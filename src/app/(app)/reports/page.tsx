@@ -38,7 +38,12 @@ export default async function ReportsPage() {
       <PageHeader
         title="التقارير"
         description="أداء المحل خلال آخر فترة"
-        action={<ExportButton href="/api/export/reports" label="تصدير التقرير" />}
+        action={
+          <div className="flex gap-2">
+            <ExportButton href="/api/export/reports" label="تصدير Excel" />
+            <ExportButton href="/api/export/reports-pdf" label="تصدير PDF" />
+          </div>
+        }
       />
 
       <div className="grid grid-cols-1 gap-4 lg:grid-cols-3">

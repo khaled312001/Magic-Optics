@@ -1,6 +1,6 @@
 import Link from "next/link";
 import {
-  DollarSign,
+  Banknote,
   ShoppingBag,
   Clock,
   PackageCheck,
@@ -39,11 +39,11 @@ export default async function DashboardPage() {
       />
 
       <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-6">
-        <StatCard label="مبيعات اليوم" value={formatCurrency(data.todaySalesTotal)} icon={DollarSign} tone="teal" />
+        <StatCard label="مبيعات اليوم" value={formatCurrency(data.todaySalesTotal)} icon={Banknote} tone="teal" />
         <StatCard label="فواتير اليوم" value={String(data.todayOrdersCount)} icon={ShoppingBag} tone="navy" />
         <StatCard label="قيد التجهيز" value={String(data.pendingCount)} icon={Clock} tone="amber" />
         <StatCard label="جاهزة للاستلام" value={String(data.readyCount)} icon={PackageCheck} tone="green" />
-        <StatCard label="رصيد الخزنة اليوم" value={formatCurrency(data.cashBalance)} icon={DollarSign} tone="navy" />
+        <StatCard label="رصيد الخزنة اليوم" value={formatCurrency(data.cashBalance)} icon={Banknote} tone="navy" />
         <StatCard label="إجمالي العملاء" value={String(data.customersCount)} icon={Users} tone="teal" />
       </div>
 
