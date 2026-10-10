@@ -29,7 +29,7 @@ export default async function ReceiptPage({ params }: { params: Promise<{ id: st
         <PrintButton />
       </div>
 
-      <div className="print-area mx-auto max-w-md rounded-xl border border-border bg-surface p-6 shadow-sm">
+      <div className="print-area print-thermal mx-auto max-w-md rounded-xl border border-border bg-surface p-6 shadow-sm">
         <div className="mb-5 flex flex-col items-center text-center">
           <Image src="/logo.jpg" alt={shop.name} width={64} height={64} className="mb-2 rounded-lg" />
           <h1 className="text-lg font-bold text-foreground">{shop.name}</h1>

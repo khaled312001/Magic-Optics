@@ -42,6 +42,7 @@ export const productCategorySchema = z.enum([
 
 export const productSchema = z.object({
   code: z.string().trim().max(50).optional().or(z.literal("")),
+  factoryCode: z.string().trim().max(50).optional().or(z.literal("")),
   name: z.string().trim().min(2, "اسم الصنف مطلوب").max(200),
   category: productCategorySchema,
   costPrice: z.coerce.number().min(0, "لا يمكن أن يكون سالباً"),

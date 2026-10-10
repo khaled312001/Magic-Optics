@@ -14,9 +14,11 @@ import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { EmptyState } from "@/components/ui/empty-state";
+import { SalesChart } from "@/components/reports/sales-chart";
 import { getDashboardData } from "@/server/dashboard";
 import { formatCurrency, formatDateTime } from "@/lib/utils";
 import { orderStatusLabels, orderStatusColors } from "@/lib/labels";
+import { TrendingUp } from "lucide-react";
 
 export default async function DashboardPage() {
   const data = await getDashboardData();
@@ -44,6 +46,18 @@ export default async function DashboardPage() {
         <StatCard label="رصيد الخزنة اليوم" value={formatCurrency(data.cashBalance)} icon={DollarSign} tone="navy" />
         <StatCard label="إجمالي العملاء" value={String(data.customersCount)} icon={Users} tone="teal" />
       </div>
+
+      <Card className="mt-6">
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <TrendingUp className="size-4" />
+            اتجاه المبيعات خلال آخر 7 أيام
+          </CardTitle>
+        </CardHeader>
+        <CardContent>
+          <SalesChart data={data.salesTrend} />
+        </CardContent>
+      </Card>
 
       <div className="mt-6 grid grid-cols-1 gap-4 lg:grid-cols-3">
         <Card className="lg:col-span-2">

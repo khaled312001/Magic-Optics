@@ -8,6 +8,7 @@ import { EmptyState } from "@/components/ui/empty-state";
 import { DeleteButton } from "@/components/ui/delete-button";
 import { DateNav } from "@/components/cash-register/date-nav";
 import { AddCashEntryDialog } from "@/components/cash-register/add-cash-entry-dialog";
+import { ExportButton } from "@/components/ui/export-button";
 import { getOrCreateCashDay, deleteCashEntry } from "@/server/cashRegister";
 import { formatCurrency, formatDateTime } from "@/lib/utils";
 import { cashCategoryLabels } from "@/lib/labels";
@@ -39,7 +40,12 @@ export default async function CashRegisterPage({
       <PageHeader
         title="الخزنة اليومية"
         description="متابعة الوارد والمنصرف يومياً"
-        action={<AddCashEntryDialog date={selectedDate} />}
+        action={
+          <div className="flex items-center gap-2">
+            <ExportButton href={`/api/export/cash-register?date=${selectedDate}`} />
+            <AddCashEntryDialog date={selectedDate} />
+          </div>
+        }
       />
 
       <div className="mb-4">

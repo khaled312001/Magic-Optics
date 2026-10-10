@@ -30,6 +30,7 @@ async function main() {
   });
 
   // --- إطارات النظارات الطبية (نضارات طبيه.xlsx) --------------------------
+  // [الكود, العدد, كود المصنع, السعر, النوع]
   const medicalFrames: Array<[string, number, number, number, string]> = [
     ["A", 37, 100, 350, "Astra مستطيل مصري"],
     ["B", 2, 250, 875, "hiphi مربع"],
@@ -62,6 +63,7 @@ async function main() {
   ];
 
   // --- إطارات النظارات الشمسية (نضارات شمس.xlsx) ---------------------------
+  // [الكود, العدد, كود المصنع, السعر, النوع]
   const sunglassesFrames: Array<[string, number, number, number, string]> = [
     ["1", 21, 90, 350, "رجالي وسط"],
     ["2", 9, 90, 350, "اطفال بولاريز"],
@@ -124,20 +126,22 @@ async function main() {
   if (existingCount === 0) {
     await prisma.product.createMany({
       data: [
-        ...medicalFrames.map(([code, quantity, costPrice, sellPrice, name]) => ({
+        ...medicalFrames.map(([code, quantity, factoryCode, sellPrice, name]) => ({
           code,
+          factoryCode: String(factoryCode),
           name,
           category: ProductCategory.FRAME_MEDICAL,
-          costPrice,
+          costPrice: factoryCode,
           sellPrice,
           quantity,
           minQuantity: 3,
         })),
-        ...sunglassesFrames.map(([code, quantity, costPrice, sellPrice, name]) => ({
+        ...sunglassesFrames.map(([code, quantity, factoryCode, sellPrice, name]) => ({
           code,
+          factoryCode: String(factoryCode),
           name,
           category: ProductCategory.FRAME_SUNGLASSES,
-          costPrice,
+          costPrice: factoryCode,
           sellPrice,
           quantity,
           minQuantity: 3,

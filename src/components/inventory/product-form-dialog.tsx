@@ -63,9 +63,20 @@ export function ProductFormDialog({
               </Select>
             </div>
             <div>
-              <Label htmlFor="code">الكود</Label>
+              <Label htmlFor="code">كود المحل</Label>
               <Input id="code" name="code" dir="ltr" className="text-right" defaultValue={product?.code ?? ""} />
             </div>
+          </div>
+
+          <div>
+            <Label htmlFor="factoryCode">كود المصنع / المورد</Label>
+            <Input
+              id="factoryCode"
+              name="factoryCode"
+              dir="ltr"
+              className="text-right"
+              defaultValue={product?.factoryCode ?? ""}
+            />
           </div>
 
           <div className="grid grid-cols-2 gap-3">

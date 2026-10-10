@@ -7,6 +7,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { EmptyState } from "@/components/ui/empty-state";
 import { SearchBox } from "@/components/ui/search-box";
+import { ExportButton } from "@/components/ui/export-button";
 import { StatusTabs } from "@/components/orders/status-tabs";
 import { formatCurrency, formatDateTime } from "@/lib/utils";
 import { orderStatusLabels, orderStatusColors, orderTypeLabels } from "@/lib/labels";
@@ -40,18 +41,25 @@ export default async function OrdersPage({
     take: 100,
   });
 
+  const exportParams = new URLSearchParams();
+  if (status) exportParams.set("status", status);
+  if (q) exportParams.set("q", q);
+
   return (
     <div>
       <PageHeader
         title="الفواتير"
         description={`${orders.length} فاتورة`}
         action={
-          <Link href="/orders/new">
-            <Button>
-              <Plus className="size-4" />
-              فاتورة جديدة
-            </Button>
-          </Link>
+          <div className="flex items-center gap-2">
+            <ExportButton href={`/api/export/orders?${exportParams.toString()}`} />
+            <Link href="/orders/new">
+              <Button>
+                <Plus className="size-4" />
+                فاتورة جديدة
+              </Button>
+            </Link>
+          </div>
         }
       />
 

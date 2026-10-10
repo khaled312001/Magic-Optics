@@ -1,6 +1,7 @@
 import "server-only";
 import { prisma } from "@/lib/prisma";
 import { getOrCreateCashDay } from "@/server/cashRegister";
+import { getSalesOverTime } from "@/server/reports";
 
 function todayStr() {
   const d = new Date();
@@ -24,6 +25,7 @@ export async function getDashboardData() {
     customersCount,
     productsCount,
     cashDay,
+    salesTrend,
   ] = await Promise.all([
     prisma.order.findMany({
       where: { createdAt: { gte: startOfToday, lt: endOfToday }, status: { not: "CANCELLED" } },
@@ -46,6 +48,7 @@ export async function getDashboardData() {
     prisma.customer.count(),
     prisma.product.count({ where: { active: true } }),
     getOrCreateCashDay(todayStr()),
+    getSalesOverTime(7),
   ]);
 
   const todaySalesTotal = todayOrders.reduce((s, o) => s + Number(o.totalAmount), 0);
@@ -76,5 +79,6 @@ export async function getDashboardData() {
     customersCount,
     productsCount,
     cashBalance,
+    salesTrend,
   };
 }

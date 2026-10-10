@@ -1,11 +1,11 @@
 @import "tailwindcss";
 
 :root {
-  --background: #f4f6fa;
+  --background: #f3f5f9;
   --surface: #ffffff;
   --foreground: #16213e;
-  --muted: #64748b;
-  --border: #e2e8f0;
+  --muted: #667085;
+  --border: #e5e9f0;
 
   --brand-navy: #0f2a52;
   --brand-navy-dark: #081a36;
@@ -32,22 +32,14 @@
   --font-sans: var(--font-cairo);
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0b1220;
-    --surface: #121a2b;
-    --foreground: #e7ecf5;
-    --muted: #93a2b8;
-    --border: #22304a;
-  }
-}
-
+/* الوضع الفاتح (White) ثابت دائماً فى هذا النظام، بغض النظر عن إعداد نظام
+   تشغيل المستخدم، حتى تبقى الشاشات متسقة لكل الموظفين. */
 * {
   border-color: var(--border);
 }
 
 html {
-  color-scheme: light dark;
+  color-scheme: light;
 }
 
 body {
@@ -102,6 +94,56 @@ input[type="number"] {
   animation: toast-in 0.18s ease-out;
 }
 
+@keyframes fade-up {
+  from {
+    opacity: 0;
+    transform: translateY(6px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+.animate-fade-up {
+  animation: fade-up 0.32s cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+
+@keyframes sidebar-in {
+  from {
+    opacity: 0;
+    transform: translateX(8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+[dir="rtl"] .animate-sidebar-in {
+  animation: sidebar-in 0.2s ease-out both;
+}
+
+/* تدرّج ظهور بطاقات القوائم والإحصائيات بترتيب بسيط */
+.stagger-children > * {
+  animation: fade-up 0.32s cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+.stagger-children > *:nth-child(1) { animation-delay: 0ms; }
+.stagger-children > *:nth-child(2) { animation-delay: 40ms; }
+.stagger-children > *:nth-child(3) { animation-delay: 80ms; }
+.stagger-children > *:nth-child(4) { animation-delay: 120ms; }
+.stagger-children > *:nth-child(5) { animation-delay: 160ms; }
+.stagger-children > *:nth-child(6) { animation-delay: 200ms; }
+
+@media (prefers-reduced-motion: reduce) {
+  .animate-dialog-in,
+  .animate-toast-in,
+  .animate-fade-up,
+  .animate-sidebar-in,
+  .stagger-children > * {
+    animation: none !important;
+  }
+}
+
+/* طباعة الإيصال على مقاس طابعة الإيصالات الحرارية (80 مم) */
 @media print {
   .no-print {
     display: none !important;
@@ -112,5 +154,27 @@ input[type="number"] {
   .print-area {
     box-shadow: none !important;
     border: none !important;
+  }
+
+  .print-thermal {
+    width: 80mm !important;
+    max-width: 80mm !important;
+    margin: 0 !important;
+    padding: 3mm !important;
+    font-size: 11px !important;
+  }
+  .print-thermal h1 {
+    font-size: 13px !important;
+  }
+  .print-thermal img {
+    width: 42px !important;
+    height: 42px !important;
+  }
+  .print-thermal .text-base {
+    font-size: 12px !important;
+  }
+  @page {
+    size: 80mm auto;
+    margin: 0;
   }
 }

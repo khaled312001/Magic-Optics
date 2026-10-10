@@ -14,6 +14,7 @@ export async function createProduct(formData: FormData): Promise<ActionResult<{ 
     const product = await prisma.product.create({
       data: {
         code: data.code || null,
+        factoryCode: data.factoryCode || null,
         name: data.name,
         category: data.category,
         costPrice: data.costPrice,
@@ -40,6 +41,7 @@ export async function updateProduct(id: number, formData: FormData): Promise<Act
       where: { id },
       data: {
         code: data.code || null,
+        factoryCode: data.factoryCode || null,
         name: data.name,
         category: data.category,
         costPrice: data.costPrice,

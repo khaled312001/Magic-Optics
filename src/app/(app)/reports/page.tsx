@@ -6,6 +6,8 @@ import { PageHeader } from "@/components/ui/page-header";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { SalesChart } from "@/components/reports/sales-chart";
+import { TopProductsChart } from "@/components/reports/top-products-chart";
+import { ExportButton } from "@/components/ui/export-button";
 import {
   getSalesOverTime,
   getTopProducts,
@@ -33,7 +35,11 @@ export default async function ReportsPage() {
 
   return (
     <div>
-      <PageHeader title="التقارير" description="أداء المحل خلال آخر فترة" />
+      <PageHeader
+        title="التقارير"
+        description="أداء المحل خلال آخر فترة"
+        action={<ExportButton href="/api/export/reports" label="تصدير التقرير" />}
+      />
 
       <div className="grid grid-cols-1 gap-4 lg:grid-cols-3">
         <Card className="lg:col-span-2">
@@ -73,18 +79,11 @@ export default async function ReportsPage() {
           <CardHeader>
             <CardTitle>الأكثر مبيعاً (30 يوم)</CardTitle>
           </CardHeader>
-          <CardContent className="p-0">
+          <CardContent>
             {topProducts.length === 0 ? (
-              <p className="p-5 text-sm text-muted">لا توجد بيانات كافية</p>
+              <p className="py-3 text-sm text-muted">لا توجد بيانات كافية</p>
             ) : (
-              <div className="divide-y divide-border">
-                {topProducts.map((p, i) => (
-                  <div key={i} className="flex items-center justify-between px-5 py-3 text-sm">
-                    <span className="truncate text-foreground">{p.name}</span>
-                    <span className="shrink-0 text-muted">{p.quantity} قطعة · {formatCurrency(p.total)}</span>
-                  </div>
-                ))}
-              </div>
+              <TopProductsChart data={topProducts} />
             )}
           </CardContent>
         </Card>

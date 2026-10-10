@@ -8,6 +8,7 @@ import { Badge } from "@/components/ui/badge";
 import { EmptyState } from "@/components/ui/empty-state";
 import { SearchBox } from "@/components/ui/search-box";
 import { CategoryTabs } from "@/components/inventory/category-tabs";
+import { ExportButton } from "@/components/ui/export-button";
 import { ProductFormDialog } from "@/components/inventory/product-form-dialog";
 import { StockAdjustDialog } from "@/components/inventory/stock-adjust-dialog";
 import { DeleteButton } from "@/components/ui/delete-button";
@@ -30,7 +31,15 @@ export default async function InventoryPage({
   const where: Prisma.ProductWhereInput = {
     active: true,
     ...(category ? { category: category as ProductCategory } : {}),
-    ...(q ? { OR: [{ name: { contains: q } }, { code: { contains: q } }] } : {}),
+    ...(q
+      ? {
+          OR: [
+            { name: { contains: q } },
+            { code: { contains: q } },
+            { factoryCode: { contains: q } },
+          ],
+        }
+      : {}),
   };
 
   const rawProducts = await prisma.product.findMany({ where, orderBy: [{ category: "asc" }, { name: "asc" }] });
@@ -41,17 +50,26 @@ export default async function InventoryPage({
     sellPrice: Number(p.sellPrice),
   }));
 
+  const exportParams = new URLSearchParams();
+  if (category) exportParams.set("category", category);
+  if (q) exportParams.set("q", q);
+
   return (
     <div>
       <PageHeader
         title="المخزون"
         description={`${products.length} صنف`}
-        action={<ProductFormDialog defaultCategory={category} isAdmin={isAdmin} />}
+        action={
+          <div className="flex items-center gap-2">
+            <ExportButton href={`/api/export/inventory?${exportParams.toString()}`} />
+            <ProductFormDialog defaultCategory={category} isAdmin={isAdmin} />
+          </div>
+        }
       />
 
       <div className="mb-4 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <CategoryTabs />
-        <SearchBox placeholder="ابحث بالاسم أو الكود..." />
+        <SearchBox placeholder="ابحث بالاسم أو كود المحل أو كود المصنع..." />
       </div>
 
       {products.length === 0 ? (
@@ -62,6 +80,7 @@ export default async function InventoryPage({
             <thead>
               <tr className="border-b border-border text-right text-xs text-muted">
                 <th className="px-4 py-3 font-medium">الكود</th>
+                <th className="px-4 py-3 font-medium">كود المصنع</th>
                 <th className="px-4 py-3 font-medium">الاسم</th>
                 <th className="px-4 py-3 font-medium">الفئة</th>
                 {isAdmin && <th className="px-4 py-3 font-medium">التكلفة</th>}
@@ -74,6 +93,7 @@ export default async function InventoryPage({
               {products.map((p) => (
                 <tr key={p.id} className="hover:bg-background">
                   <td className="px-4 py-3 text-muted">{p.code || "-"}</td>
+                  <td className="px-4 py-3 text-muted">{p.factoryCode || "-"}</td>
                   <td className="px-4 py-3 font-medium text-foreground">{p.name}</td>
                   <td className="px-4 py-3 text-muted">{productCategoryShortLabels[p.category]}</td>
                   {isAdmin && <td className="px-4 py-3 text-muted">{formatCurrency(p.costPrice)}</td>}

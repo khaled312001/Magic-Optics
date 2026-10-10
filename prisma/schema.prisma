@@ -111,6 +111,7 @@ enum ProductCategory {
 model Product {
   id          Int             @id @default(autoincrement())
   code        String? // كود الصنف فى كتالوج المحل
+  factoryCode String? // كود المصنع / المورد
   name        String // النوع / الاسم
   category    ProductCategory
   costPrice   Decimal         @db.Decimal(10, 2) // سعر التكلفة
