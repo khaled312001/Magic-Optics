@@ -39,6 +39,7 @@ export function Sidebar({ onNavigate }: { onNavigate?: () => void }) {
           alt="Magic Optics"
           width={40}
           height={40}
+          priority
           className="rounded-lg bg-white object-contain p-0.5"
         />
         <div className="min-w-0">

@@ -4,10 +4,15 @@ export function cn(...inputs: ClassValue[]) {
   return clsx(inputs);
 }
 
+// نستخدم أرقاماً إنجليزية (0-9) رغم أن اللغة عربية، لأن هذا هو المعتاد فى
+// فواتير وقوائم أسعار المحل نفسه (كما يظهر فى نماذجه الورقية)، بدلاً من
+// الأرقام الهندية التي تنتجها لغة "ar-EG" افتراضياً.
+const AR_EG_LATIN = "ar-EG-u-nu-latn";
+
 export function formatCurrency(value: number | string | { toString(): string }) {
   const n = typeof value === "object" ? Number(value.toString()) : Number(value);
   return (
-    new Intl.NumberFormat("ar-EG", {
+    new Intl.NumberFormat(AR_EG_LATIN, {
       minimumFractionDigits: 0,
       maximumFractionDigits: 2,
     }).format(n) + " ج.م"
@@ -16,7 +21,7 @@ export function formatCurrency(value: number | string | { toString(): string }) 
 
 export function formatDate(date: Date | string) {
   const d = typeof date === "string" ? new Date(date) : date;
-  return new Intl.DateTimeFormat("ar-EG", {
+  return new Intl.DateTimeFormat(AR_EG_LATIN, {
     year: "numeric",
     month: "long",
     day: "numeric",
@@ -25,7 +30,7 @@ export function formatDate(date: Date | string) {
 
 export function formatDateShort(date: Date | string) {
   const d = typeof date === "string" ? new Date(date) : date;
-  return new Intl.DateTimeFormat("ar-EG", {
+  return new Intl.DateTimeFormat(AR_EG_LATIN, {
     year: "numeric",
     month: "2-digit",
     day: "2-digit",
@@ -34,7 +39,7 @@ export function formatDateShort(date: Date | string) {
 
 export function formatDateTime(date: Date | string) {
   const d = typeof date === "string" ? new Date(date) : date;
-  return new Intl.DateTimeFormat("ar-EG", {
+  return new Intl.DateTimeFormat(AR_EG_LATIN, {
     year: "numeric",
     month: "2-digit",
     day: "2-digit",

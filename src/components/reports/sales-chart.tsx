@@ -6,7 +6,7 @@ import { formatCurrency } from "@/lib/utils";
 export function SalesChart({ data }: { data: { date: string; total: number }[] }) {
   const formatted = data.map((d) => ({
     ...d,
-    label: new Intl.DateTimeFormat("ar-EG", { day: "numeric", month: "numeric" }).format(new Date(d.date)),
+    label: new Intl.DateTimeFormat("ar-EG-u-nu-latn", { day: "numeric", month: "numeric" }).format(new Date(d.date)),
   }));
 
   return (

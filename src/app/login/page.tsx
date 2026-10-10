@@ -48,6 +48,7 @@ function LoginForm() {
             alt="Magic Optics"
             width={88}
             height={88}
+            priority
             className="mb-4 rounded-2xl bg-white p-1.5 shadow-lg"
           />
           <h1 className="text-xl font-bold">Magic Optics</h1>
