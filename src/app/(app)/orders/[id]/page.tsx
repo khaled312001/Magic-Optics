@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import { ChevronRight, Printer, User, Calendar, FileText } from "lucide-react";
+import { ChevronRight, Printer, User, Calendar, FileText, Eye } from "lucide-react";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
@@ -100,6 +100,26 @@ export default async function OrderDetailPage({ params }: { params: Promise<{ id
           </CardContent>
         </Card>
       </div>
+
+      {order.prescription && (
+        <Card className="mt-4">
+          <CardContent className="flex items-center justify-between gap-3 py-4">
+            <div className="flex items-center gap-3">
+              <Eye className="size-5 text-brand-navy" />
+              <div>
+                <p className="text-xs text-muted">كشف النظر المرتبط</p>
+                <p className="font-medium text-foreground">كشف بتاريخ {formatDate(order.prescription.date)}</p>
+              </div>
+            </div>
+            <Link
+              href={`/prescriptions/${order.prescription.id}`}
+              className="inline-flex h-9 items-center rounded-lg border border-border bg-surface px-3 text-sm font-medium text-foreground transition-colors hover:bg-background"
+            >
+              عرض / طباعة
+            </Link>
+          </CardContent>
+        </Card>
+      )}
 
       <Card className="mt-4">
         <CardHeader>

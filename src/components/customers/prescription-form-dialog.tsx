@@ -1,20 +1,39 @@
 "use client";
 
 import { useState } from "react";
-import { Plus } from "lucide-react";
+import { useRouter } from "next/navigation";
+import { Plus, User, UserPlus } from "lucide-react";
 import { Dialog } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
-import { Input, Label, Textarea } from "@/components/ui/input";
+import { Input, Label, Textarea, FieldError } from "@/components/ui/input";
+import { Combobox, type ComboboxItem } from "@/components/ui/combobox";
 import { useActionForm } from "@/components/ui/use-action-form";
 import { createPrescription } from "@/server/customers";
 
-export function PrescriptionFormDialog({ customerId }: { customerId: number }) {
-  const [open, setOpen] = useState(false);
+type CustomerOption = { id: number; name: string; phone: string | null };
 
-  const { onSubmit, isPending } = useActionForm(createPrescription, {
+export function PrescriptionFormDialog({
+  customerId,
+  customers,
+}: {
+  customerId?: number;
+  customers?: CustomerOption[];
+}) {
+  const router = useRouter();
+  const [open, setOpen] = useState(false);
+  const [customerMode, setCustomerMode] = useState<"existing" | "new">("existing");
+  const [selectedCustomer, setSelectedCustomer] = useState<CustomerOption | null>(null);
+
+  const { onSubmit, isPending, fieldErrors, error } = useActionForm(createPrescription, {
     successMessage: "تم حفظ الكشف الطبي",
-    onSuccess: () => setOpen(false),
+    onSuccess: (data) => {
+      setOpen(false);
+      if (!customerId) router.push(`/prescriptions/${(data as { id: number }).id}`);
+    },
+    refresh: !!customerId,
   });
+
+  const customerItems: ComboboxItem[] = (customers ?? []).map((c) => ({ id: c.id, label: c.name, sublabel: c.phone ?? undefined }));
 
   return (
     <>
@@ -25,7 +44,61 @@ export function PrescriptionFormDialog({ customerId }: { customerId: number }) {
 
       <Dialog open={open} onClose={() => setOpen(false)} title="إضافة كشف نظر" maxWidth="max-w-2xl">
         <form onSubmit={onSubmit} className="space-y-5">
-          <input type="hidden" name="customerId" value={customerId} />
+          {error && <div className="rounded-lg bg-red-50 px-4 py-3 text-sm text-red-700">{error}</div>}
+
+          {customerId ? (
+            <input type="hidden" name="customerId" value={customerId} />
+          ) : (
+            <div>
+              <div className="mb-2 flex gap-1 rounded-lg bg-background p-1 text-xs">
+                <button
+                  type="button"
+                  onClick={() => setCustomerMode("existing")}
+                  className={`flex items-center gap-1 rounded-md px-2.5 py-1.5 font-medium ${customerMode === "existing" ? "bg-surface shadow-sm text-foreground" : "text-muted"}`}
+                >
+                  <User className="size-3.5" /> عميل حالي
+                </button>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setCustomerMode("new");
+                    setSelectedCustomer(null);
+                  }}
+                  className={`flex items-center gap-1 rounded-md px-2.5 py-1.5 font-medium ${customerMode === "new" ? "bg-surface shadow-sm text-foreground" : "text-muted"}`}
+                >
+                  <UserPlus className="size-3.5" /> عميل جديد
+                </button>
+              </div>
+
+              {customerMode === "existing" ? (
+                <div>
+                  {selectedCustomer && <input type="hidden" name="customerId" value={selectedCustomer.id} />}
+                  <Label>اختر العميل</Label>
+                  <Combobox
+                    items={customerItems}
+                    placeholder="ابحث بالاسم أو الهاتف..."
+                    selectedLabel={selectedCustomer?.name}
+                    onSelect={(item) => {
+                      const c = (customers ?? []).find((x) => x.id === item.id);
+                      if (c) setSelectedCustomer(c);
+                    }}
+                  />
+                  <FieldError>{fieldErrors.customerId}</FieldError>
+                </div>
+              ) : (
+                <div className="grid grid-cols-2 gap-3">
+                  <div>
+                    <Label htmlFor="newCustomerName">اسم العميل *</Label>
+                    <Input id="newCustomerName" name="newCustomerName" required />
+                  </div>
+                  <div>
+                    <Label htmlFor="newCustomerPhone">رقم الهاتف</Label>
+                    <Input id="newCustomerPhone" name="newCustomerPhone" dir="ltr" className="text-right" />
+                  </div>
+                </div>
+              )}
+            </div>
+          )}
 
           <div className="overflow-x-auto">
             <table className="w-full min-w-[560px] border-collapse text-sm">

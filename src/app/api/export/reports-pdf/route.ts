@@ -1,29 +1,43 @@
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
-import { getSalesOverTime, getTopProducts, getOutstandingBalances, getLowStockReport, getProfitSummary } from "@/server/reports";
+import {
+  getSalesOverTime,
+  getTopProducts,
+  getOutstandingBalances,
+  getLowStockReport,
+  getProfitSummary,
+  resolveReportRange,
+} from "@/server/reports";
 import { getShopSettings } from "@/server/settings";
 import { buildReportHtml } from "@/lib/report-pdf-html";
 import { renderHtmlToPdf } from "@/lib/pdf-browser";
+import { formatDateUTC } from "@/lib/utils";
 
 export const runtime = "nodejs";
 export const maxDuration = 60;
 
-export async function GET() {
+export async function GET(request: Request) {
   const session = await getServerSession(authOptions);
   if (!session) return new Response("Unauthorized", { status: 401 });
   if (session.user?.role !== "ADMIN") return new Response("Forbidden", { status: 403 });
 
-  const periodDays = 14;
+  const { searchParams } = new URL(request.url);
+  const fromParam = searchParams.get("from") ?? undefined;
+  const toParam = searchParams.get("to") ?? undefined;
+  const range = resolveReportRange(fromParam, toParam, 30);
+  const salesRange = resolveReportRange(fromParam, toParam, 14);
+  const periodLabel = typeof range === "number" ? `${range} يوم` : `${formatDateUTC(range.from)} - ${formatDateUTC(range.until)}`;
+
   const [sales, topProducts, debtors, lowStock, profit, shop] = await Promise.all([
-    getSalesOverTime(periodDays),
-    getTopProducts(30),
+    getSalesOverTime(salesRange),
+    getTopProducts(range),
     getOutstandingBalances(),
     getLowStockReport(),
-    getProfitSummary(30),
+    getProfitSummary(range),
     getShopSettings(),
   ]);
 
-  const html = buildReportHtml({ shop, sales, topProducts, debtors, lowStock, profit, periodDays });
+  const html = buildReportHtml({ shop, sales, topProducts, debtors, lowStock, profit, periodLabel });
 
   let pdf: Buffer;
   try {

@@ -1,3 +1,5 @@
+import Link from "next/link";
+import { Printer } from "lucide-react";
 import { formatDate } from "@/lib/utils";
 import { DeleteButton } from "@/components/ui/delete-button";
 import { deletePrescription } from "@/server/customers";
@@ -13,12 +15,21 @@ export function PrescriptionView({ prescription, canDelete }: { prescription: Pr
     <div className="rounded-lg border border-border p-4">
       <div className="mb-3 flex items-center justify-between">
         <p className="text-sm font-medium text-foreground">{formatDate(prescription.date)}</p>
-        {canDelete && (
-          <DeleteButton
-            action={deletePrescription.bind(null, prescription.id, prescription.customerId)}
-            confirmMessage="هل تريد حذف هذا الكشف؟"
-          />
-        )}
+        <div className="flex items-center gap-1">
+          <Link
+            href={`/prescriptions/${prescription.id}`}
+            className="inline-flex h-7 items-center gap-1 rounded-md px-2 text-xs font-medium text-brand-navy hover:bg-background"
+          >
+            <Printer className="size-3.5" />
+            طباعة
+          </Link>
+          {canDelete && (
+            <DeleteButton
+              action={deletePrescription.bind(null, prescription.id, prescription.customerId)}
+              confirmMessage="هل تريد حذف هذا الكشف؟"
+            />
+          )}
+        </div>
       </div>
 
       <div className="overflow-x-auto">

@@ -3,6 +3,7 @@ import { authOptions } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { buildWorkbookBuffer, excelResponse } from "@/lib/excel";
 import { orderStatusLabels, orderTypeLabels } from "@/lib/labels";
+import { dateRangeFilter } from "@/lib/utils";
 import type { Prisma, OrderStatus } from "@prisma/client";
 
 export async function GET(request: Request) {
@@ -12,12 +13,19 @@ export async function GET(request: Request) {
   const { searchParams } = new URL(request.url);
   const status = searchParams.get("status");
   const q = searchParams.get("q");
+  const createdAt = dateRangeFilter(searchParams.get("from") ?? undefined, searchParams.get("to") ?? undefined);
 
   const where: Prisma.OrderWhereInput = {
     ...(status ? { status: status as OrderStatus } : {}),
+    ...(createdAt ? { createdAt } : {}),
     ...(q
       ? {
-          OR: [{ receiptNumber: { contains: q } }, { customer: { name: { contains: q } } }],
+          OR: [
+            { receiptNumber: { contains: q } },
+            { customer: { name: { contains: q } } },
+            { customer: { phone: { contains: q } } },
+            { customer: { phone2: { contains: q } } },
+          ],
         }
       : {}),
   };

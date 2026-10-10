@@ -1,20 +1,31 @@
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import { excelResponse } from "@/lib/excel";
-import { getSalesOverTime, getTopProducts, getOutstandingBalances, getLowStockReport, getProfitSummary } from "@/server/reports";
+import {
+  getSalesOverTime,
+  getTopProducts,
+  getOutstandingBalances,
+  getLowStockReport,
+  getProfitSummary,
+  resolveReportRange,
+} from "@/server/reports";
 import * as XLSX from "xlsx";
 
-export async function GET() {
+export async function GET(request: Request) {
   const session = await getServerSession(authOptions);
   if (!session) return new Response("Unauthorized", { status: 401 });
   if (session.user?.role !== "ADMIN") return new Response("Forbidden", { status: 403 });
 
+  const { searchParams } = new URL(request.url);
+  const range = resolveReportRange(searchParams.get("from") ?? undefined, searchParams.get("to") ?? undefined, 30);
+  const salesRange = resolveReportRange(searchParams.get("from") ?? undefined, searchParams.get("to") ?? undefined, 14);
+
   const [sales, topProducts, debtors, lowStock, profit] = await Promise.all([
-    getSalesOverTime(14),
-    getTopProducts(30),
+    getSalesOverTime(salesRange),
+    getTopProducts(range),
     getOutstandingBalances(),
     getLowStockReport(),
-    getProfitSummary(30),
+    getProfitSummary(range),
   ]);
 
   const wb = XLSX.utils.book_new();
@@ -49,7 +60,7 @@ export async function GET() {
 
   const summarySheet = XLSX.utils.aoa_to_sheet([
     ["البند", "القيمة"],
-    ["الإيرادات (30 يوم)", profit.revenue],
+    ["الإيرادات", profit.revenue],
     ["التكلفة التقديرية", profit.cost],
     ["صافي الربح التقديري", profit.profit],
   ]);

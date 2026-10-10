@@ -8,40 +8,58 @@ import { Badge } from "@/components/ui/badge";
 import { SalesChart } from "@/components/reports/sales-chart";
 import { TopProductsChart } from "@/components/reports/top-products-chart";
 import { ExportButton } from "@/components/ui/export-button";
+import { DateRangeFilter } from "@/components/ui/date-range-filter";
 import {
   getSalesOverTime,
   getTopProducts,
   getOutstandingBalances,
   getLowStockReport,
   getProfitSummary,
+  resolveReportRange,
 } from "@/server/reports";
-import { formatCurrency } from "@/lib/utils";
+import { formatCurrency, formatDateUTC } from "@/lib/utils";
 
 export const dynamic = "force-dynamic";
 
-export default async function ReportsPage() {
+export default async function ReportsPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ from?: string; to?: string }>;
+}) {
   const session = await getServerSession(authOptions);
   if (session?.user?.role !== "ADMIN") redirect("/dashboard");
 
+  const { from, to } = await searchParams;
+  const range = resolveReportRange(from, to, 30);
+  const salesRange = resolveReportRange(from, to, 14);
+
   const [sales, topProducts, debtors, lowStock, profit] = await Promise.all([
-    getSalesOverTime(14),
-    getTopProducts(30),
+    getSalesOverTime(salesRange),
+    getTopProducts(range),
     getOutstandingBalances(),
     getLowStockReport(),
-    getProfitSummary(30),
+    getProfitSummary(range),
   ]);
 
   const totalOutstanding = debtors.reduce((s, d) => s + d.remaining, 0);
+  const periodLabel =
+    typeof range === "number" ? `${range} يوم` : `${formatDateUTC(range.from)} - ${formatDateUTC(range.until)}`;
+
+  const exportParams = new URLSearchParams();
+  if (from) exportParams.set("from", from);
+  if (to) exportParams.set("to", to);
+  const exportQuery = exportParams.toString() ? `?${exportParams.toString()}` : "";
 
   return (
     <div>
       <PageHeader
         title="التقارير"
-        description="أداء المحل خلال آخر فترة"
+        description={`أداء المحل خلال ${periodLabel}`}
         action={
-          <div className="flex gap-2">
-            <ExportButton href="/api/export/reports" label="تصدير Excel" />
-            <ExportButton href="/api/export/reports-pdf" label="تصدير PDF" />
+          <div className="flex flex-wrap items-center gap-2">
+            <DateRangeFilter />
+            <ExportButton href={`/api/export/reports${exportQuery}`} label="تصدير Excel" />
+            <ExportButton href={`/api/export/reports-pdf${exportQuery}`} label="تصدير PDF" />
           </div>
         }
       />
@@ -51,7 +69,7 @@ export default async function ReportsPage() {
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
               <TrendingUp className="size-4" />
-              المبيعات خلال آخر 14 يوم
+              المبيعات خلال {periodLabel}
             </CardTitle>
           </CardHeader>
           <CardContent>
@@ -63,7 +81,7 @@ export default async function ReportsPage() {
           <Card>
             <CardContent className="space-y-3 py-5">
               <div className="flex items-center justify-between">
-                <span className="text-sm text-muted">الإيرادات (30 يوم)</span>
+                <span className="text-sm text-muted">الإيرادات ({periodLabel})</span>
                 <span className="font-bold text-foreground">{formatCurrency(profit.revenue)}</span>
               </div>
               <div className="flex items-center justify-between">
@@ -82,7 +100,7 @@ export default async function ReportsPage() {
       <div className="mt-4 grid grid-cols-1 gap-4 lg:grid-cols-3">
         <Card className="lg:col-span-1">
           <CardHeader>
-            <CardTitle>الأكثر مبيعاً (30 يوم)</CardTitle>
+            <CardTitle>الأكثر مبيعاً ({periodLabel})</CardTitle>
           </CardHeader>
           <CardContent>
             {topProducts.length === 0 ? (

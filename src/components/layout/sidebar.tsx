@@ -12,6 +12,7 @@ import {
   Wallet,
   BarChart3,
   Settings,
+  Eye,
   X,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
@@ -20,6 +21,7 @@ const navItems = [
   { href: "/dashboard", label: "لوحة التحكم", icon: LayoutDashboard },
   { href: "/orders", label: "الفواتير", icon: Receipt },
   { href: "/customers", label: "العملاء", icon: Users },
+  { href: "/prescriptions", label: "كشوفات النظر", icon: Eye },
   { href: "/inventory", label: "المخزون", icon: Glasses },
   { href: "/cash-register", label: "الخزنة اليومية", icon: Wallet },
   { href: "/reports", label: "التقارير", icon: BarChart3, adminOnly: true },

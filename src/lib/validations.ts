@@ -14,23 +14,30 @@ const numOrEmpty = z
   .optional()
   .transform((v) => (v === "" || v === undefined ? null : v));
 
-export const prescriptionSchema = z.object({
-  customerId: z.coerce.number().int().positive(),
-  rightSphFar: numOrEmpty,
-  rightCylFar: numOrEmpty,
-  rightAxisFar: numOrEmpty,
-  leftSphFar: numOrEmpty,
-  leftCylFar: numOrEmpty,
-  leftAxisFar: numOrEmpty,
-  rightSphNear: numOrEmpty,
-  rightCylNear: numOrEmpty,
-  rightAxisNear: numOrEmpty,
-  leftSphNear: numOrEmpty,
-  leftCylNear: numOrEmpty,
-  leftAxisNear: numOrEmpty,
-  ipd: numOrEmpty,
-  notes: z.string().trim().max(2000).optional().or(z.literal("")),
-});
+export const prescriptionSchema = z
+  .object({
+    customerId: z.coerce.number().int().positive().optional(),
+    newCustomerName: z.string().trim().max(150).optional().or(z.literal("")),
+    newCustomerPhone: z.string().trim().max(30).optional().or(z.literal("")),
+    rightSphFar: numOrEmpty,
+    rightCylFar: numOrEmpty,
+    rightAxisFar: numOrEmpty,
+    leftSphFar: numOrEmpty,
+    leftCylFar: numOrEmpty,
+    leftAxisFar: numOrEmpty,
+    rightSphNear: numOrEmpty,
+    rightCylNear: numOrEmpty,
+    rightAxisNear: numOrEmpty,
+    leftSphNear: numOrEmpty,
+    leftCylNear: numOrEmpty,
+    leftAxisNear: numOrEmpty,
+    ipd: numOrEmpty,
+    notes: z.string().trim().max(2000).optional().or(z.literal("")),
+  })
+  .refine((data) => data.customerId || data.newCustomerName?.trim(), {
+    message: "اختر عميلاً أو أدخل اسم عميل جديد",
+    path: ["customerId"],
+  });
 export type PrescriptionInput = z.infer<typeof prescriptionSchema>;
 
 export const productCategorySchema = z.enum([

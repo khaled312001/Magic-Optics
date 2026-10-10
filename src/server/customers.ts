@@ -87,9 +87,17 @@ export async function createPrescription(formData: FormData): Promise<ActionResu
     const raw = Object.fromEntries(formData);
     const data = prescriptionSchema.parse(raw);
 
+    let customerId = data.customerId;
+    if (!customerId) {
+      const customer = await prisma.customer.create({
+        data: { name: data.newCustomerName!.trim(), phone: data.newCustomerPhone?.trim() || null },
+      });
+      customerId = customer.id;
+    }
+
     const prescription = await prisma.prescription.create({
       data: {
-        customerId: data.customerId,
+        customerId,
         rightSphFar: data.rightSphFar,
         rightCylFar: data.rightCylFar,
         rightAxisFar: data.rightAxisFar,
@@ -108,7 +116,8 @@ export async function createPrescription(formData: FormData): Promise<ActionResu
       },
     });
 
-    revalidatePath(`/customers/${data.customerId}`);
+    revalidatePath(`/customers/${customerId}`);
+    revalidatePath("/prescriptions");
     return okResult({ id: prescription.id });
   } catch (err) {
     return handleActionError(err);
@@ -120,6 +129,7 @@ export async function deletePrescription(id: number, customerId: number): Promis
     await requireAdmin();
     await prisma.prescription.delete({ where: { id } });
     revalidatePath(`/customers/${customerId}`);
+    revalidatePath("/prescriptions");
     return okResult(undefined);
   } catch (err) {
     return handleActionError(err);
