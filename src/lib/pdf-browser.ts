@@ -24,10 +24,16 @@ export async function renderHtmlToPdf(html: string): Promise<Buffer> {
   try {
     const page = await browser.newPage();
     await page.setContent(html, { waitUntil: "load" });
+
+    const heightPx = await page.evaluate(() => document.documentElement.scrollHeight);
+    const heightMm = Math.ceil((heightPx * 25.4) / 96) + 2;
+
     const pdf = await page.pdf({
-      format: "A4",
+      width: "210mm",
+      height: `${heightMm}mm`,
       printBackground: true,
       margin: { top: "0", bottom: "0", left: "0", right: "0" },
+      pageRanges: "1",
     });
     return Buffer.from(pdf);
   } finally {
