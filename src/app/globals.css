@@ -154,6 +154,8 @@ input[type="number"] {
   .print-area {
     box-shadow: none !important;
     border: none !important;
+    -webkit-print-color-adjust: exact;
+    print-color-adjust: exact;
   }
 
   .print-thermal {

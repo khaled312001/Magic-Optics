@@ -1,15 +1,24 @@
 import { notFound } from "next/navigation";
 import Image from "next/image";
+import Link from "next/link";
 import { prisma } from "@/lib/prisma";
 import { getShopSettings } from "@/server/settings";
 import { PrintButton } from "@/components/orders/print-button";
-import { formatCurrency, formatDateTime } from "@/lib/utils";
+import { AutoPrint } from "@/components/orders/auto-print";
+import { formatCurrency, formatDate, formatDateTime } from "@/lib/utils";
 import { orderTypeLabels } from "@/lib/labels";
 
 export const dynamic = "force-dynamic";
 
-export default async function ReceiptPage({ params }: { params: Promise<{ id: string }> }) {
+export default async function ReceiptPage({
+  params,
+  searchParams,
+}: {
+  params: Promise<{ id: string }>;
+  searchParams: Promise<{ auto?: string }>;
+}) {
   const { id } = await params;
+  const { auto } = await searchParams;
 
   const [order, shop] = await Promise.all([
     prisma.order.findUnique({
@@ -25,12 +34,20 @@ export default async function ReceiptPage({ params }: { params: Promise<{ id: st
 
   return (
     <div className="min-h-dvh bg-background py-8">
-      <div className="no-print mx-auto mb-4 flex max-w-md justify-center">
+      {auto === "1" && <AutoPrint />}
+
+      <div className="no-print mx-auto mb-4 flex max-w-md items-center justify-center gap-3">
         <PrintButton />
+        <Link
+          href={`/orders/${order.id}`}
+          className="inline-flex h-10 items-center rounded-lg border border-border bg-surface px-4 text-sm font-medium text-foreground transition-colors hover:bg-background"
+        >
+          تفاصيل الفاتورة
+        </Link>
       </div>
 
       <div className="print-area print-thermal mx-auto max-w-md rounded-xl border border-border bg-surface p-6 shadow-sm">
-        <div className="mb-5 flex flex-col items-center text-center">
+        <div className="mb-5 flex flex-col items-center border-b-2 border-brand-navy pb-4 text-center">
           <Image src="/logo.jpg" alt={shop.name} width={64} height={64} className="mb-2 rounded-lg" />
           <h1 className="text-lg font-bold text-foreground">{shop.name}</h1>
           <p className="text-xs text-muted">{shop.address}</p>
@@ -61,6 +78,12 @@ export default async function ReceiptPage({ params }: { params: Promise<{ id: st
             <span className="text-muted">نوع الطلب</span>
             <span className="text-foreground">{orderTypeLabels[order.type]}</span>
           </div>
+          {order.deliveryDate && (
+            <div className="flex justify-between">
+              <span className="text-muted">موعد الاستلام</span>
+              <span className="font-medium text-foreground">{formatDate(order.deliveryDate)}</span>
+            </div>
+          )}
         </div>
 
         <table className="mb-4 w-full text-sm">
@@ -82,7 +105,7 @@ export default async function ReceiptPage({ params }: { params: Promise<{ id: st
           </tbody>
         </table>
 
-        <div className="space-y-1 border-t border-dashed border-border pt-3 text-sm">
+        <div className="space-y-1.5 rounded-lg border-t-2 border-brand-navy bg-background px-3 py-3 text-sm">
           <div className="flex justify-between">
             <span className="text-muted">الإجمالي</span>
             <span className="font-semibold text-foreground">{formatCurrency(order.totalAmount)}</span>
@@ -91,7 +114,7 @@ export default async function ReceiptPage({ params }: { params: Promise<{ id: st
             <span className="text-muted">المدفوع</span>
             <span className="text-foreground">{formatCurrency(order.paidAmount)}</span>
           </div>
-          <div className="flex justify-between text-base font-bold">
+          <div className="flex justify-between border-t border-dashed border-border pt-1.5 text-base font-bold">
             <span>المتبقي</span>
             <span className={remaining > 0.01 ? "text-red-600" : ""}>{formatCurrency(remaining)}</span>
           </div>

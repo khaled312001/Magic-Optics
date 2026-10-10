@@ -18,9 +18,9 @@ import { cn } from "@/lib/utils";
 
 const navItems = [
   { href: "/dashboard", label: "لوحة التحكم", icon: LayoutDashboard },
+  { href: "/orders", label: "الفواتير", icon: Receipt },
   { href: "/customers", label: "العملاء", icon: Users },
   { href: "/inventory", label: "المخزون", icon: Glasses },
-  { href: "/orders", label: "الفواتير", icon: Receipt },
   { href: "/cash-register", label: "الخزنة اليومية", icon: Wallet },
   { href: "/reports", label: "التقارير", icon: BarChart3, adminOnly: true },
   { href: "/settings", label: "الإعدادات", icon: Settings },

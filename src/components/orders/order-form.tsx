@@ -50,7 +50,7 @@ export function OrderForm({
 
   const { onSubmit, isPending, fieldErrors, error } = useActionForm(createOrder, {
     successMessage: "تم إنشاء الفاتورة",
-    onSuccess: (data) => router.push(`/orders/${(data as { id: number }).id}`),
+    onSuccess: (data) => router.push(`/orders/${(data as { id: number }).id}/receipt?auto=1`),
     refresh: false,
   });
 
