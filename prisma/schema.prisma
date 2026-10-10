@@ -1,0 +1,293 @@
+// Magic Optics — مركز ماجيك للبصريات
+// Database schema (MySQL)
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "mysql"
+  url      = env("DATABASE_URL")
+}
+
+// ---------------------------------------------------------------------------
+// المستخدمون (موظفو المحل)
+// ---------------------------------------------------------------------------
+
+enum Role {
+  ADMIN // صاحب المحل / مدير
+  EMPLOYEE // موظف
+}
+
+model User {
+  id        Int      @id @default(autoincrement())
+  name      String
+  username  String   @unique
+  password  String
+  role      Role     @default(EMPLOYEE)
+  active    Boolean  @default(true)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  orders       Order[]
+  payments     Payment[]
+  cashEntries  CashEntry[]
+  stockMoves   StockMovement[]
+  prescriptions Prescription[]
+
+  @@map("users")
+}
+
+// ---------------------------------------------------------------------------
+// العملاء والكشوفات الطبية
+// ---------------------------------------------------------------------------
+
+model Customer {
+  id        Int      @id @default(autoincrement())
+  name      String
+  phone     String?
+  phone2    String?
+  address   String?
+  notes     String?  @db.Text
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  prescriptions Prescription[]
+  orders        Order[]
+
+  @@index([name])
+  @@index([phone])
+  @@map("customers")
+}
+
+// كشف النظر: مقاسات العدسات لكل عين (بعيد / قريب) + المسافة بين الحدقتين
+model Prescription {
+  id         Int      @id @default(autoincrement())
+  customerId Int
+  customer   Customer @relation(fields: [customerId], references: [id], onDelete: Cascade)
+  date       DateTime @default(now())
+
+  // بعيد (Distance)
+  rightSphFar  Float?
+  rightCylFar  Float?
+  rightAxisFar Int?
+  leftSphFar   Float?
+  leftCylFar   Float?
+  leftAxisFar  Int?
+
+  // قريب (Reading)
+  rightSphNear  Float?
+  rightCylNear  Float?
+  rightAxisNear Int?
+  leftSphNear   Float?
+  leftCylNear   Float?
+  leftAxisNear  Int?
+
+  ipd   Float? // المسافة بين الحدقتين
+  notes String? @db.Text
+
+  createdById Int?
+  createdBy   User?   @relation(fields: [createdById], references: [id], onDelete: SetNull)
+
+  orders Order[]
+
+  createdAt DateTime @default(now())
+
+  @@index([customerId])
+  @@map("prescriptions")
+}
+
+// ---------------------------------------------------------------------------
+// المخزون: إطارات (طبية / شمسية)، عدسات، إكسسوارات
+// ---------------------------------------------------------------------------
+
+enum ProductCategory {
+  FRAME_MEDICAL // اطار نظارة طبية
+  FRAME_SUNGLASSES // اطار نظارة شمسية
+  LENS // عدسة
+  ACCESSORY // اكسسوار
+}
+
+model Product {
+  id          Int             @id @default(autoincrement())
+  code        String? // كود الصنف فى كتالوج المحل
+  name        String // النوع / الاسم
+  category    ProductCategory
+  costPrice   Decimal         @db.Decimal(10, 2) // سعر التكلفة
+  sellPrice   Decimal         @db.Decimal(10, 2) // سعر البيع
+  quantity    Int             @default(0)
+  minQuantity Int             @default(3) // حد التنبيه عند قرب النفاذ
+  notes       String?         @db.Text
+  active      Boolean         @default(true)
+  createdAt   DateTime        @default(now())
+  updatedAt   DateTime        @updatedAt
+
+  orderItems     OrderItem[]
+  stockMovements StockMovement[]
+
+  @@index([category])
+  @@index([name])
+  @@map("products")
+}
+
+enum StockMovementType {
+  IN // إضافة للمخزون (توريد)
+  OUT // خصم من المخزون (بيع / تالف)
+  ADJUSTMENT // تسوية جرد
+}
+
+model StockMovement {
+  id        Int               @id @default(autoincrement())
+  productId Int
+  product   Product           @relation(fields: [productId], references: [id], onDelete: Cascade)
+  type      StockMovementType
+  quantity  Int
+  note      String?
+  createdById Int?
+  createdBy   User?   @relation(fields: [createdById], references: [id], onDelete: SetNull)
+  createdAt DateTime          @default(now())
+
+  @@index([productId])
+  @@map("stock_movements")
+}
+
+// ---------------------------------------------------------------------------
+// الفواتير / الطلبات
+// ---------------------------------------------------------------------------
+
+enum OrderType {
+  MEDICAL // نظارة طبية
+  SUNGLASSES // نظارة شمسية
+  LENS_CHANGE // تغيير عدسات
+  OTHER // أخرى
+}
+
+enum OrderStatus {
+  PENDING // قيد التجهيز
+  READY // جاهزة للاستلام
+  DELIVERED // تم التسليم
+  CANCELLED // ملغية
+}
+
+model Order {
+  id             Int           @id @default(autoincrement())
+  receiptNumber  String        @unique // رقم الإيصال
+  customerId     Int?
+  customer       Customer?     @relation(fields: [customerId], references: [id], onDelete: SetNull)
+  prescriptionId Int?
+  prescription   Prescription? @relation(fields: [prescriptionId], references: [id], onDelete: SetNull)
+
+  type   OrderType   @default(MEDICAL)
+  status OrderStatus @default(PENDING)
+
+  totalAmount  Decimal @db.Decimal(10, 2)
+  paidAmount   Decimal @db.Decimal(10, 2) @default(0)
+
+  deliveryDate DateTime?
+  notes        String?   @db.Text
+
+  createdById Int?
+  createdBy   User?   @relation(fields: [createdById], references: [id], onDelete: SetNull)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  items    OrderItem[]
+  payments Payment[]
+
+  @@index([customerId])
+  @@index([status])
+  @@index([createdAt])
+  @@map("orders")
+}
+
+model OrderItem {
+  id          Int      @id @default(autoincrement())
+  orderId     Int
+  order       Order    @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  productId   Int?
+  product     Product? @relation(fields: [productId], references: [id], onDelete: SetNull)
+  description String // وصف الصنف (يُستخدم أيضاً عند عدم الربط بمنتج من المخزون)
+  quantity    Int      @default(1)
+  unitPrice   Decimal  @db.Decimal(10, 2)
+  subtotal    Decimal  @db.Decimal(10, 2)
+
+  @@index([orderId])
+  @@map("order_items")
+}
+
+model Payment {
+  id        Int      @id @default(autoincrement())
+  orderId   Int
+  order     Order    @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  amount    Decimal  @db.Decimal(10, 2)
+  note      String?
+  createdById Int?
+  createdBy   User?   @relation(fields: [createdById], references: [id], onDelete: SetNull)
+  createdAt DateTime @default(now())
+
+  @@index([orderId])
+  @@map("payments")
+}
+
+// ---------------------------------------------------------------------------
+// حركة الخزنة اليومية
+// ---------------------------------------------------------------------------
+
+enum CashCategory {
+  SUNGLASSES_SALE // مبيعات شمس
+  MEDICAL_SALE // مبيعات نظر
+  LENS_CHANGE // تغيير عدسات
+  OTHER_SALE // مبيعات أخرى
+  BANK_DEPOSIT // إيداع بنك
+  EXPENSE // مصروفات
+  WITHDRAWAL // سحب / مرتبات
+  OTHER // أخرى
+}
+
+enum CashEntryType {
+  IN
+  OUT
+}
+
+model CashRegisterDay {
+  id             Int      @id @default(autoincrement())
+  date           DateTime @unique @db.Date
+  openingBalance Decimal  @db.Decimal(10, 2) @default(0)
+  closed         Boolean  @default(false)
+  createdAt      DateTime @default(now())
+
+  entries CashEntry[]
+
+  @@map("cash_register_days")
+}
+
+model CashEntry {
+  id          Int              @id @default(autoincrement())
+  dayId       Int
+  day         CashRegisterDay  @relation(fields: [dayId], references: [id], onDelete: Cascade)
+  category    CashCategory
+  type        CashEntryType
+  amount      Decimal          @db.Decimal(10, 2)
+  note        String?
+  createdById Int?
+  createdBy   User?            @relation(fields: [createdById], references: [id], onDelete: SetNull)
+  createdAt   DateTime         @default(now())
+
+  @@index([dayId])
+  @@map("cash_entries")
+}
+
+// ---------------------------------------------------------------------------
+// إعدادات المحل
+// ---------------------------------------------------------------------------
+
+model ShopSettings {
+  id      Int    @id @default(1)
+  name    String @default("Magic Optics - مركز ماجيك للبصريات")
+  address String @default("قنا - قفط - أمام فرع اتصالات")
+  phone   String @default("01012135456")
+  phone2  String?
+
+  @@map("shop_settings")
+}

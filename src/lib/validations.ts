@@ -1,0 +1,138 @@
+import { z } from "zod";
+
+export const customerSchema = z.object({
+  name: z.string().trim().min(2, "الاسم مطلوب (حرفان على الأقل)").max(150),
+  phone: z.string().trim().max(30).optional().or(z.literal("")),
+  phone2: z.string().trim().max(30).optional().or(z.literal("")),
+  address: z.string().trim().max(250).optional().or(z.literal("")),
+  notes: z.string().trim().max(2000).optional().or(z.literal("")),
+});
+export type CustomerInput = z.infer<typeof customerSchema>;
+
+const numOrEmpty = z
+  .union([z.coerce.number(), z.literal("")])
+  .optional()
+  .transform((v) => (v === "" || v === undefined ? null : v));
+
+export const prescriptionSchema = z.object({
+  customerId: z.coerce.number().int().positive(),
+  rightSphFar: numOrEmpty,
+  rightCylFar: numOrEmpty,
+  rightAxisFar: numOrEmpty,
+  leftSphFar: numOrEmpty,
+  leftCylFar: numOrEmpty,
+  leftAxisFar: numOrEmpty,
+  rightSphNear: numOrEmpty,
+  rightCylNear: numOrEmpty,
+  rightAxisNear: numOrEmpty,
+  leftSphNear: numOrEmpty,
+  leftCylNear: numOrEmpty,
+  leftAxisNear: numOrEmpty,
+  ipd: numOrEmpty,
+  notes: z.string().trim().max(2000).optional().or(z.literal("")),
+});
+export type PrescriptionInput = z.infer<typeof prescriptionSchema>;
+
+export const productCategorySchema = z.enum([
+  "FRAME_MEDICAL",
+  "FRAME_SUNGLASSES",
+  "LENS",
+  "ACCESSORY",
+]);
+
+export const productSchema = z.object({
+  code: z.string().trim().max(50).optional().or(z.literal("")),
+  name: z.string().trim().min(2, "اسم الصنف مطلوب").max(200),
+  category: productCategorySchema,
+  costPrice: z.coerce.number().min(0, "لا يمكن أن يكون سالباً"),
+  sellPrice: z.coerce.number().min(0, "لا يمكن أن يكون سالباً"),
+  quantity: z.coerce.number().int().min(0),
+  minQuantity: z.coerce.number().int().min(0),
+  notes: z.string().trim().max(2000).optional().or(z.literal("")),
+});
+export type ProductInput = z.infer<typeof productSchema>;
+
+export const stockAdjustSchema = z.object({
+  productId: z.coerce.number().int().positive(),
+  type: z.enum(["IN", "OUT", "ADJUSTMENT"]),
+  quantity: z.coerce.number().int().positive("الكمية يجب أن تكون أكبر من صفر"),
+  note: z.string().trim().max(500).optional().or(z.literal("")),
+});
+export type StockAdjustInput = z.infer<typeof stockAdjustSchema>;
+
+const idOrEmpty = z
+  .union([z.coerce.number().int().positive(), z.literal("")])
+  .optional()
+  .nullable()
+  .transform((v) => (v === "" || v === undefined || v === null ? null : v));
+
+export const orderItemSchema = z.object({
+  productId: idOrEmpty,
+  description: z.string().trim().min(1, "وصف الصنف مطلوب").max(300),
+  quantity: z.coerce.number().int().positive().default(1),
+  unitPrice: z.coerce.number().min(0),
+});
+
+export const orderSchema = z.object({
+  customerId: idOrEmpty,
+  newCustomerName: z.string().trim().max(150).optional().or(z.literal("")),
+  newCustomerPhone: z.string().trim().max(30).optional().or(z.literal("")),
+  prescriptionId: idOrEmpty,
+  type: z.enum(["MEDICAL", "SUNGLASSES", "LENS_CHANGE", "OTHER"]),
+  status: z.enum(["PENDING", "READY", "DELIVERED", "CANCELLED"]).default("PENDING"),
+  items: z.array(orderItemSchema).min(1, "أضف صنفاً واحداً على الأقل"),
+  paidAmount: z.coerce.number().min(0).default(0),
+  deliveryDate: z.string().optional().or(z.literal("")),
+  notes: z.string().trim().max(2000).optional().or(z.literal("")),
+});
+export type OrderInput = z.infer<typeof orderSchema>;
+
+export const paymentSchema = z.object({
+  orderId: z.coerce.number().int().positive(),
+  amount: z.coerce.number().positive("المبلغ يجب أن يكون أكبر من صفر"),
+  note: z.string().trim().max(300).optional().or(z.literal("")),
+});
+export type PaymentInput = z.infer<typeof paymentSchema>;
+
+export const cashEntrySchema = z.object({
+  date: z.string().min(1, "التاريخ مطلوب"),
+  category: z.enum([
+    "SUNGLASSES_SALE",
+    "MEDICAL_SALE",
+    "LENS_CHANGE",
+    "OTHER_SALE",
+    "BANK_DEPOSIT",
+    "EXPENSE",
+    "WITHDRAWAL",
+    "OTHER",
+  ]),
+  type: z.enum(["IN", "OUT"]),
+  amount: z.coerce.number().positive("المبلغ يجب أن يكون أكبر من صفر"),
+  note: z.string().trim().max(300).optional().or(z.literal("")),
+});
+export type CashEntryInput = z.infer<typeof cashEntrySchema>;
+
+export const userSchema = z.object({
+  name: z.string().trim().min(2, "الاسم مطلوب").max(150),
+  username: z
+    .string()
+    .trim()
+    .min(3, "اسم المستخدم 3 أحرف على الأقل")
+    .max(50)
+    .regex(/^[a-zA-Z0-9_.]+$/, "اسم المستخدم يجب أن يكون بالإنجليزية بدون مسافات"),
+  password: z.string().min(6, "كلمة المرور 6 أحرف على الأقل").max(100).optional().or(z.literal("")),
+  role: z.enum(["ADMIN", "EMPLOYEE"]),
+  active: z
+    .union([z.literal("true"), z.literal("false")])
+    .default("true")
+    .transform((v) => v === "true"),
+});
+export type UserInput = z.infer<typeof userSchema>;
+
+export const shopSettingsSchema = z.object({
+  name: z.string().trim().min(2).max(200),
+  address: z.string().trim().max(300).optional().or(z.literal("")),
+  phone: z.string().trim().max(30).optional().or(z.literal("")),
+  phone2: z.string().trim().max(30).optional().or(z.literal("")),
+});
+export type ShopSettingsInput = z.infer<typeof shopSettingsSchema>;
