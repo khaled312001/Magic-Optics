@@ -24,7 +24,15 @@ export async function GET() {
   ]);
 
   const html = buildReportHtml({ shop, sales, topProducts, debtors, lowStock, profit, periodDays });
-  const pdf = await renderHtmlToPdf(html);
+
+  let pdf: Buffer;
+  try {
+    pdf = await renderHtmlToPdf(html);
+  } catch (err) {
+    console.error("reports-pdf render failed:", err);
+    const message = err instanceof Error ? err.message : String(err);
+    return new Response(`PDF generation failed: ${message}`, { status: 500 });
+  }
 
   const filename = `تقرير-${new Date().toISOString().slice(0, 10)}.pdf`;
   return new Response(new Uint8Array(pdf), {
