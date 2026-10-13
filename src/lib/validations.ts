@@ -51,6 +51,7 @@ export const productCategorySchema = z.enum([
   "FRAME_MEDICAL",
   "FRAME_SUNGLASSES",
   "LENS",
+  "LENS_CONTRACT",
   "ACCESSORY",
 ]);
 
@@ -159,5 +160,6 @@ export const shopSettingsSchema = z.object({
   phone: z.string().trim().max(30).optional().or(z.literal("")),
   phone2: z.string().trim().max(30).optional().or(z.literal("")),
   examFee: z.coerce.number().min(0).default(0),
+  discountPercent: z.coerce.number().min(0).max(100).default(20),
 });
 export type ShopSettingsInput = z.infer<typeof shopSettingsSchema>;

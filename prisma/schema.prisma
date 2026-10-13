@@ -121,6 +121,7 @@ enum ProductCategory {
   FRAME_MEDICAL // اطار نظارة طبية
   FRAME_SUNGLASSES // اطار نظارة شمسية
   LENS // عدسة
+  LENS_CONTRACT // عدسات التعاقد (قائمة أسعار سيلفر/بلاتينيوم درجة أولى وثانية - منفصلة عن العدسات العادية)
   ACCESSORY // اكسسوار
 }
 
@@ -310,6 +311,7 @@ model ShopSettings {
   phone   String @default("01012135456")
   phone2  String?
   examFee Decimal @db.Decimal(10, 2) @default(50) // سعر كشف نظر العدسات على الفاتورة
+  discountPercent Decimal @db.Decimal(5, 2) @default(20) // نسبة خصم الشنابر (الإطارات) المطبوعة أسفل الفاتورة
 
   @@map("shop_settings")
 }

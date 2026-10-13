@@ -7,6 +7,7 @@ export const productCategoryLabels = {
   FRAME_MEDICAL: "إطارات طبية",
   FRAME_SUNGLASSES: "إطارات شمسية",
   LENS: "عدسات",
+  LENS_CONTRACT: "عدسات التعاقد",
   ACCESSORY: "إكسسوارات",
 } as const;
 
@@ -14,6 +15,7 @@ export const productCategoryShortLabels = {
   FRAME_MEDICAL: "إطار طبي",
   FRAME_SUNGLASSES: "إطار شمسي",
   LENS: "عدسة",
+  LENS_CONTRACT: "عدسة تعاقد",
   ACCESSORY: "إكسسوار",
 } as const;
 

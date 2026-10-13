@@ -10,6 +10,7 @@ const categories = [
   { value: "FRAME_MEDICAL", label: productCategoryLabels.FRAME_MEDICAL },
   { value: "FRAME_SUNGLASSES", label: productCategoryLabels.FRAME_SUNGLASSES },
   { value: "LENS", label: productCategoryLabels.LENS },
+  { value: "LENS_CONTRACT", label: productCategoryLabels.LENS_CONTRACT },
   { value: "ACCESSORY", label: productCategoryLabels.ACCESSORY },
 ];
 
