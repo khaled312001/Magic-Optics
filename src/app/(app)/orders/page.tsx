@@ -1,5 +1,7 @@
 import Link from "next/link";
 import { Receipt, Plus } from "lucide-react";
+import { getServerSession } from "next-auth";
+import { authOptions } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { PageHeader } from "@/components/ui/page-header";
 import { Card } from "@/components/ui/card";
@@ -10,6 +12,8 @@ import { SearchBox } from "@/components/ui/search-box";
 import { ExportButton } from "@/components/ui/export-button";
 import { DateRangeFilter } from "@/components/ui/date-range-filter";
 import { StatusTabs } from "@/components/orders/status-tabs";
+import { DeleteButton } from "@/components/ui/delete-button";
+import { deleteOrder } from "@/server/orders";
 import { formatCurrency, formatDateTime, dateRangeFilter } from "@/lib/utils";
 import { orderStatusLabels, orderStatusColors, orderTypeLabels } from "@/lib/labels";
 import type { Prisma, OrderStatus } from "@prisma/client";
@@ -24,6 +28,8 @@ export default async function OrdersPage({
   searchParams: Promise<{ status?: string; q?: string; from?: string; to?: string }>;
 }) {
   const { status, q, from, to } = await searchParams;
+  const session = await getServerSession(authOptions);
+  const isAdmin = session?.user?.role === "ADMIN";
 
   const createdAt = dateRangeFilter(from, to);
 
@@ -96,25 +102,27 @@ export default async function OrdersPage({
             {orders.map((o) => {
               const remaining = Number(o.totalAmount) - Number(o.paidAmount);
               return (
-                <Link
-                  key={o.id}
-                  href={`/orders/${o.id}`}
-                  className="flex flex-wrap items-center justify-between gap-3 px-5 py-4 hover:bg-background"
-                >
-                  <div className="min-w-0">
+                <div key={o.id} className="flex flex-wrap items-center justify-between gap-3 px-5 py-4 hover:bg-background">
+                  <Link href={`/orders/${o.id}`} className="min-w-0 flex-1">
                     <p className="font-medium text-foreground">{o.customer?.name ?? "بدون اسم"}</p>
                     <p className="mt-0.5 text-xs text-muted">
                       #{o.receiptNumber} · {orderTypeLabels[o.type]} · {formatDateTime(o.createdAt)}
                     </p>
-                  </div>
+                  </Link>
                   <div className="flex items-center gap-4">
-                    <div className="text-left">
+                    <Link href={`/orders/${o.id}`} className="text-left">
                       <p className="text-sm font-semibold text-foreground">{formatCurrency(o.totalAmount)}</p>
                       {remaining > 0.01 && <p className="text-xs text-red-600">متبقي {formatCurrency(remaining)}</p>}
-                    </div>
+                    </Link>
                     <Badge color={orderStatusColors[o.status]}>{orderStatusLabels[o.status]}</Badge>
+                    {isAdmin && (
+                      <DeleteButton
+                        action={deleteOrder.bind(null, o.id)}
+                        confirmMessage={`حذف الفاتورة #${o.receiptNumber} نهائياً؟`}
+                      />
+                    )}
                   </div>
-                </Link>
+                </div>
               );
             })}
           </div>

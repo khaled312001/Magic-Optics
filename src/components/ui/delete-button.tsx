@@ -14,12 +14,15 @@ export function DeleteButton({
   confirmMessage = "هل أنت متأكد من الحذف؟ لا يمكن التراجع عن هذا الإجراء.",
   label,
   size = "icon",
+  redirectTo,
 }: {
   action: () => Promise<ActionResult<unknown>>;
   confirmTitle?: string;
   confirmMessage?: string;
   label?: string;
   size?: "icon" | "sm" | "md";
+  /** بدل تحديث الصفحة الحالية - للحذف من صفحة تفاصيل العنصر نفسه الذي سيختفي بعد الحذف */
+  redirectTo?: string;
 }) {
   const [open, setOpen] = useState(false);
   const [isPending, startTransition] = useTransition();
@@ -32,7 +35,8 @@ export function DeleteButton({
       if (result.ok) {
         show("تم الحذف بنجاح");
         setOpen(false);
-        router.refresh();
+        if (redirectTo) router.push(redirectTo);
+        else router.refresh();
       } else {
         show(result.error, "error");
       }

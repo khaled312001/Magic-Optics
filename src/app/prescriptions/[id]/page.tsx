@@ -1,10 +1,14 @@
 import { notFound } from "next/navigation";
 import Image from "next/image";
 import Link from "next/link";
-import { ChevronRight, Printer } from "lucide-react";
+import { ChevronRight } from "lucide-react";
+import { getServerSession } from "next-auth";
+import { authOptions } from "@/lib/auth";
 import { getShopSettings } from "@/server/settings";
 import { getPrescriptionById } from "@/server/prescriptions";
+import { deletePrescription } from "@/server/customers";
 import { PrintButton } from "@/components/orders/print-button";
+import { DeleteButton } from "@/components/ui/delete-button";
 import { formatDate } from "@/lib/utils";
 
 export const dynamic = "force-dynamic";
@@ -17,9 +21,15 @@ function v(n: number | null | undefined) {
 export default async function PrescriptionPrintPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
 
-  const [prescription, shop] = await Promise.all([getPrescriptionById(Number(id)), getShopSettings()]);
+  const [prescription, shop, session] = await Promise.all([
+    getPrescriptionById(Number(id)),
+    getShopSettings(),
+    getServerSession(authOptions),
+  ]);
 
   if (!prescription) notFound();
+
+  const isAdmin = session?.user?.role === "ADMIN";
 
   return (
     <div className="min-h-dvh bg-background py-8">
@@ -32,6 +42,13 @@ export default async function PrescriptionPrintPage({ params }: { params: Promis
           <ChevronRight className="size-4" />
           كل الكشوفات
         </Link>
+        {isAdmin && (
+          <DeleteButton
+            action={deletePrescription.bind(null, prescription.id, prescription.customerId)}
+            confirmMessage="هل تريد حذف هذا الكشف نهائياً؟"
+            redirectTo="/prescriptions"
+          />
+        )}
       </div>
 
       <div className="print-area print-thermal mx-auto max-w-md rounded-xl border border-border bg-surface p-6 shadow-sm">
@@ -95,7 +112,7 @@ export default async function PrescriptionPrintPage({ params }: { params: Promis
           </thead>
           <tbody>
             <tr className="border-t border-border">
-              <td className="py-2 text-right font-medium text-foreground">بعيد</td>
+              <td className="py-2 text-right font-medium text-foreground">D</td>
               <td dir="ltr">{v(prescription.leftAxisFar)}</td>
               <td dir="ltr">{v(prescription.leftCylFar)}</td>
               <td dir="ltr">{v(prescription.leftSphFar)}</td>
@@ -105,7 +122,7 @@ export default async function PrescriptionPrintPage({ params }: { params: Promis
               <td dir="ltr">{v(prescription.rightSphFar)}</td>
             </tr>
             <tr className="border-t border-border">
-              <td className="py-2 text-right font-medium text-foreground">قريب</td>
+              <td className="py-2 text-right font-medium text-foreground">R</td>
               <td dir="ltr">{v(prescription.leftAxisNear)}</td>
               <td dir="ltr">{v(prescription.leftCylNear)}</td>
               <td dir="ltr">{v(prescription.leftSphNear)}</td>

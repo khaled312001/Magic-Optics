@@ -12,6 +12,9 @@ import { EmptyState } from "@/components/ui/empty-state";
 import { CustomerFormDialog } from "@/components/customers/customer-form-dialog";
 import { PrescriptionFormDialog } from "@/components/customers/prescription-form-dialog";
 import { PrescriptionView } from "@/components/customers/prescription-view";
+import { DeleteButton } from "@/components/ui/delete-button";
+import { deleteCustomer } from "@/server/customers";
+import { deleteOrder } from "@/server/orders";
 import { formatCurrency, formatDateTime } from "@/lib/utils";
 import { orderStatusLabels, orderStatusColors } from "@/lib/labels";
 
@@ -52,6 +55,13 @@ export default async function CustomerDetailPage({
         action={
           <div className="flex gap-2">
             <CustomerFormDialog customer={customer} />
+            {isAdmin && (
+              <DeleteButton
+                action={deleteCustomer.bind(null, customer.id)}
+                confirmMessage={`حذف العميل "${customer.name}" نهائياً؟ ستُحذف كشوفاته الطبية، وتبقى فواتيره بدون اسم عميل.`}
+                redirectTo="/customers"
+              />
+            )}
             <Link href={`/orders/new?customerId=${customer.id}`}>
               <Button>
                 <Plus className="size-4" />
@@ -118,20 +128,22 @@ export default async function CustomerDetailPage({
             ) : (
               <div className="divide-y divide-border">
                 {customer.orders.map((o) => (
-                  <Link
-                    key={o.id}
-                    href={`/orders/${o.id}`}
-                    className="flex items-center justify-between gap-3 px-5 py-3 hover:bg-background"
-                  >
-                    <div className="min-w-0">
+                  <div key={o.id} className="flex items-center justify-between gap-3 px-5 py-3 hover:bg-background">
+                    <Link href={`/orders/${o.id}`} className="min-w-0 flex-1">
                       <p className="text-sm font-medium text-foreground">#{o.receiptNumber}</p>
                       <p className="text-xs text-muted">{formatDateTime(o.createdAt)}</p>
-                    </div>
+                    </Link>
                     <div className="flex shrink-0 items-center gap-3">
                       <span className="text-sm font-semibold text-foreground">{formatCurrency(o.totalAmount)}</span>
                       <Badge color={orderStatusColors[o.status]}>{orderStatusLabels[o.status]}</Badge>
+                      {isAdmin && (
+                        <DeleteButton
+                          action={deleteOrder.bind(null, o.id)}
+                          confirmMessage={`حذف الفاتورة #${o.receiptNumber} نهائياً؟`}
+                        />
+                      )}
                     </div>
-                  </Link>
+                  </div>
                 ))}
               </div>
             )}

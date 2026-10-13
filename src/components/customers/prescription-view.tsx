@@ -60,7 +60,7 @@ export function PrescriptionView({ prescription, canDelete }: { prescription: Pr
           </thead>
           <tbody>
             <tr className="border-t border-border">
-              <td className="py-1.5 text-right font-medium text-foreground">بعيد</td>
+              <td className="py-1.5 text-right font-medium text-foreground">D</td>
               <td>{v(prescription.leftAxisFar)}</td>
               <td>{v(prescription.leftCylFar)}</td>
               <td>{v(prescription.leftSphFar)}</td>
@@ -70,7 +70,7 @@ export function PrescriptionView({ prescription, canDelete }: { prescription: Pr
               <td>{v(prescription.rightSphFar)}</td>
             </tr>
             <tr className="border-t border-border">
-              <td className="py-1.5 text-right font-medium text-foreground">قريب</td>
+              <td className="py-1.5 text-right font-medium text-foreground">R</td>
               <td>{v(prescription.leftAxisNear)}</td>
               <td>{v(prescription.leftCylNear)}</td>
               <td>{v(prescription.leftSphNear)}</td>

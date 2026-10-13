@@ -57,7 +57,7 @@ export default async function OrderDetailPage({ params }: { params: Promise<{ id
               </Button>
             </Link>
             {isAdmin && (
-              <DeleteButton action={deleteOrder.bind(null, order.id)} confirmMessage="حذف هذه الفاتورة نهائياً؟" />
+              <DeleteButton action={deleteOrder.bind(null, order.id)} confirmMessage="حذف هذه الفاتورة نهائياً؟" redirectTo="/orders" />
             )}
           </div>
         }

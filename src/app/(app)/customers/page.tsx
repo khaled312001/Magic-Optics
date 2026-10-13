@@ -1,11 +1,15 @@
 import Link from "next/link";
 import { Users, Phone, MapPin, ChevronLeft } from "lucide-react";
+import { getServerSession } from "next-auth";
+import { authOptions } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { PageHeader } from "@/components/ui/page-header";
 import { Card } from "@/components/ui/card";
 import { EmptyState } from "@/components/ui/empty-state";
 import { SearchBox } from "@/components/ui/search-box";
 import { CustomerFormDialog } from "@/components/customers/customer-form-dialog";
+import { DeleteButton } from "@/components/ui/delete-button";
+import { deleteCustomer } from "@/server/customers";
 import { formatDate } from "@/lib/utils";
 
 export const dynamic = "force-dynamic";
@@ -16,6 +20,8 @@ export default async function CustomersPage({
   searchParams: Promise<{ q?: string }>;
 }) {
   const { q } = await searchParams;
+  const session = await getServerSession(authOptions);
+  const isAdmin = session?.user?.role === "ADMIN";
 
   const customers = await prisma.customer.findMany({
     where: q
@@ -49,12 +55,8 @@ export default async function CustomersPage({
         <Card className="overflow-hidden">
           <div className="divide-y divide-border">
             {customers.map((c) => (
-              <Link
-                key={c.id}
-                href={`/customers/${c.id}`}
-                className="flex items-center justify-between gap-3 px-5 py-4 hover:bg-background"
-              >
-                <div className="min-w-0 flex-1">
+              <div key={c.id} className="flex items-center justify-between gap-3 px-5 py-4 hover:bg-background">
+                <Link href={`/customers/${c.id}`} className="min-w-0 flex-1">
                   <p className="font-medium text-foreground">{c.name}</p>
                   <div className="mt-1 flex flex-wrap items-center gap-x-4 gap-y-1 text-xs text-muted">
                     {c.phone && (
@@ -70,9 +72,19 @@ export default async function CustomersPage({
                     <span>منذ {formatDate(c.createdAt)}</span>
                     <span>{c._count.orders} فاتورة</span>
                   </div>
+                </Link>
+                <div className="flex shrink-0 items-center gap-1">
+                  {isAdmin && (
+                    <DeleteButton
+                      action={deleteCustomer.bind(null, c.id)}
+                      confirmMessage={`حذف العميل "${c.name}" نهائياً؟ ستُحذف كشوفاته الطبية، وتبقى فواتيره بدون اسم عميل.`}
+                    />
+                  )}
+                  <Link href={`/customers/${c.id}`}>
+                    <ChevronLeft className="size-4 text-muted" />
+                  </Link>
                 </div>
-                <ChevronLeft className="size-4 shrink-0 text-muted" />
-              </Link>
+              </div>
             ))}
           </div>
         </Card>

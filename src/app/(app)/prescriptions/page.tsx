@@ -1,5 +1,7 @@
 import Link from "next/link";
 import { Eye } from "lucide-react";
+import { getServerSession } from "next-auth";
+import { authOptions } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { PageHeader } from "@/components/ui/page-header";
 import { Card } from "@/components/ui/card";
@@ -7,7 +9,9 @@ import { EmptyState } from "@/components/ui/empty-state";
 import { SearchBox } from "@/components/ui/search-box";
 import { DateRangeFilter } from "@/components/ui/date-range-filter";
 import { PrescriptionFormDialog } from "@/components/customers/prescription-form-dialog";
+import { DeleteButton } from "@/components/ui/delete-button";
 import { getPrescriptions } from "@/server/prescriptions";
+import { deletePrescription } from "@/server/customers";
 import { formatDate } from "@/lib/utils";
 
 export const dynamic = "force-dynamic";
@@ -23,6 +27,8 @@ export default async function PrescriptionsPage({
   searchParams: Promise<{ q?: string; from?: string; to?: string }>;
 }) {
   const { q, from, to } = await searchParams;
+  const session = await getServerSession(authOptions);
+  const isAdmin = session?.user?.role === "ADMIN";
 
   const [{ prescriptions, totalCount }, customers] = await Promise.all([
     getPrescriptions(q, from, to),
@@ -78,13 +84,21 @@ export default async function PrescriptionsPage({
                     </td>
                     <td className="px-3 py-3 text-center">{p.ipdFar ?? p.ipdNear ?? "-"}</td>
                     <td className="px-4 py-3 text-left">
-                      <Link
-                        href={`/prescriptions/${p.id}`}
-                        className="inline-flex h-8 items-center gap-1 rounded-lg border border-border bg-surface px-3 text-xs font-medium text-foreground transition-colors hover:bg-background"
-                      >
-                        <Eye className="size-3.5" />
-                        عرض
-                      </Link>
+                      <div className="flex items-center justify-end gap-1">
+                        <Link
+                          href={`/prescriptions/${p.id}`}
+                          className="inline-flex h-8 items-center gap-1 rounded-lg border border-border bg-surface px-3 text-xs font-medium text-foreground transition-colors hover:bg-background"
+                        >
+                          <Eye className="size-3.5" />
+                          عرض
+                        </Link>
+                        {isAdmin && (
+                          <DeleteButton
+                            action={deletePrescription.bind(null, p.id, p.customerId)}
+                            confirmMessage="هل تريد حذف هذا الكشف نهائياً؟"
+                          />
+                        )}
+                      </div>
                     </td>
                   </tr>
                 ))}

@@ -139,7 +139,7 @@ export function PrescriptionFormDialog({
               </thead>
               <tbody>
                 <tr>
-                  <td className="py-1 pl-2 text-xs font-medium text-foreground">بعيد (D)</td>
+                  <td className="py-1 pl-2 text-xs font-medium text-foreground">D</td>
                   <RxCell name="leftAxisFar" />
                   <RxCell name="leftCylFar" />
                   <RxCell name="leftSphFar" />
@@ -151,7 +151,7 @@ export function PrescriptionFormDialog({
                   <RxCell name="rightSphFar" />
                 </tr>
                 <tr>
-                  <td className="py-1 pl-2 text-xs font-medium text-foreground">قريب (R)</td>
+                  <td className="py-1 pl-2 text-xs font-medium text-foreground">R</td>
                   <RxCell name="leftAxisNear" />
                   <RxCell name="leftCylNear" />
                   <RxCell name="leftSphNear" />
