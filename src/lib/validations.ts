@@ -32,9 +32,11 @@ export const prescriptionSchema = z
     leftCylNear: numOrEmpty,
     leftAxisNear: numOrEmpty,
     ipd: numOrEmpty,
+    date: z.string().optional().or(z.literal("")),
     notes: z.string().trim().max(2000).optional().or(z.literal("")),
     // تفاصيل الطلب المرتبط (اختياري) - تطابق سلّة الكشف الورقية التي تجمع بيانات الفحص والطلب فى إيصال واحد
     orderType: z.enum(["MEDICAL", "SUNGLASSES", "LENS_CHANGE", "OTHER"]).optional(),
+    orderDescription: z.string().trim().max(200).optional().or(z.literal("")),
     totalAmount: numOrEmpty,
     paidAmount: numOrEmpty,
     deliveryDate: z.string().optional().or(z.literal("")),

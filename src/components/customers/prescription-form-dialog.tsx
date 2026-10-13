@@ -108,6 +108,11 @@ export function PrescriptionFormDialog({
             </div>
           )}
 
+          <div className="w-40">
+            <Label htmlFor="p-date">التاريخ</Label>
+            <Input id="p-date" name="date" type="date" defaultValue={new Date().toISOString().slice(0, 10)} />
+          </div>
+
           <div className="overflow-x-auto">
             <table className="w-full min-w-[560px] border-collapse text-sm">
               <thead>
@@ -190,6 +195,10 @@ export function PrescriptionFormDialog({
                 <div>
                   <Label htmlFor="deliveryDate">ميعاد الاستلام</Label>
                   <Input id="deliveryDate" name="deliveryDate" type="date" />
+                </div>
+                <div className="col-span-2">
+                  <Label htmlFor="orderDescription">اسم الصنف / تفاصيل الطلب</Label>
+                  <Input id="orderDescription" name="orderDescription" placeholder="مثال: نظارة طبية + عدسات سيلفر" />
                 </div>
                 <div>
                   <Label htmlFor="totalAmount">القيمة</Label>

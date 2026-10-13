@@ -102,6 +102,7 @@ export async function createPrescription(
     const prescription = await prisma.prescription.create({
       data: {
         customerId,
+        date: data.date ? new Date(data.date) : undefined,
         rightSphFar: data.rightSphFar,
         rightCylFar: data.rightCylFar,
         rightAxisFar: data.rightAxisFar,
@@ -140,7 +141,7 @@ export async function createPrescription(
           items: {
             create: [
               {
-                description: orderTypeLabels[orderType],
+                description: data.orderDescription?.trim() || orderTypeLabels[orderType],
                 quantity: 1,
                 unitPrice: data.totalAmount,
                 subtotal: data.totalAmount,
