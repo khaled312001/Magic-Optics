@@ -33,7 +33,7 @@ export async function getPrescriptions(query?: string, from?: string, to?: strin
 
 export async function getPrescriptionById(id: number) {
   const [prescription, linkedOrders] = await Promise.all([
-    prisma.prescription.findUnique({ where: { id }, include: { customer: true } }),
+    prisma.prescription.findUnique({ where: { id }, include: { customer: true, createdBy: true } }),
     prisma.order.findMany({
       where: { prescriptionId: id },
       select: { id: true, receiptNumber: true, createdAt: true },

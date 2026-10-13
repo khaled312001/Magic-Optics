@@ -114,13 +114,14 @@ export function PrescriptionFormDialog({
           </div>
 
           <div className="overflow-x-auto">
-            <table className="w-full min-w-[560px] border-collapse text-sm">
+            <table className="w-full min-w-[620px] border-collapse text-sm">
               <thead>
                 <tr className="text-xs text-muted">
-                  <th className="w-20 text-right"></th>
+                  <th className="w-16 text-right"></th>
                   <th colSpan={3} className="pb-2 text-center font-semibold text-brand-navy">
                     العين اليمنى (Right)
                   </th>
+                  <th className="w-20 pb-2 text-center font-semibold text-foreground">IPD</th>
                   <th colSpan={3} className="pb-2 text-center font-semibold text-brand-teal-dark">
                     العين اليسرى (Left)
                   </th>
@@ -130,6 +131,7 @@ export function PrescriptionFormDialog({
                   <th className="pb-2 font-normal">SPH</th>
                   <th className="pb-2 font-normal">CYL</th>
                   <th className="pb-2 font-normal">AXIS</th>
+                  <th></th>
                   <th className="pb-2 font-normal">AXIS</th>
                   <th className="pb-2 font-normal">CYL</th>
                   <th className="pb-2 font-normal">SPH</th>
@@ -141,6 +143,9 @@ export function PrescriptionFormDialog({
                   <RxCell name="rightSphFar" />
                   <RxCell name="rightCylFar" />
                   <RxCell name="rightAxisFar" />
+                  <td rowSpan={2} className="px-0.5 py-1">
+                    <Input id="ipd" name="ipd" type="number" step="0.5" className="h-9 px-2 text-center" />
+                  </td>
                   <RxCell name="leftAxisFar" />
                   <RxCell name="leftCylFar" />
                   <RxCell name="leftSphFar" />
@@ -156,11 +161,6 @@ export function PrescriptionFormDialog({
                 </tr>
               </tbody>
             </table>
-          </div>
-
-          <div className="w-32">
-            <Label htmlFor="ipd">IPD</Label>
-            <Input id="ipd" name="ipd" type="number" step="0.5" />
           </div>
 
           <div>

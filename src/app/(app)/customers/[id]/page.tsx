@@ -30,7 +30,7 @@ export default async function CustomerDetailPage({
   const customer = await prisma.customer.findUnique({
     where: { id: customerId },
     include: {
-      prescriptions: { orderBy: { date: "desc" } },
+      prescriptions: { orderBy: { date: "desc" }, include: { createdBy: true } },
       orders: { orderBy: { createdAt: "desc" } },
     },
   });

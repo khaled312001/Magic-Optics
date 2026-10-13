@@ -10,11 +10,17 @@ function v(n: number | null | undefined) {
   return n > 0 ? `+${n}` : String(n);
 }
 
-export function PrescriptionView({ prescription, canDelete }: { prescription: Prescription; canDelete: boolean }) {
+type PrescriptionWithCreator = Prescription & { createdBy: { name: string } | null };
+
+export function PrescriptionView({ prescription, canDelete }: { prescription: PrescriptionWithCreator; canDelete: boolean }) {
   return (
     <div className="rounded-lg border border-border p-4">
       <div className="mb-3 flex items-center justify-between">
-        <p className="text-sm font-medium text-foreground">{formatDate(prescription.date)}</p>
+        <div className="flex items-center gap-2 text-xs text-muted">
+          <span className="font-medium text-foreground">{formatDate(prescription.date)}</span>
+          <span>· الكود #{prescription.id}</span>
+          {prescription.createdBy && <span>· {prescription.createdBy.name}</span>}
+        </div>
         <div className="flex items-center gap-1">
           <Link
             href={`/prescriptions/${prescription.id}`}
@@ -33,11 +39,12 @@ export function PrescriptionView({ prescription, canDelete }: { prescription: Pr
       </div>
 
       <div className="overflow-x-auto">
-        <table className="w-full min-w-[480px] border-collapse text-center text-xs">
+        <table className="w-full min-w-[540px] border-collapse text-center text-xs">
           <thead>
             <tr className="text-muted">
               <th className="w-16 text-right font-normal"></th>
               <th colSpan={3} className="pb-1 font-semibold text-brand-navy">يمين</th>
+              <th className="pb-1 font-semibold text-foreground">IPD</th>
               <th colSpan={3} className="pb-1 font-semibold text-brand-teal-dark">يسار</th>
             </tr>
             <tr className="text-muted">
@@ -45,6 +52,7 @@ export function PrescriptionView({ prescription, canDelete }: { prescription: Pr
               <th className="font-normal">SPH</th>
               <th className="font-normal">CYL</th>
               <th className="font-normal">AXIS</th>
+              <th></th>
               <th className="font-normal">AXIS</th>
               <th className="font-normal">CYL</th>
               <th className="font-normal">SPH</th>
@@ -56,6 +64,7 @@ export function PrescriptionView({ prescription, canDelete }: { prescription: Pr
               <td>{v(prescription.rightSphFar)}</td>
               <td>{v(prescription.rightCylFar)}</td>
               <td>{v(prescription.rightAxisFar)}</td>
+              <td rowSpan={2} className="font-medium text-foreground">{prescription.ipd ?? "-"}</td>
               <td>{v(prescription.leftAxisFar)}</td>
               <td>{v(prescription.leftCylFar)}</td>
               <td>{v(prescription.leftSphFar)}</td>
@@ -73,7 +82,6 @@ export function PrescriptionView({ prescription, canDelete }: { prescription: Pr
         </table>
       </div>
 
-      {prescription.ipd && <p className="mt-2 text-xs text-muted">IPD: {prescription.ipd}</p>}
       {prescription.notes && <p className="mt-2 text-xs text-muted">{prescription.notes}</p>}
     </div>
   );

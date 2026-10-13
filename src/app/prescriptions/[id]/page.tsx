@@ -49,17 +49,27 @@ export default async function PrescriptionPrintPage({ params }: { params: Promis
 
         <div className="mb-4 space-y-1 text-sm">
           <div className="flex justify-between">
+            <span className="text-muted">الكود</span>
+            <span className="text-foreground">#{prescription.id}</span>
+          </div>
+          <div className="flex justify-between">
             <span className="text-muted">التاريخ</span>
             <span className="text-foreground">{formatDate(prescription.date)}</span>
           </div>
           <div className="flex justify-between">
-            <span className="text-muted">العميل</span>
+            <span className="text-muted">الاسم</span>
             <span className="text-foreground">{prescription.customer.name}</span>
           </div>
           {prescription.customer.phone && (
             <div className="flex justify-between">
               <span className="text-muted">الهاتف</span>
               <span className="text-foreground" dir="ltr">{prescription.customer.phone}</span>
+            </div>
+          )}
+          {prescription.createdBy && (
+            <div className="flex justify-between">
+              <span className="text-muted">اسم الموظف</span>
+              <span className="text-foreground">{prescription.createdBy.name}</span>
             </div>
           )}
         </div>
@@ -69,6 +79,7 @@ export default async function PrescriptionPrintPage({ params }: { params: Promis
             <tr className="text-muted">
               <th className="w-14 text-right font-normal"></th>
               <th colSpan={3} className="pb-1.5 font-semibold text-brand-navy">العين اليمنى</th>
+              <th className="pb-1.5 font-semibold text-foreground">IPD</th>
               <th colSpan={3} className="pb-1.5 font-semibold text-brand-teal-dark">العين اليسرى</th>
             </tr>
             <tr className="text-muted">
@@ -76,6 +87,7 @@ export default async function PrescriptionPrintPage({ params }: { params: Promis
               <th className="font-normal">SPH</th>
               <th className="font-normal">CYL</th>
               <th className="font-normal">AXIS</th>
+              <th></th>
               <th className="font-normal">AXIS</th>
               <th className="font-normal">CYL</th>
               <th className="font-normal">SPH</th>
@@ -87,6 +99,7 @@ export default async function PrescriptionPrintPage({ params }: { params: Promis
               <td dir="ltr">{v(prescription.rightSphFar)}</td>
               <td dir="ltr">{v(prescription.rightCylFar)}</td>
               <td dir="ltr">{v(prescription.rightAxisFar)}</td>
+              <td rowSpan={2} className="font-medium text-foreground">{prescription.ipd ?? "-"}</td>
               <td dir="ltr">{v(prescription.leftAxisFar)}</td>
               <td dir="ltr">{v(prescription.leftCylFar)}</td>
               <td dir="ltr">{v(prescription.leftSphFar)}</td>
@@ -102,13 +115,6 @@ export default async function PrescriptionPrintPage({ params }: { params: Promis
             </tr>
           </tbody>
         </table>
-
-        {prescription.ipd && (
-          <div className="mb-2 flex justify-between border-t border-dashed border-border pt-2 text-sm">
-            <span className="text-muted">IPD</span>
-            <span className="font-medium text-foreground">{prescription.ipd}</span>
-          </div>
-        )}
 
         {prescription.notes && (
           <div className="mb-2 border-t border-dashed border-border pt-2 text-sm">
