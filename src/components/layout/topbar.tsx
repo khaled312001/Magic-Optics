@@ -49,7 +49,7 @@ export function Topbar({ onMenuClick }: { onMenuClick: () => void }) {
         </button>
 
         {open && (
-          <div className="absolute left-0 top-full mt-2 w-48 rounded-lg border border-border bg-surface py-1 shadow-lg">
+          <div className="absolute left-0 top-full z-50 mt-2 w-48 rounded-lg border border-border bg-surface py-1 shadow-lg">
             <Link
               href="/settings/profile"
               onClick={() => setOpen(false)}
