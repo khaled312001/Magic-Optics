@@ -118,46 +118,49 @@ export function PrescriptionFormDialog({
               <thead>
                 <tr className="text-xs text-muted">
                   <th className="w-16 text-right"></th>
-                  <th colSpan={3} className="pb-2 text-center font-semibold text-brand-navy">
-                    العين اليمنى (Right)
-                  </th>
-                  <th className="w-20 pb-2 text-center font-semibold text-foreground">IPD</th>
                   <th colSpan={3} className="pb-2 text-center font-semibold text-brand-teal-dark">
                     العين اليسرى (Left)
+                  </th>
+                  <th className="w-20 pb-2 text-center font-semibold text-foreground">IPD</th>
+                  <th colSpan={3} className="pb-2 text-center font-semibold text-brand-navy">
+                    العين اليمنى (Right)
                   </th>
                 </tr>
                 <tr className="text-xs text-muted">
                   <th></th>
-                  <th className="pb-2 font-normal">SPH</th>
-                  <th className="pb-2 font-normal">CYL</th>
                   <th className="pb-2 font-normal">AXIS</th>
+                  <th className="pb-2 font-normal">CYL</th>
+                  <th className="pb-2 font-normal">SPH</th>
                   <th></th>
-                  <th className="pb-2 font-normal">AXIS</th>
-                  <th className="pb-2 font-normal">CYL</th>
                   <th className="pb-2 font-normal">SPH</th>
+                  <th className="pb-2 font-normal">CYL</th>
+                  <th className="pb-2 font-normal">AXIS</th>
                 </tr>
               </thead>
               <tbody>
                 <tr>
                   <td className="py-1 pl-2 text-xs font-medium text-foreground">بعيد (D)</td>
-                  <RxCell name="rightSphFar" />
-                  <RxCell name="rightCylFar" />
-                  <RxCell name="rightAxisFar" />
-                  <td rowSpan={2} className="px-0.5 py-1">
-                    <Input id="ipd" name="ipd" type="number" step="0.5" className="h-9 px-2 text-center" />
-                  </td>
                   <RxCell name="leftAxisFar" />
                   <RxCell name="leftCylFar" />
                   <RxCell name="leftSphFar" />
+                  <td className="px-0.5 py-1">
+                    <Input id="ipdFar" name="ipdFar" type="number" step="0.5" className="h-9 px-2 text-center" />
+                  </td>
+                  <RxCell name="rightSphFar" />
+                  <RxCell name="rightCylFar" />
+                  <RxCell name="rightAxisFar" />
                 </tr>
                 <tr>
                   <td className="py-1 pl-2 text-xs font-medium text-foreground">قريب (R)</td>
-                  <RxCell name="rightSphNear" />
-                  <RxCell name="rightCylNear" />
-                  <RxCell name="rightAxisNear" />
                   <RxCell name="leftAxisNear" />
                   <RxCell name="leftCylNear" />
                   <RxCell name="leftSphNear" />
+                  <td className="px-0.5 py-1">
+                    <Input id="ipdNear" name="ipdNear" type="number" step="0.5" className="h-9 px-2 text-center" />
+                  </td>
+                  <RxCell name="rightSphNear" />
+                  <RxCell name="rightCylNear" />
+                  <RxCell name="rightAxisNear" />
                 </tr>
               </tbody>
             </table>

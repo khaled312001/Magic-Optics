@@ -31,7 +31,8 @@ export const prescriptionSchema = z
     leftSphNear: numOrEmpty,
     leftCylNear: numOrEmpty,
     leftAxisNear: numOrEmpty,
-    ipd: numOrEmpty,
+    ipdFar: numOrEmpty,
+    ipdNear: numOrEmpty,
     date: z.string().optional().or(z.literal("")),
     notes: z.string().trim().max(2000).optional().or(z.literal("")),
     // تفاصيل الطلب المرتبط (اختياري) - تطابق سلّة الكشف الورقية التي تجمع بيانات الفحص والطلب فى إيصال واحد

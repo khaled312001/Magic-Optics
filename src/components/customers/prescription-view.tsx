@@ -43,40 +43,41 @@ export function PrescriptionView({ prescription, canDelete }: { prescription: Pr
           <thead>
             <tr className="text-muted">
               <th className="w-16 text-right font-normal"></th>
-              <th colSpan={3} className="pb-1 font-semibold text-brand-navy">يمين</th>
-              <th className="pb-1 font-semibold text-foreground">IPD</th>
               <th colSpan={3} className="pb-1 font-semibold text-brand-teal-dark">يسار</th>
+              <th className="pb-1 font-semibold text-foreground">IPD</th>
+              <th colSpan={3} className="pb-1 font-semibold text-brand-navy">يمين</th>
             </tr>
             <tr className="text-muted">
               <th></th>
-              <th className="font-normal">SPH</th>
-              <th className="font-normal">CYL</th>
               <th className="font-normal">AXIS</th>
+              <th className="font-normal">CYL</th>
+              <th className="font-normal">SPH</th>
               <th></th>
-              <th className="font-normal">AXIS</th>
-              <th className="font-normal">CYL</th>
               <th className="font-normal">SPH</th>
+              <th className="font-normal">CYL</th>
+              <th className="font-normal">AXIS</th>
             </tr>
           </thead>
           <tbody>
             <tr className="border-t border-border">
               <td className="py-1.5 text-right font-medium text-foreground">بعيد</td>
-              <td>{v(prescription.rightSphFar)}</td>
-              <td>{v(prescription.rightCylFar)}</td>
-              <td>{v(prescription.rightAxisFar)}</td>
-              <td rowSpan={2} className="font-medium text-foreground">{prescription.ipd ?? "-"}</td>
               <td>{v(prescription.leftAxisFar)}</td>
               <td>{v(prescription.leftCylFar)}</td>
               <td>{v(prescription.leftSphFar)}</td>
+              <td className="font-medium text-foreground">{prescription.ipdFar ?? "-"}</td>
+              <td>{v(prescription.rightSphFar)}</td>
+              <td>{v(prescription.rightCylFar)}</td>
+              <td>{v(prescription.rightAxisFar)}</td>
             </tr>
             <tr className="border-t border-border">
               <td className="py-1.5 text-right font-medium text-foreground">قريب</td>
-              <td>{v(prescription.rightSphNear)}</td>
-              <td>{v(prescription.rightCylNear)}</td>
-              <td>{v(prescription.rightAxisNear)}</td>
               <td>{v(prescription.leftAxisNear)}</td>
               <td>{v(prescription.leftCylNear)}</td>
               <td>{v(prescription.leftSphNear)}</td>
+              <td className="font-medium text-foreground">{prescription.ipdNear ?? "-"}</td>
+              <td>{v(prescription.rightSphNear)}</td>
+              <td>{v(prescription.rightCylNear)}</td>
+              <td>{v(prescription.rightAxisNear)}</td>
             </tr>
           </tbody>
         </table>

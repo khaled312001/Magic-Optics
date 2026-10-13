@@ -99,8 +99,9 @@ model Prescription {
   leftCylNear   Float?
   leftAxisNear  Int?
 
-  ipd   Float? // المسافة بين الحدقتين
-  notes String? @db.Text
+  ipdFar  Float? // المسافة بين الحدقتين - بعيد
+  ipdNear Float? // المسافة بين الحدقتين - قريب
+  notes   String? @db.Text
 
   createdById Int?
   createdBy   User?   @relation(fields: [createdById], references: [id], onDelete: SetNull)

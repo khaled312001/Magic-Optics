@@ -76,7 +76,7 @@ export default async function PrescriptionsPage({
                     <td className="px-3 py-3 text-center" dir="ltr">
                       {v(p.leftSphFar)}
                     </td>
-                    <td className="px-3 py-3 text-center">{p.ipd ?? "-"}</td>
+                    <td className="px-3 py-3 text-center">{p.ipdFar ?? p.ipdNear ?? "-"}</td>
                     <td className="px-4 py-3 text-left">
                       <Link
                         href={`/prescriptions/${p.id}`}

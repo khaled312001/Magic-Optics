@@ -78,40 +78,41 @@ export default async function PrescriptionPrintPage({ params }: { params: Promis
           <thead>
             <tr className="text-muted">
               <th className="w-14 text-right font-normal"></th>
-              <th colSpan={3} className="pb-1.5 font-semibold text-brand-navy">العين اليمنى</th>
-              <th className="pb-1.5 font-semibold text-foreground">IPD</th>
               <th colSpan={3} className="pb-1.5 font-semibold text-brand-teal-dark">العين اليسرى</th>
+              <th className="pb-1.5 font-semibold text-foreground">IPD</th>
+              <th colSpan={3} className="pb-1.5 font-semibold text-brand-navy">العين اليمنى</th>
             </tr>
             <tr className="text-muted">
               <th></th>
-              <th className="font-normal">SPH</th>
-              <th className="font-normal">CYL</th>
               <th className="font-normal">AXIS</th>
+              <th className="font-normal">CYL</th>
+              <th className="font-normal">SPH</th>
               <th></th>
-              <th className="font-normal">AXIS</th>
-              <th className="font-normal">CYL</th>
               <th className="font-normal">SPH</th>
+              <th className="font-normal">CYL</th>
+              <th className="font-normal">AXIS</th>
             </tr>
           </thead>
           <tbody>
             <tr className="border-t border-border">
               <td className="py-2 text-right font-medium text-foreground">بعيد</td>
-              <td dir="ltr">{v(prescription.rightSphFar)}</td>
-              <td dir="ltr">{v(prescription.rightCylFar)}</td>
-              <td dir="ltr">{v(prescription.rightAxisFar)}</td>
-              <td rowSpan={2} className="font-medium text-foreground">{prescription.ipd ?? "-"}</td>
               <td dir="ltr">{v(prescription.leftAxisFar)}</td>
               <td dir="ltr">{v(prescription.leftCylFar)}</td>
               <td dir="ltr">{v(prescription.leftSphFar)}</td>
+              <td className="font-medium text-foreground">{prescription.ipdFar ?? "-"}</td>
+              <td dir="ltr">{v(prescription.rightSphFar)}</td>
+              <td dir="ltr">{v(prescription.rightCylFar)}</td>
+              <td dir="ltr">{v(prescription.rightAxisFar)}</td>
             </tr>
             <tr className="border-t border-border">
               <td className="py-2 text-right font-medium text-foreground">قريب</td>
-              <td dir="ltr">{v(prescription.rightSphNear)}</td>
-              <td dir="ltr">{v(prescription.rightCylNear)}</td>
-              <td dir="ltr">{v(prescription.rightAxisNear)}</td>
               <td dir="ltr">{v(prescription.leftAxisNear)}</td>
               <td dir="ltr">{v(prescription.leftCylNear)}</td>
               <td dir="ltr">{v(prescription.leftSphNear)}</td>
+              <td className="font-medium text-foreground">{prescription.ipdNear ?? "-"}</td>
+              <td dir="ltr">{v(prescription.rightSphNear)}</td>
+              <td dir="ltr">{v(prescription.rightCylNear)}</td>
+              <td dir="ltr">{v(prescription.rightAxisNear)}</td>
             </tr>
           </tbody>
         </table>
