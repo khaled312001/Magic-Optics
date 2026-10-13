@@ -16,7 +16,7 @@ export async function GET(request: Request) {
   const where: Prisma.ProductWhereInput = {
     active: true,
     ...(category ? { category: category as ProductCategory } : {}),
-    ...(q ? (category === "LENS" ? { name: { contains: q } } : { code: { contains: q } }) : {}),
+    ...(q ? (category === "LENS" ? { name: { contains: q } } : { code: { equals: q } }) : {}),
   };
 
   const products = await prisma.product.findMany({ where, orderBy: [{ category: "asc" }, { name: "asc" }] });

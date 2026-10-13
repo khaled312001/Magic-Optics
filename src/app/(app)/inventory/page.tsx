@@ -33,8 +33,8 @@ export default async function InventoryPage({
   const where: Prisma.ProductWhereInput = {
     active: true,
     ...(category ? { category: category as ProductCategory } : {}),
-    // العدسات تُسمى بنوعها (سيلفر/بلاتينيوم/بلوكت...) لا بكود، فالبحث فيها بالاسم، وباقي الفئات بالكود
-    ...(q ? (isLensCategory ? { name: { contains: q } } : { code: { contains: q } }) : {}),
+    // العدسات تُسمى بنوعها (سيلفر/بلاتينيوم/بلوكت...) لا بكود، فالبحث فيها بالاسم، وباقي الفئات بالكود كاملاً (تطابق تام لا جزء منه)
+    ...(q ? (isLensCategory ? { name: { contains: q } } : { code: { equals: q } }) : {}),
   };
 
   const rawProducts = await prisma.product.findMany({ where, orderBy: [{ category: "asc" }, { name: "asc" }] });
