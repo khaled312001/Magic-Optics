@@ -39,7 +39,7 @@ export function ShopSettingsForm({ settings }: { settings: SerializedShopSetting
         </div>
       </div>
       <div>
-        <Label htmlFor="examFee">سعر كشف نظر العدسات</Label>
+        <Label htmlFor="examFee">سعر العدسات</Label>
         <Input
           id="examFee"
           name="examFee"

@@ -53,9 +53,9 @@ export function PrescriptionView({ prescription, canDelete }: { prescription: Pr
               <th className="font-normal">CYL</th>
               <th className="font-normal">SPH</th>
               <th></th>
-              <th className="font-normal">SPH</th>
-              <th className="font-normal">CYL</th>
               <th className="font-normal">AXIS</th>
+              <th className="font-normal">CYL</th>
+              <th className="font-normal">SPH</th>
             </tr>
           </thead>
           <tbody>
@@ -65,9 +65,9 @@ export function PrescriptionView({ prescription, canDelete }: { prescription: Pr
               <td>{v(prescription.leftCylFar)}</td>
               <td>{v(prescription.leftSphFar)}</td>
               <td className="font-medium text-foreground">{prescription.ipdFar ?? "-"}</td>
-              <td>{v(prescription.rightSphFar)}</td>
-              <td>{v(prescription.rightCylFar)}</td>
               <td>{v(prescription.rightAxisFar)}</td>
+              <td>{v(prescription.rightCylFar)}</td>
+              <td>{v(prescription.rightSphFar)}</td>
             </tr>
             <tr className="border-t border-border">
               <td className="py-1.5 text-right font-medium text-foreground">قريب</td>
@@ -75,9 +75,9 @@ export function PrescriptionView({ prescription, canDelete }: { prescription: Pr
               <td>{v(prescription.leftCylNear)}</td>
               <td>{v(prescription.leftSphNear)}</td>
               <td className="font-medium text-foreground">{prescription.ipdNear ?? "-"}</td>
-              <td>{v(prescription.rightSphNear)}</td>
-              <td>{v(prescription.rightCylNear)}</td>
               <td>{v(prescription.rightAxisNear)}</td>
+              <td>{v(prescription.rightCylNear)}</td>
+              <td>{v(prescription.rightSphNear)}</td>
             </tr>
           </tbody>
         </table>

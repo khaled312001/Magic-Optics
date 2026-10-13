@@ -132,9 +132,9 @@ export function PrescriptionFormDialog({
                   <th className="pb-2 font-normal">CYL</th>
                   <th className="pb-2 font-normal">SPH</th>
                   <th></th>
-                  <th className="pb-2 font-normal">SPH</th>
-                  <th className="pb-2 font-normal">CYL</th>
                   <th className="pb-2 font-normal">AXIS</th>
+                  <th className="pb-2 font-normal">CYL</th>
+                  <th className="pb-2 font-normal">SPH</th>
                 </tr>
               </thead>
               <tbody>
@@ -146,9 +146,9 @@ export function PrescriptionFormDialog({
                   <td className="px-0.5 py-1">
                     <Input id="ipdFar" name="ipdFar" type="number" step="0.5" className="h-9 px-2 text-center" />
                   </td>
-                  <RxCell name="rightSphFar" />
-                  <RxCell name="rightCylFar" />
                   <RxCell name="rightAxisFar" />
+                  <RxCell name="rightCylFar" />
+                  <RxCell name="rightSphFar" />
                 </tr>
                 <tr>
                   <td className="py-1 pl-2 text-xs font-medium text-foreground">قريب (R)</td>
@@ -158,9 +158,9 @@ export function PrescriptionFormDialog({
                   <td className="px-0.5 py-1">
                     <Input id="ipdNear" name="ipdNear" type="number" step="0.5" className="h-9 px-2 text-center" />
                   </td>
-                  <RxCell name="rightSphNear" />
-                  <RxCell name="rightCylNear" />
                   <RxCell name="rightAxisNear" />
+                  <RxCell name="rightCylNear" />
+                  <RxCell name="rightSphNear" />
                 </tr>
               </tbody>
             </table>
