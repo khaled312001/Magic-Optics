@@ -14,6 +14,7 @@ export type ActivityItem = {
   label: string;
   detail: string;
   amount?: number;
+  href?: string;
 };
 
 export type UserDailyActivity = {
@@ -36,7 +37,7 @@ export async function getDailyActivity(dateStr: string): Promise<UserDailyActivi
     prisma.payment.findMany({ where: { createdAt: range }, include: { order: { include: { customer: true } } } }),
     prisma.prescription.findMany({ where: { createdAt: range }, include: { customer: true } }),
     prisma.stockMovement.findMany({ where: { createdAt: range }, include: { product: true } }),
-    prisma.cashEntry.findMany({ where: { createdAt: range } }),
+    prisma.cashEntry.findMany({ where: { createdAt: range }, include: { day: true } }),
   ]);
 
   const byUser = new Map<number, UserDailyActivity>();
@@ -60,6 +61,7 @@ export async function getDailyActivity(dateStr: string): Promise<UserDailyActivi
       label: `فاتورة جديدة #${o.receiptNumber}`,
       detail: o.customer?.name ?? "بدون اسم",
       amount: Number(o.totalAmount),
+      href: `/orders/${o.id}`,
     });
   }
   for (const p of payments) {
@@ -70,6 +72,7 @@ export async function getDailyActivity(dateStr: string): Promise<UserDailyActivi
       label: `دفعة على فاتورة #${p.order.receiptNumber}`,
       detail: p.order.customer?.name ?? "-",
       amount: Number(p.amount),
+      href: `/orders/${p.orderId}`,
     });
   }
   for (const pr of prescriptions) {
@@ -79,15 +82,19 @@ export async function getDailyActivity(dateStr: string): Promise<UserDailyActivi
       kind: "PRESCRIPTION",
       label: "كشف نظر جديد",
       detail: pr.customer.name,
+      href: `/prescriptions/${pr.id}`,
     });
   }
   for (const s of stockMoves) {
+    const isLensCategory = s.product.category === "LENS" || s.product.category === "LENS_CONTRACT";
+    const searchTerm = isLensCategory ? s.product.name : s.product.code;
     push(s.createdById, {
       id: `stock-${s.id}`,
       time: s.createdAt,
       kind: "STOCK",
       label: stockMovementTypeLabels[s.type],
       detail: `${s.product.name} (${s.quantity})`,
+      href: `/inventory?category=${s.product.category}${searchTerm ? `&q=${encodeURIComponent(searchTerm)}` : ""}`,
     });
   }
   for (const c of cashEntries) {
@@ -98,6 +105,7 @@ export async function getDailyActivity(dateStr: string): Promise<UserDailyActivi
       label: cashCategoryLabels[c.category],
       detail: c.note || "-",
       amount: Number(c.amount) * (c.type === "OUT" ? -1 : 1),
+      href: `/cash-register?date=${c.day.date.toISOString().slice(0, 10)}`,
     });
   }
 

@@ -1,6 +1,7 @@
 import { redirect } from "next/navigation";
+import Link from "next/link";
 import { getServerSession } from "next-auth";
-import { History, LogIn, Receipt, Wallet, Eye, Glasses, UserX } from "lucide-react";
+import { History, LogIn, Receipt, Wallet, Eye, Glasses, UserX, ChevronLeft } from "lucide-react";
 import { authOptions } from "@/lib/auth";
 import { PageHeader } from "@/components/ui/page-header";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
@@ -94,8 +95,8 @@ export default async function DailyLogPage({
                   <div className="divide-y divide-border">
                     {u.items.map((item) => {
                       const Icon = kindIcons[item.kind];
-                      return (
-                        <div key={item.id} className="flex items-center gap-3 px-5 py-2.5 text-sm">
+                      const content = (
+                        <>
                           <div className="flex size-8 shrink-0 items-center justify-center rounded-lg bg-background text-brand-navy">
                             <Icon className="size-4" />
                           </div>
@@ -110,6 +111,20 @@ export default async function DailyLogPage({
                             </span>
                           )}
                           <span className="shrink-0 text-xs text-muted">{timeStr(item.time)}</span>
+                          {item.href && <ChevronLeft className="size-4 shrink-0 text-muted" />}
+                        </>
+                      );
+                      return item.href ? (
+                        <Link
+                          key={item.id}
+                          href={item.href}
+                          className="flex items-center gap-3 px-5 py-2.5 text-sm transition-colors hover:bg-background"
+                        >
+                          {content}
+                        </Link>
+                      ) : (
+                        <div key={item.id} className="flex items-center gap-3 px-5 py-2.5 text-sm">
+                          {content}
                         </div>
                       );
                     })}
