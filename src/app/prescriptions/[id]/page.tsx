@@ -76,9 +76,9 @@ export default async function PrescriptionPrintPage({ params }: { params: Promis
               <th className="font-normal">SPH</th>
               <th className="font-normal">CYL</th>
               <th className="font-normal">AXIS</th>
-              <th className="font-normal">SPH</th>
-              <th className="font-normal">CYL</th>
               <th className="font-normal">AXIS</th>
+              <th className="font-normal">CYL</th>
+              <th className="font-normal">SPH</th>
             </tr>
           </thead>
           <tbody>
@@ -87,18 +87,18 @@ export default async function PrescriptionPrintPage({ params }: { params: Promis
               <td dir="ltr">{v(prescription.rightSphFar)}</td>
               <td dir="ltr">{v(prescription.rightCylFar)}</td>
               <td dir="ltr">{v(prescription.rightAxisFar)}</td>
-              <td dir="ltr">{v(prescription.leftSphFar)}</td>
-              <td dir="ltr">{v(prescription.leftCylFar)}</td>
               <td dir="ltr">{v(prescription.leftAxisFar)}</td>
+              <td dir="ltr">{v(prescription.leftCylFar)}</td>
+              <td dir="ltr">{v(prescription.leftSphFar)}</td>
             </tr>
             <tr className="border-t border-border">
               <td className="py-2 text-right font-medium text-foreground">قريب</td>
               <td dir="ltr">{v(prescription.rightSphNear)}</td>
               <td dir="ltr">{v(prescription.rightCylNear)}</td>
               <td dir="ltr">{v(prescription.rightAxisNear)}</td>
-              <td dir="ltr">{v(prescription.leftSphNear)}</td>
-              <td dir="ltr">{v(prescription.leftCylNear)}</td>
               <td dir="ltr">{v(prescription.leftAxisNear)}</td>
+              <td dir="ltr">{v(prescription.leftCylNear)}</td>
+              <td dir="ltr">{v(prescription.leftSphNear)}</td>
             </tr>
           </tbody>
         </table>
