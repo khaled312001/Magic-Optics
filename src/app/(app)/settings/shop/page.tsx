@@ -16,7 +16,9 @@ export default async function ShopSettingsPage() {
   return (
     <div>
       <PageHeader title="بيانات المحل" description="تظهر هذه البيانات في رأس إيصالات الطباعة" />
-      <ShopSettingsForm settings={{ ...settings, examFee: Number(settings.examFee) }} />
+      <ShopSettingsForm
+        settings={{ ...settings, examFee: Number(settings.examFee), discountPercent: Number(settings.discountPercent) }}
+      />
     </div>
   );
 }

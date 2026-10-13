@@ -26,12 +26,16 @@ export async function updateShopSettings(formData: FormData): Promise<ActionResu
         address: data.address || "",
         phone: data.phone || "",
         phone2: data.phone2 || null,
+        examFee: data.examFee,
+        discountPercent: data.discountPercent,
       },
       update: {
         name: data.name,
         address: data.address || "",
         phone: data.phone || "",
         phone2: data.phone2 || null,
+        examFee: data.examFee,
+        discountPercent: data.discountPercent,
       },
     });
 

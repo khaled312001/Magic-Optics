@@ -126,7 +126,13 @@ export default async function ReceiptPage({
           </div>
         </div>
 
-        <p className="mt-6 text-center text-xs text-muted">شكراً لتعاملكم مع Magic Optics</p>
+        {Number(shop.discountPercent) > 0 && (
+          <div className="mt-4 rounded-lg border border-dashed border-amber-300 bg-amber-50 px-3 py-2 text-center text-xs font-medium text-amber-800">
+            خصم {Number(shop.discountPercent)}% على الشنابر فقط - لا يشمل العدسات
+          </div>
+        )}
+
+        <p className="mt-4 text-center text-xs text-muted">شكراً لتعاملكم مع Magic Optics</p>
       </div>
     </div>
   );

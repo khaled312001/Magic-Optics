@@ -6,7 +6,10 @@ import { useActionForm } from "@/components/ui/use-action-form";
 import { updateShopSettings } from "@/server/settings";
 import type { ShopSettings } from "@prisma/client";
 
-type SerializedShopSettings = Omit<ShopSettings, "examFee"> & { examFee: number };
+type SerializedShopSettings = Omit<ShopSettings, "examFee" | "discountPercent"> & {
+  examFee: number;
+  discountPercent: number;
+};
 
 export function ShopSettingsForm({ settings }: { settings: SerializedShopSettings }) {
   const { onSubmit, isPending, fieldErrors } = useActionForm(updateShopSettings, {
@@ -47,6 +50,20 @@ export function ShopSettingsForm({ settings }: { settings: SerializedShopSetting
           defaultValue={settings.examFee.toString()}
         />
         <p className="mt-1 text-xs text-muted">يُقترح تلقائياً عند إضافة فاتورة نظارة طبية</p>
+      </div>
+      <div>
+        <Label htmlFor="discountPercent">نسبة خصم الشنابر %</Label>
+        <Input
+          id="discountPercent"
+          name="discountPercent"
+          type="number"
+          min={0}
+          max={100}
+          step="1"
+          className="w-48"
+          defaultValue={settings.discountPercent.toString()}
+        />
+        <p className="mt-1 text-xs text-muted">تُطبع أسفل كل فاتورة - خصم على الشنابر فقط، لا يشمل العدسات</p>
       </div>
       <Button type="submit" loading={isPending}>
         حفظ التغييرات
