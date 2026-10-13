@@ -29,10 +29,12 @@ export default async function InventoryPage({
   const isAdmin = session?.user?.role === "ADMIN";
   const canEditInventory = isAdmin || session?.user?.canEditInventory === true;
 
+  const isLensCategory = category === "LENS";
   const where: Prisma.ProductWhereInput = {
     active: true,
     ...(category ? { category: category as ProductCategory } : {}),
-    ...(q ? { code: { contains: q } } : {}),
+    // العدسات تُسمى بنوعها (سيلفر/بلاتينيوم/بلوكت...) لا بكود، فالبحث فيها بالاسم، وباقي الفئات بالكود
+    ...(q ? (isLensCategory ? { name: { contains: q } } : { code: { contains: q } }) : {}),
   };
 
   const rawProducts = await prisma.product.findMany({ where, orderBy: [{ category: "asc" }, { name: "asc" }] });
@@ -62,7 +64,7 @@ export default async function InventoryPage({
 
       <div className="mb-4 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <CategoryTabs />
-        <SearchBox placeholder="ابحث بالكود..." />
+        <SearchBox placeholder={isLensCategory ? "ابحث بنوع العدسة..." : "ابحث بالكود..."} />
       </div>
 
       {products.length === 0 ? (
