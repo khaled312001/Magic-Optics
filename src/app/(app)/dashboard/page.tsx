@@ -39,11 +39,11 @@ export default async function DashboardPage() {
       />
 
       <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-6">
-        <StatCard label="مبيعات اليوم" value={formatCurrency(data.todaySalesTotal)} icon={Banknote} tone="teal" />
+        <StatCard label="مبيعات اليوم" value={formatCurrency(data.todaySalesTotal)} icon={Banknote} tone="teal" highlight />
         <StatCard label="فواتير اليوم" value={String(data.todayOrdersCount)} icon={ShoppingBag} tone="navy" />
         <StatCard label="قيد التجهيز" value={String(data.pendingCount)} icon={Clock} tone="amber" />
         <StatCard label="جاهزة للاستلام" value={String(data.readyCount)} icon={PackageCheck} tone="green" />
-        <StatCard label="رصيد الخزنة اليوم" value={formatCurrency(data.cashBalance)} icon={Banknote} tone="navy" />
+        <StatCard label="رصيد الخزنة اليوم" value={formatCurrency(data.cashBalance)} icon={Banknote} tone="navy" highlight />
         <StatCard label="إجمالي العملاء" value={String(data.customersCount)} icon={Users} tone="teal" />
       </div>
 
@@ -135,7 +135,7 @@ export default async function DashboardPage() {
           <Card>
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
-                <AlertTriangle className="size-4 text-amber-500" />
+                <AlertTriangle className="size-4 text-amber-600" />
                 أصناف أوشكت على النفاذ
               </CardTitle>
               <Link href="/inventory" className="text-xs font-medium text-brand-teal hover:underline">
@@ -150,7 +150,9 @@ export default async function DashboardPage() {
                   {data.lowStock.slice(0, 6).map((p) => (
                     <div key={p.id} className="flex items-center justify-between px-5 py-3 text-sm">
                       <span className="truncate text-foreground">{p.name}</span>
-                      <Badge color={p.quantity === 0 ? "red" : "amber"}>متبقي {p.quantity}</Badge>
+                      <Badge color={p.quantity === 0 ? "red" : "amber"} solid={p.quantity === 0}>
+                        متبقي {p.quantity}
+                      </Badge>
                     </div>
                   ))}
                 </div>

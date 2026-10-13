@@ -2,7 +2,7 @@
 
 import { revalidatePath } from "next/cache";
 import { prisma } from "@/lib/prisma";
-import { requireUser, requireAdmin } from "@/lib/auth-helpers";
+import { requireUser, requireAdmin, UnauthorizedError } from "@/lib/auth-helpers";
 import { cashEntrySchema } from "@/lib/validations";
 import { ActionResult, handleActionError, okResult } from "@/server/action-result";
 
@@ -62,6 +62,10 @@ export async function addCashEntry(formData: FormData): Promise<ActionResult> {
   try {
     const user = await requireUser();
     const data = cashEntrySchema.parse(Object.fromEntries(formData));
+
+    if (data.type === "OUT" && user.role !== "ADMIN" && !user.canManageExpenses) {
+      throw new UnauthorizedError("ليس لديك صلاحية تسجيل حركات المنصرف، راجع المدير");
+    }
 
     const day = await getOrCreateCashDay(data.date);
 

@@ -1,17 +1,29 @@
 "use client";
 
-import { useState } from "react";
-import { Plus } from "lucide-react";
+import { useEffect, useMemo, useState } from "react";
+import { Plus, Lock } from "lucide-react";
 import { Dialog } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Input, Label, Select, Textarea } from "@/components/ui/input";
 import { useActionForm } from "@/components/ui/use-action-form";
 import { addCashEntry } from "@/server/cashRegister";
-import { cashCategoryLabels } from "@/lib/labels";
+import { cashCategoryLabels, cashCategoryDirection } from "@/lib/labels";
 
-export function AddCashEntryDialog({ date }: { date: string }) {
+export function AddCashEntryDialog({ date, canManageExpenses = true }: { date: string; canManageExpenses?: boolean }) {
   const [open, setOpen] = useState(false);
   const [type, setType] = useState<"IN" | "OUT">("IN");
+
+  const categoryOptions = useMemo(
+    () =>
+      Object.entries(cashCategoryLabels).filter(
+        ([value]) => cashCategoryDirection[value as keyof typeof cashCategoryDirection] === type || cashCategoryDirection[value as keyof typeof cashCategoryDirection] === "BOTH"
+      ),
+    [type]
+  );
+
+  useEffect(() => {
+    if (!open) setType("IN");
+  }, [open]);
 
   const { onSubmit, isPending } = useActionForm(addCashEntry, {
     successMessage: "تم تسجيل الحركة",
@@ -39,9 +51,14 @@ export function AddCashEntryDialog({ date }: { date: string }) {
             </button>
             <button
               type="button"
-              onClick={() => setType("OUT")}
-              className={`flex-1 rounded-md py-1.5 font-medium ${type === "OUT" ? "bg-red-600 text-white" : "text-muted"}`}
+              onClick={() => canManageExpenses && setType("OUT")}
+              disabled={!canManageExpenses}
+              title={!canManageExpenses ? "ليس لديك صلاحية تسجيل حركات المنصرف" : undefined}
+              className={`flex flex-1 items-center justify-center gap-1 rounded-md py-1.5 font-medium ${
+                type === "OUT" ? "bg-red-600 text-white" : "text-muted"
+              } ${!canManageExpenses ? "cursor-not-allowed opacity-50" : ""}`}
             >
+              {!canManageExpenses && <Lock className="size-3" />}
               منصرف (-)
             </button>
           </div>
@@ -49,8 +66,11 @@ export function AddCashEntryDialog({ date }: { date: string }) {
 
           <div>
             <Label htmlFor="category">البند</Label>
-            <Select id="category" name="category" required>
-              {Object.entries(cashCategoryLabels).map(([value, label]) => (
+            <Select id="category" name="category" key={type} required defaultValue="">
+              <option value="" disabled>
+                اختر البند
+              </option>
+              {categoryOptions.map(([value, label]) => (
                 <option key={value} value={value}>
                   {label}
                 </option>

@@ -43,10 +43,30 @@ export const cashCategoryLabels = {
   MEDICAL_SALE: "مبيعات نظر",
   LENS_CHANGE: "تغيير عدسات",
   OTHER_SALE: "مبيعات أخرى",
+  SUNGLASSES_PURCHASE: "مشتريات شمس",
+  MEDICAL_PURCHASE: "مشتريات نظارات",
+  LENS_PURCHASE: "مشتريات عدسات",
+  OTHER_PURCHASE: "مشتريات أخرى",
   BANK_DEPOSIT: "إيداع بنك",
   EXPENSE: "مصروفات",
   WITHDRAWAL: "سحب / مرتبات",
   OTHER: "أخرى",
+} as const;
+
+/** يحدد نوع الحركة المنطقي لكل بند، لتصفية قائمة "البند" حسب وارد/منصرف فى نموذج الخزنة */
+export const cashCategoryDirection = {
+  SUNGLASSES_SALE: "IN",
+  MEDICAL_SALE: "IN",
+  LENS_CHANGE: "IN",
+  OTHER_SALE: "IN",
+  SUNGLASSES_PURCHASE: "OUT",
+  MEDICAL_PURCHASE: "OUT",
+  LENS_PURCHASE: "OUT",
+  OTHER_PURCHASE: "OUT",
+  BANK_DEPOSIT: "OUT",
+  EXPENSE: "OUT",
+  WITHDRAWAL: "OUT",
+  OTHER: "BOTH",
 } as const;
 
 export const stockMovementTypeLabels = {

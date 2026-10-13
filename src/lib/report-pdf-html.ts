@@ -31,11 +31,13 @@ export interface ReportPdfData {
   debtors: { customer: { name: string } | null; remaining: number }[];
   lowStock: { code: string | null; name: string; quantity: number; minQuantity: number }[];
   profit: { revenue: number; cost: number; profit: number };
+  expenses: number;
   periodLabel: string;
 }
 
 export function buildReportHtml(data: ReportPdfData): string {
-  const { shop, sales, topProducts, debtors, lowStock, profit, periodLabel } = data;
+  const { shop, sales, topProducts, debtors, lowStock, profit, expenses, periodLabel } = data;
+  const netProfit = profit.profit - expenses;
   const maxSale = Math.max(1, ...sales.map((s) => s.total));
   const generatedAt = new Date().toLocaleString("ar-EG", { dateStyle: "long", timeStyle: "short" });
   const topDebtors = debtors.slice(0, 10);
@@ -165,8 +167,9 @@ export function buildReportHtml(data: ReportPdfData): string {
 
     <div class="cards">
       <div class="stat-card revenue"><div class="label">الإيرادات (${esc(periodLabel)})</div><div class="value">${esc(fmtMoney(profit.revenue))}</div></div>
-      <div class="stat-card cost"><div class="label">التكلفة التقديرية</div><div class="value">${esc(fmtMoney(profit.cost))}</div></div>
-      <div class="stat-card profit"><div class="label">صافي الربح التقديري</div><div class="value">${esc(fmtMoney(profit.profit))}</div></div>
+      <div class="stat-card cost"><div class="label">تكلفة البضاعة</div><div class="value">${esc(fmtMoney(profit.cost))}</div></div>
+      <div class="stat-card cost"><div class="label">مصروفات الخزنة</div><div class="value">${esc(fmtMoney(expenses))}</div></div>
+      <div class="stat-card profit"><div class="label">صافي الربح</div><div class="value">${esc(fmtMoney(netProfit))}</div></div>
       <div class="stat-card debt"><div class="label">إجمالي المستحق على العملاء</div><div class="value">${esc(fmtMoney(totalDebt))}</div></div>
     </div>
 

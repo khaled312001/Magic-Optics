@@ -2,13 +2,13 @@
 
 import { revalidatePath } from "next/cache";
 import { prisma } from "@/lib/prisma";
-import { requireUser, requireAdmin } from "@/lib/auth-helpers";
+import { requireAdmin, requireInventoryEdit } from "@/lib/auth-helpers";
 import { productSchema, stockAdjustSchema } from "@/lib/validations";
 import { ActionResult, handleActionError, okResult } from "@/server/action-result";
 
 export async function createProduct(formData: FormData): Promise<ActionResult<{ id: number }>> {
   try {
-    await requireUser();
+    await requireInventoryEdit();
     const data = productSchema.parse(Object.fromEntries(formData));
 
     const product = await prisma.product.create({
@@ -34,7 +34,7 @@ export async function createProduct(formData: FormData): Promise<ActionResult<{ 
 
 export async function updateProduct(id: number, formData: FormData): Promise<ActionResult<{ id: number }>> {
   try {
-    await requireUser();
+    await requireInventoryEdit();
     const data = productSchema.parse(Object.fromEntries(formData));
 
     await prisma.product.update({
@@ -83,7 +83,7 @@ export async function deleteProduct(id: number): Promise<ActionResult> {
 
 export async function adjustStock(formData: FormData): Promise<ActionResult> {
   try {
-    const user = await requireUser();
+    const user = await requireInventoryEdit();
     const data = stockAdjustSchema.parse(Object.fromEntries(formData));
 
     const product = await prisma.product.findUniqueOrThrow({ where: { id: data.productId } });

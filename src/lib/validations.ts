@@ -109,6 +109,10 @@ export const cashEntrySchema = z.object({
     "MEDICAL_SALE",
     "LENS_CHANGE",
     "OTHER_SALE",
+    "SUNGLASSES_PURCHASE",
+    "MEDICAL_PURCHASE",
+    "LENS_PURCHASE",
+    "OTHER_PURCHASE",
     "BANK_DEPOSIT",
     "EXPENSE",
     "WITHDRAWAL",
@@ -120,6 +124,12 @@ export const cashEntrySchema = z.object({
 });
 export type CashEntryInput = z.infer<typeof cashEntrySchema>;
 
+const checkboxBool = (defaultValue: "true" | "false") =>
+  z
+    .union([z.literal("true"), z.literal("false")])
+    .default(defaultValue)
+    .transform((v) => v === "true");
+
 export const userSchema = z.object({
   name: z.string().trim().min(2, "الاسم مطلوب").max(150),
   username: z
@@ -130,10 +140,9 @@ export const userSchema = z.object({
     .regex(/^[a-zA-Z0-9_.]+$/, "اسم المستخدم يجب أن يكون بالإنجليزية بدون مسافات"),
   password: z.string().min(6, "كلمة المرور 6 أحرف على الأقل").max(100).optional().or(z.literal("")),
   role: z.enum(["ADMIN", "EMPLOYEE"]),
-  active: z
-    .union([z.literal("true"), z.literal("false")])
-    .default("true")
-    .transform((v) => v === "true"),
+  active: checkboxBool("true"),
+  canEditInventory: checkboxBool("true"),
+  canManageExpenses: checkboxBool("true"),
 });
 export type UserInput = z.infer<typeof userSchema>;
 
@@ -142,5 +151,6 @@ export const shopSettingsSchema = z.object({
   address: z.string().trim().max(300).optional().or(z.literal("")),
   phone: z.string().trim().max(30).optional().or(z.literal("")),
   phone2: z.string().trim().max(30).optional().or(z.literal("")),
+  examFee: z.coerce.number().min(0).default(0),
 });
 export type ShopSettingsInput = z.infer<typeof shopSettingsSchema>;

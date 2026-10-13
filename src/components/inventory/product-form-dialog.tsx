@@ -17,6 +17,7 @@ export function ProductFormDialog({
 }: {
   product?: SerializedProduct;
   defaultCategory?: string;
+  /** صاحب المحل: يظهر له حقل التكلفة فى النموذج (العمود نفسه أُزيل من جدول المخزون) */
   isAdmin: boolean;
 }) {
   const [open, setOpen] = useState(false);

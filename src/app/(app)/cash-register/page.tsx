@@ -28,6 +28,7 @@ export default async function CashRegisterPage({
   const selectedDate = date || todayStr();
   const session = await getServerSession(authOptions);
   const isAdmin = session?.user?.role === "ADMIN";
+  const canManageExpenses = isAdmin || session?.user?.canManageExpenses === true;
 
   const day = await getOrCreateCashDay(selectedDate);
 
@@ -43,7 +44,7 @@ export default async function CashRegisterPage({
         action={
           <div className="flex items-center gap-2">
             <ExportButton href={`/api/export/cash-register?date=${selectedDate}`} />
-            <AddCashEntryDialog date={selectedDate} />
+            <AddCashEntryDialog date={selectedDate} canManageExpenses={canManageExpenses} />
           </div>
         }
       />
@@ -53,21 +54,21 @@ export default async function CashRegisterPage({
       </div>
 
       <div className="mb-4 grid grid-cols-2 gap-3 sm:grid-cols-4">
-        <div className="rounded-xl border border-border bg-surface p-4">
-          <p className="text-xs text-muted">رصيد أول اليوم</p>
-          <p className="mt-1 text-lg font-bold text-foreground">{formatCurrency(day.openingBalance)}</p>
+        <div className="rounded-xl border-2 border-brand-navy/20 bg-surface p-4 shadow-sm">
+          <p className="text-xs font-medium text-muted">رصيد أول اليوم</p>
+          <p className="mt-1 text-xl font-extrabold text-brand-navy">{formatCurrency(day.openingBalance)}</p>
         </div>
-        <div className="rounded-xl border border-border bg-surface p-4">
-          <p className="text-xs text-muted">إجمالي الوارد</p>
-          <p className="mt-1 text-lg font-bold text-emerald-600">{formatCurrency(cashIn)}</p>
+        <div className="rounded-xl border-2 border-emerald-200 bg-emerald-50 p-4 shadow-sm">
+          <p className="text-xs font-medium text-emerald-700">إجمالي الوارد</p>
+          <p className="mt-1 text-xl font-extrabold text-emerald-700">{formatCurrency(cashIn)}</p>
         </div>
-        <div className="rounded-xl border border-border bg-surface p-4">
-          <p className="text-xs text-muted">إجمالي المنصرف</p>
-          <p className="mt-1 text-lg font-bold text-red-600">{formatCurrency(cashOut)}</p>
+        <div className="rounded-xl border-2 border-red-200 bg-red-50 p-4 shadow-sm">
+          <p className="text-xs font-medium text-red-700">إجمالي المنصرف</p>
+          <p className="mt-1 text-xl font-extrabold text-red-700">{formatCurrency(cashOut)}</p>
         </div>
-        <div className="rounded-xl border border-border bg-brand-navy p-4 text-white">
-          <p className="text-xs text-white/70">رصيد آخر اليوم</p>
-          <p className="mt-1 text-lg font-bold">{formatCurrency(closingBalance)}</p>
+        <div className="rounded-xl border-2 border-brand-navy bg-brand-navy p-4 text-white shadow-md shadow-brand-navy/20">
+          <p className="text-xs font-medium text-white/80">رصيد آخر اليوم</p>
+          <p className="mt-1 text-xl font-extrabold">{formatCurrency(closingBalance)}</p>
         </div>
       </div>
 

@@ -25,6 +25,8 @@ export async function createUser(formData: FormData): Promise<ActionResult<{ id:
         password: hashed,
         role: data.role,
         active: data.active,
+        canEditInventory: data.canEditInventory,
+        canManageExpenses: data.canManageExpenses,
       },
     });
 
@@ -47,6 +49,8 @@ export async function updateUser(id: number, formData: FormData): Promise<Action
         username: data.username,
         role: data.role,
         active: data.active,
+        canEditInventory: data.canEditInventory,
+        canManageExpenses: data.canManageExpenses,
         ...(data.password ? { password: await bcrypt.hash(data.password, 10) } : {}),
       },
     });

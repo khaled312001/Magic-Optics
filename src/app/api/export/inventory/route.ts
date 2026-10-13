@@ -8,7 +8,6 @@ import type { Prisma, ProductCategory } from "@prisma/client";
 export async function GET(request: Request) {
   const session = await getServerSession(authOptions);
   if (!session) return new Response("Unauthorized", { status: 401 });
-  const isAdmin = session.user?.role === "ADMIN";
 
   const { searchParams } = new URL(request.url);
   const category = searchParams.get("category");
@@ -17,19 +16,18 @@ export async function GET(request: Request) {
   const where: Prisma.ProductWhereInput = {
     active: true,
     ...(category ? { category: category as ProductCategory } : {}),
-    ...(q ? { OR: [{ name: { contains: q } }, { code: { contains: q } }, { factoryCode: { contains: q } }] } : {}),
+    ...(q ? { code: { contains: q } } : {}),
   };
 
   const products = await prisma.product.findMany({ where, orderBy: [{ category: "asc" }, { name: "asc" }] });
 
-  const headers = ["كود المحل", "كود المصنع", "الاسم", "الفئة", ...(isAdmin ? ["سعر التكلفة"] : []), "سعر البيع", "الكمية", "حد التنبيه"];
+  const headers = ["كود المحل", "كود المصنع", "الاسم", "الفئة", "سعر البيع", "الكمية", "حد التنبيه"];
 
   const rows = products.map((p) => [
     p.code ?? "",
     p.factoryCode ?? "",
     p.name,
     productCategoryShortLabels[p.category],
-    ...(isAdmin ? [Number(p.costPrice)] : []),
     Number(p.sellPrice),
     p.quantity,
     p.minQuantity,

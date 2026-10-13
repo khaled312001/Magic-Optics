@@ -6,6 +6,7 @@ import {
   getOutstandingBalances,
   getLowStockReport,
   getProfitSummary,
+  getCashExpenses,
   resolveReportRange,
 } from "@/server/reports";
 import { getShopSettings } from "@/server/settings";
@@ -28,16 +29,17 @@ export async function GET(request: Request) {
   const salesRange = resolveReportRange(fromParam, toParam, 14);
   const periodLabel = typeof range === "number" ? `${range} يوم` : `${formatDateUTC(range.from)} - ${formatDateUTC(range.until)}`;
 
-  const [sales, topProducts, debtors, lowStock, profit, shop] = await Promise.all([
+  const [sales, topProducts, debtors, lowStock, profit, expenses, shop] = await Promise.all([
     getSalesOverTime(salesRange),
     getTopProducts(range),
     getOutstandingBalances(),
     getLowStockReport(),
     getProfitSummary(range),
+    getCashExpenses(range),
     getShopSettings(),
   ]);
 
-  const html = buildReportHtml({ shop, sales, topProducts, debtors, lowStock, profit, periodLabel });
+  const html = buildReportHtml({ shop, sales, topProducts, debtors, lowStock, profit, expenses, periodLabel });
 
   let pdf: Buffer;
   try {

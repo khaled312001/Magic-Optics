@@ -35,6 +35,8 @@ export const authOptions: AuthOptions = {
           name: user.name,
           username: user.username,
           role: user.role,
+          canEditInventory: user.canEditInventory,
+          canManageExpenses: user.canManageExpenses,
         };
       },
     }),
@@ -45,6 +47,8 @@ export const authOptions: AuthOptions = {
         token.id = user.id;
         token.username = (user as { username: string }).username;
         token.role = (user as { role: "ADMIN" | "EMPLOYEE" }).role;
+        token.canEditInventory = (user as { canEditInventory: boolean }).canEditInventory;
+        token.canManageExpenses = (user as { canManageExpenses: boolean }).canManageExpenses;
       }
       return token;
     },
@@ -53,6 +57,8 @@ export const authOptions: AuthOptions = {
         session.user.id = token.id as string;
         session.user.username = token.username as string;
         session.user.role = token.role as "ADMIN" | "EMPLOYEE";
+        session.user.canEditInventory = token.canEditInventory as boolean;
+        session.user.canManageExpenses = token.canManageExpenses as boolean;
       }
       return session;
     },

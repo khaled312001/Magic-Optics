@@ -7,6 +7,7 @@ import {
   getOutstandingBalances,
   getLowStockReport,
   getProfitSummary,
+  getCashExpenses,
   resolveReportRange,
 } from "@/server/reports";
 import * as XLSX from "xlsx";
@@ -20,12 +21,13 @@ export async function GET(request: Request) {
   const range = resolveReportRange(searchParams.get("from") ?? undefined, searchParams.get("to") ?? undefined, 30);
   const salesRange = resolveReportRange(searchParams.get("from") ?? undefined, searchParams.get("to") ?? undefined, 14);
 
-  const [sales, topProducts, debtors, lowStock, profit] = await Promise.all([
+  const [sales, topProducts, debtors, lowStock, profit, expenses] = await Promise.all([
     getSalesOverTime(salesRange),
     getTopProducts(range),
     getOutstandingBalances(),
     getLowStockReport(),
     getProfitSummary(range),
+    getCashExpenses(range),
   ]);
 
   const wb = XLSX.utils.book_new();
@@ -61,8 +63,9 @@ export async function GET(request: Request) {
   const summarySheet = XLSX.utils.aoa_to_sheet([
     ["البند", "القيمة"],
     ["الإيرادات", profit.revenue],
-    ["التكلفة التقديرية", profit.cost],
-    ["صافي الربح التقديري", profit.profit],
+    ["تكلفة البضاعة المباعة", profit.cost],
+    ["مصروفات الخزنة", expenses],
+    ["صافي الربح", profit.profit - expenses],
   ]);
   summarySheet["!views"] = [{ rightToLeft: true }];
   XLSX.utils.book_append_sheet(wb, summarySheet, "ملخص الأرباح");

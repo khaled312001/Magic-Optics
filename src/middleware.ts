@@ -12,8 +12,9 @@ export const config = {
      * حماية كل المسارات ما عدا:
      * - /login
      * - /api/auth (نظام تسجيل الدخول)
+     * - /api/cron (مهام مجدولة من Vercel Cron، تتحقق من CRON_SECRET بنفسها)
      * - ملفات Next الثابتة والصور
      */
-    "/((?!login|api/auth|_next/static|_next/image|favicon.ico|logo.jpg).*)",
+    "/((?!login|api/auth|api/cron|_next/static|_next/image|favicon.ico|logo.jpg).*)",
   ],
 };

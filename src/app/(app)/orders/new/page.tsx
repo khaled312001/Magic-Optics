@@ -3,6 +3,7 @@ import { ChevronRight } from "lucide-react";
 import { prisma } from "@/lib/prisma";
 import { PageHeader } from "@/components/ui/page-header";
 import { OrderForm } from "@/components/orders/order-form";
+import { getShopSettings } from "@/server/settings";
 import { formatDate } from "@/lib/utils";
 
 export const dynamic = "force-dynamic";
@@ -14,7 +15,7 @@ export default async function NewOrderPage({
 }) {
   const { customerId } = await searchParams;
 
-  const [customers, products, preselected] = await Promise.all([
+  const [customers, products, preselected, shopSettings] = await Promise.all([
     prisma.customer.findMany({ select: { id: true, name: true, phone: true }, orderBy: { name: "asc" } }),
     prisma.product.findMany({
       where: { active: true },
@@ -27,6 +28,7 @@ export default async function NewOrderPage({
           select: { id: true, name: true, phone: true, prescriptions: { orderBy: { date: "desc" }, select: { id: true, date: true } } },
         })
       : null,
+    getShopSettings(),
   ]);
 
   return (
@@ -40,6 +42,7 @@ export default async function NewOrderPage({
       <OrderForm
         customers={customers}
         products={products.map((p) => ({ ...p, sellPrice: Number(p.sellPrice) }))}
+        examFee={Number(shopSettings.examFee)}
         preselectedCustomer={
           preselected
             ? {

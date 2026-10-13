@@ -27,3 +27,21 @@ export async function requireAdmin() {
   if (user.role !== "ADMIN") throw new UnauthorizedError("هذا الإجراء متاح للمدير فقط");
   return user;
 }
+
+/** يتأكد أن المستخدم مدير أو لديه صلاحية تعديل المخزون */
+export async function requireInventoryEdit() {
+  const user = await requireUser();
+  if (user.role !== "ADMIN" && !user.canEditInventory) {
+    throw new UnauthorizedError("ليس لديك صلاحية تعديل المخزون، راجع المدير");
+  }
+  return user;
+}
+
+/** يتأكد أن المستخدم مدير أو لديه صلاحية تسجيل حركات المنصرف بالخزنة */
+export async function requireExpenseManage() {
+  const user = await requireUser();
+  if (user.role !== "ADMIN" && !user.canManageExpenses) {
+    throw new UnauthorizedError("ليس لديك صلاحية تسجيل المصروفات، راجع المدير");
+  }
+  return user;
+}

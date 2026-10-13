@@ -12,6 +12,7 @@ import type { User } from "@prisma/client";
 
 export function UserFormDialog({ user }: { user?: User }) {
   const [open, setOpen] = useState(false);
+  const [role, setRole] = useState<"ADMIN" | "EMPLOYEE">(user?.role ?? "EMPLOYEE");
   const isEdit = Boolean(user);
 
   const { onSubmit, isPending, fieldErrors } = useActionForm(
@@ -57,7 +58,7 @@ export function UserFormDialog({ user }: { user?: User }) {
 
           <div>
             <Label htmlFor="role">الصلاحية</Label>
-            <Select id="role" name="role" defaultValue={user?.role ?? "EMPLOYEE"}>
+            <Select id="role" name="role" value={role} onChange={(e) => setRole(e.target.value as "ADMIN" | "EMPLOYEE")}>
               {Object.entries(roleLabels).map(([value, label]) => (
                 <option key={value} value={value}>
                   {label}
@@ -71,6 +72,34 @@ export function UserFormDialog({ user }: { user?: User }) {
             <input type="checkbox" name="active" value="true" defaultChecked={user?.active ?? true} className="size-4 rounded" />
             حساب مفعّل
           </label>
+
+          {role === "EMPLOYEE" && (
+            <div className="space-y-2 rounded-lg border border-border bg-background p-3">
+              <p className="text-xs font-medium text-muted">صلاحيات الموظف</p>
+              <label className="flex items-center gap-2 text-sm text-foreground">
+                <input type="hidden" name="canEditInventory" value="false" />
+                <input
+                  type="checkbox"
+                  name="canEditInventory"
+                  value="true"
+                  defaultChecked={user?.canEditInventory ?? true}
+                  className="size-4 rounded"
+                />
+                السماح بتعديل/إضافة أصناف المخزون وتسوية الكميات
+              </label>
+              <label className="flex items-center gap-2 text-sm text-foreground">
+                <input type="hidden" name="canManageExpenses" value="false" />
+                <input
+                  type="checkbox"
+                  name="canManageExpenses"
+                  value="true"
+                  defaultChecked={user?.canManageExpenses ?? true}
+                  className="size-4 rounded"
+                />
+                السماح بتسجيل حركات المنصرف بالخزنة (مصروفات/مشتريات/سحب)
+              </label>
+            </div>
+          )}
 
           <div className="flex justify-end gap-2 pt-2">
             <Button type="button" variant="outline" onClick={() => setOpen(false)}>

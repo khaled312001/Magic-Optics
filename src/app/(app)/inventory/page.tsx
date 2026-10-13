@@ -27,19 +27,12 @@ export default async function InventoryPage({
   const { category, q } = await searchParams;
   const session = await getServerSession(authOptions);
   const isAdmin = session?.user?.role === "ADMIN";
+  const canEditInventory = isAdmin || session?.user?.canEditInventory === true;
 
   const where: Prisma.ProductWhereInput = {
     active: true,
     ...(category ? { category: category as ProductCategory } : {}),
-    ...(q
-      ? {
-          OR: [
-            { name: { contains: q } },
-            { code: { contains: q } },
-            { factoryCode: { contains: q } },
-          ],
-        }
-      : {}),
+    ...(q ? { code: { contains: q } } : {}),
   };
 
   const rawProducts = await prisma.product.findMany({ where, orderBy: [{ category: "asc" }, { name: "asc" }] });
@@ -62,14 +55,14 @@ export default async function InventoryPage({
         action={
           <div className="flex items-center gap-2">
             <ExportButton href={`/api/export/inventory?${exportParams.toString()}`} />
-            <ProductFormDialog defaultCategory={category} isAdmin={isAdmin} />
+            {canEditInventory && <ProductFormDialog defaultCategory={category} isAdmin={isAdmin} />}
           </div>
         }
       />
 
       <div className="mb-4 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <CategoryTabs />
-        <SearchBox placeholder="ابحث بالاسم أو كود المحل أو كود المصنع..." />
+        <SearchBox placeholder="ابحث بالكود..." />
       </div>
 
       {products.length === 0 ? (
@@ -83,7 +76,6 @@ export default async function InventoryPage({
                 <th className="px-4 py-3 font-medium">كود المصنع</th>
                 <th className="px-4 py-3 font-medium">الاسم</th>
                 <th className="px-4 py-3 font-medium">الفئة</th>
-                {isAdmin && <th className="px-4 py-3 font-medium">التكلفة</th>}
                 <th className="px-4 py-3 font-medium">سعر البيع</th>
                 <th className="px-4 py-3 font-medium">الكمية</th>
                 <th className="px-4 py-3 font-medium"></th>
@@ -92,21 +84,23 @@ export default async function InventoryPage({
             <tbody className="divide-y divide-border">
               {products.map((p) => (
                 <tr key={p.id} className="hover:bg-background">
-                  <td className="px-4 py-3 text-muted">{p.code || "-"}</td>
+                  <td className="px-4 py-3 font-medium text-brand-navy">{p.code || "-"}</td>
                   <td className="px-4 py-3 text-muted">{p.factoryCode || "-"}</td>
                   <td className="px-4 py-3 font-medium text-foreground">{p.name}</td>
                   <td className="px-4 py-3 text-muted">{productCategoryShortLabels[p.category]}</td>
-                  {isAdmin && <td className="px-4 py-3 text-muted">{formatCurrency(p.costPrice)}</td>}
-                  <td className="px-4 py-3 font-medium text-foreground">{formatCurrency(p.sellPrice)}</td>
+                  <td className="px-4 py-3 font-semibold text-brand-teal-dark">{formatCurrency(p.sellPrice)}</td>
                   <td className="px-4 py-3">
-                    <Badge color={p.quantity === 0 ? "red" : p.quantity <= p.minQuantity ? "amber" : "green"}>
+                    <Badge
+                      color={p.quantity === 0 ? "red" : p.quantity <= p.minQuantity ? "amber" : "green"}
+                      solid={p.quantity === 0}
+                    >
                       {p.quantity}
                     </Badge>
                   </td>
                   <td className="px-4 py-3">
                     <div className="flex items-center justify-end gap-1">
-                      <StockAdjustDialog product={p} />
-                      <ProductFormDialog product={p} isAdmin={isAdmin} />
+                      {canEditInventory && <StockAdjustDialog product={p} />}
+                      {canEditInventory && <ProductFormDialog product={p} isAdmin={isAdmin} />}
                       {isAdmin && <DeleteButton action={deleteProduct.bind(null, p.id)} confirmMessage={`حذف "${p.name}" نهائياً؟`} />}
                     </div>
                   </td>

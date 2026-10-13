@@ -2,7 +2,7 @@
 
 import { useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
-import { Plus, Trash2, UserPlus, User } from "lucide-react";
+import { Plus, Trash2, UserPlus, User, Eye } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input, Label, Select, Textarea, FieldError } from "@/components/ui/input";
 import { Combobox, type ComboboxItem } from "@/components/ui/combobox";
@@ -34,19 +34,41 @@ function emptyRow(): ItemRow {
   return { key: Math.random().toString(36).slice(2), productId: null, description: "", quantity: 1, unitPrice: 0 };
 }
 
+const EXAM_FEE_DESCRIPTION = "كشف نظر عدسات";
+
 export function OrderForm({
   customers,
   products,
   preselectedCustomer,
+  examFee = 0,
 }: {
   customers: CustomerOption[];
   products: ProductOption[];
   preselectedCustomer?: { id: number; name: string; phone: string | null; prescriptions: PrescriptionOption[] };
+  /** سعر كشف نظر العدسات (من بيانات المحل) - يُقترح كصنف اختياري عند اختيار نوع الطلب "نظارة طبية" */
+  examFee?: number;
 }) {
   const router = useRouter();
   const [customerMode, setCustomerMode] = useState<"existing" | "new">(preselectedCustomer ? "existing" : "existing");
   const [selectedCustomer, setSelectedCustomer] = useState<CustomerOption | null>(preselectedCustomer ?? null);
   const [items, setItems] = useState<ItemRow[]>([emptyRow()]);
+  const [orderType, setOrderType] = useState("MEDICAL");
+
+  const hasExamFeeItem = items.some((i) => i.description === EXAM_FEE_DESCRIPTION);
+
+  function toggleExamFee(checked: boolean) {
+    if (checked) {
+      setItems((rows) => {
+        const withoutEmpty = rows.filter((r) => r.description.trim() || r.productId);
+        return [...withoutEmpty, { key: Math.random().toString(36).slice(2), productId: null, description: EXAM_FEE_DESCRIPTION, quantity: 1, unitPrice: examFee }];
+      });
+    } else {
+      setItems((rows) => {
+        const next = rows.filter((r) => r.description !== EXAM_FEE_DESCRIPTION);
+        return next.length > 0 ? next : [emptyRow()];
+      });
+    }
+  }
 
   const { onSubmit, isPending, fieldErrors, error } = useActionForm(createOrder, {
     successMessage: "تم إنشاء الفاتورة",
@@ -169,7 +191,7 @@ export function OrderForm({
           <div className="grid grid-cols-2 gap-3">
             <div>
               <Label htmlFor="type">نوع الطلب</Label>
-              <Select id="type" name="type" defaultValue="MEDICAL">
+              <Select id="type" name="type" value={orderType} onChange={(e) => setOrderType(e.target.value)}>
                 {Object.entries(orderTypeLabels).map(([value, label]) => (
                   <option key={value} value={value}>
                     {label}
@@ -188,6 +210,19 @@ export function OrderForm({
               </Select>
             </div>
           </div>
+
+          {orderType === "MEDICAL" && (
+            <label className="flex items-center gap-2 rounded-lg border border-dashed border-brand-teal/40 bg-brand-teal/5 px-3 py-2.5 text-sm text-foreground">
+              <input
+                type="checkbox"
+                checked={hasExamFeeItem}
+                onChange={(e) => toggleExamFee(e.target.checked)}
+                className="size-4 rounded"
+              />
+              <Eye className="size-4 text-brand-teal-dark" />
+              إضافة كشف نظر عدسات على الفاتورة ({formatCurrency(examFee)})
+            </label>
+          )}
 
           <div>
             <Label htmlFor="deliveryDate">موعد التسليم</Label>
