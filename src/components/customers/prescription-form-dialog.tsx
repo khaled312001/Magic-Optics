@@ -2,13 +2,15 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { Plus, User, UserPlus } from "lucide-react";
+import { Plus, User, UserPlus, Receipt } from "lucide-react";
 import { Dialog } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
-import { Input, Label, Textarea, FieldError } from "@/components/ui/input";
+import { Input, Label, Select, Textarea, FieldError } from "@/components/ui/input";
 import { Combobox, type ComboboxItem } from "@/components/ui/combobox";
 import { useActionForm } from "@/components/ui/use-action-form";
 import { createPrescription } from "@/server/customers";
+import { orderTypeLabels } from "@/lib/labels";
+import { formatCurrency } from "@/lib/utils";
 
 type CustomerOption = { id: number; name: string; phone: string | null };
 
@@ -23,14 +25,20 @@ export function PrescriptionFormDialog({
   const [open, setOpen] = useState(false);
   const [customerMode, setCustomerMode] = useState<"existing" | "new">("existing");
   const [selectedCustomer, setSelectedCustomer] = useState<CustomerOption | null>(null);
+  const [withOrder, setWithOrder] = useState(false);
+  const [totalAmount, setTotalAmount] = useState(0);
+  const [paidAmount, setPaidAmount] = useState(0);
+  const remaining = Math.max(0, totalAmount - paidAmount);
 
   const { onSubmit, isPending, fieldErrors, error } = useActionForm(createPrescription, {
     successMessage: "تم حفظ الكشف الطبي",
     onSuccess: (data) => {
       setOpen(false);
-      if (!customerId) router.push(`/prescriptions/${(data as { id: number }).id}`);
+      const result = data as { id: number; orderId?: number };
+      if (result.orderId) router.push(`/orders/${result.orderId}/receipt?auto=1`);
+      else if (!customerId) router.push(`/prescriptions/${result.id}`);
     },
-    refresh: !!customerId,
+    refresh: !!customerId && !withOrder,
   });
 
   const customerItems: ComboboxItem[] = (customers ?? []).map((c) => ({ id: c.id, label: c.name, sublabel: c.phone ?? undefined }));
@@ -153,6 +161,67 @@ export function PrescriptionFormDialog({
           <div>
             <Label htmlFor="p-notes">ملاحظات</Label>
             <Textarea id="p-notes" name="notes" rows={2} />
+          </div>
+
+          <div className="rounded-lg border border-dashed border-brand-teal/40 bg-brand-teal/5 p-3">
+            <label className="flex items-center gap-2 text-sm font-medium text-foreground">
+              <input
+                type="checkbox"
+                checked={withOrder}
+                onChange={(e) => setWithOrder(e.target.checked)}
+                className="size-4 rounded"
+              />
+              <Receipt className="size-4 text-brand-teal-dark" />
+              إضافة طلب/فاتورة مرتبطة بهذا الكشف
+            </label>
+
+            {withOrder && (
+              <div className="mt-3 grid grid-cols-2 gap-3">
+                <div>
+                  <Label htmlFor="orderType">نوع الطلب</Label>
+                  <Select id="orderType" name="orderType" defaultValue="MEDICAL">
+                    {Object.entries(orderTypeLabels).map(([value, label]) => (
+                      <option key={value} value={value}>
+                        {label}
+                      </option>
+                    ))}
+                  </Select>
+                </div>
+                <div>
+                  <Label htmlFor="deliveryDate">ميعاد الاستلام</Label>
+                  <Input id="deliveryDate" name="deliveryDate" type="date" />
+                </div>
+                <div>
+                  <Label htmlFor="totalAmount">القيمة</Label>
+                  <Input
+                    id="totalAmount"
+                    name="totalAmount"
+                    type="number"
+                    min={0}
+                    step="0.01"
+                    value={totalAmount || ""}
+                    onChange={(e) => setTotalAmount(Number(e.target.value) || 0)}
+                  />
+                </div>
+                <div>
+                  <Label htmlFor="paidAmount">الدفعة</Label>
+                  <Input
+                    id="paidAmount"
+                    name="paidAmount"
+                    type="number"
+                    min={0}
+                    max={totalAmount}
+                    step="0.01"
+                    value={paidAmount || ""}
+                    onChange={(e) => setPaidAmount(Number(e.target.value) || 0)}
+                  />
+                </div>
+                <div className="col-span-2 flex items-center justify-between rounded-lg bg-background px-3 py-2 text-sm">
+                  <span className="text-muted">الباقي</span>
+                  <span className="font-bold text-red-600">{formatCurrency(remaining)}</span>
+                </div>
+              </div>
+            )}
           </div>
 
           <div className="flex justify-end gap-2 pt-2">

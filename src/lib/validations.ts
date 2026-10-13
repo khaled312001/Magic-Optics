@@ -33,6 +33,11 @@ export const prescriptionSchema = z
     leftAxisNear: numOrEmpty,
     ipd: numOrEmpty,
     notes: z.string().trim().max(2000).optional().or(z.literal("")),
+    // تفاصيل الطلب المرتبط (اختياري) - تطابق سلّة الكشف الورقية التي تجمع بيانات الفحص والطلب فى إيصال واحد
+    orderType: z.enum(["MEDICAL", "SUNGLASSES", "LENS_CHANGE", "OTHER"]).optional(),
+    totalAmount: numOrEmpty,
+    paidAmount: numOrEmpty,
+    deliveryDate: z.string().optional().or(z.literal("")),
   })
   .refine((data) => data.customerId || data.newCustomerName?.trim(), {
     message: "اختر عميلاً أو أدخل اسم عميل جديد",

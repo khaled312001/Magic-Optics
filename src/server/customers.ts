@@ -5,6 +5,8 @@ import { prisma } from "@/lib/prisma";
 import { requireUser, requireAdmin } from "@/lib/auth-helpers";
 import { customerSchema, prescriptionSchema } from "@/lib/validations";
 import { ActionResult, handleActionError, okResult } from "@/server/action-result";
+import { generateReceiptNumber } from "@/lib/utils";
+import { orderTypeLabels } from "@/lib/labels";
 
 export async function createCustomer(formData: FormData): Promise<ActionResult<{ id: number }>> {
   try {
@@ -81,7 +83,9 @@ export async function searchCustomers(query: string) {
   });
 }
 
-export async function createPrescription(formData: FormData): Promise<ActionResult<{ id: number }>> {
+export async function createPrescription(
+  formData: FormData
+): Promise<ActionResult<{ id: number; orderId?: number }>> {
   try {
     const user = await requireUser();
     const raw = Object.fromEntries(formData);
@@ -116,9 +120,44 @@ export async function createPrescription(formData: FormData): Promise<ActionResu
       },
     });
 
+    // لو العميل كتب قيمة الطلب، يتولد فاتورة مرتبطة بهذا الكشف تلقائياً (زي سلّة الفحص الورقية التي تجمع الكشف والطلب معاً)
+    let orderId: number | undefined;
+    if (data.totalAmount && data.totalAmount > 0) {
+      const orderType = data.orderType ?? "MEDICAL";
+      const paidAmount = Math.min(data.paidAmount ?? 0, data.totalAmount);
+
+      const order = await prisma.order.create({
+        data: {
+          receiptNumber: generateReceiptNumber(),
+          customerId,
+          prescriptionId: prescription.id,
+          type: orderType,
+          status: "PENDING",
+          totalAmount: data.totalAmount,
+          paidAmount,
+          deliveryDate: data.deliveryDate ? new Date(data.deliveryDate) : null,
+          createdById: Number(user.id),
+          items: {
+            create: [
+              {
+                description: orderTypeLabels[orderType],
+                quantity: 1,
+                unitPrice: data.totalAmount,
+                subtotal: data.totalAmount,
+              },
+            ],
+          },
+          payments: paidAmount > 0 ? { create: [{ amount: paidAmount, createdById: Number(user.id) }] } : undefined,
+        },
+      });
+      orderId = order.id;
+      revalidatePath("/orders");
+      revalidatePath("/dashboard");
+    }
+
     revalidatePath(`/customers/${customerId}`);
     revalidatePath("/prescriptions");
-    return okResult({ id: prescription.id });
+    return okResult({ id: prescription.id, orderId });
   } catch (err) {
     return handleActionError(err);
   }
