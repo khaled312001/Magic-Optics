@@ -23,7 +23,7 @@ export default async function ReceiptPage({
   const [order, shop] = await Promise.all([
     prisma.order.findUnique({
       where: { id: Number(id) },
-      include: { customer: true, items: true, payments: true },
+      include: { customer: true, items: true, payments: true, createdBy: true },
     }),
     getShopSettings(),
   ]);
@@ -82,6 +82,12 @@ export default async function ReceiptPage({
             <div className="flex justify-between">
               <span className="text-muted">موعد الاستلام</span>
               <span className="font-medium text-foreground">{formatDate(order.deliveryDate)}</span>
+            </div>
+          )}
+          {order.createdBy && (
+            <div className="flex justify-between">
+              <span className="text-muted">بواسطة</span>
+              <span className="text-foreground">{order.createdBy.name}</span>
             </div>
           )}
         </div>

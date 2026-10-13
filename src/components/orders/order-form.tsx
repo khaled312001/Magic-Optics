@@ -34,7 +34,7 @@ function emptyRow(): ItemRow {
   return { key: Math.random().toString(36).slice(2), productId: null, description: "", quantity: 1, unitPrice: 0 };
 }
 
-const EXAM_FEE_DESCRIPTION = "كشف نظر عدسات";
+const EXAM_FEE_DESCRIPTION = "عدسات";
 
 export function OrderForm({
   customers,
