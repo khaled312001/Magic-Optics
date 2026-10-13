@@ -6,7 +6,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { EmptyState } from "@/components/ui/empty-state";
 import { DeleteButton } from "@/components/ui/delete-button";
-import { DateNav } from "@/components/cash-register/date-nav";
+import { DateNav } from "@/components/ui/date-nav";
 import { AddCashEntryDialog } from "@/components/cash-register/add-cash-entry-dialog";
 import { ExportButton } from "@/components/ui/export-button";
 import { getOrCreateCashDay, deleteCashEntry } from "@/server/cashRegister";
@@ -50,7 +50,7 @@ export default async function CashRegisterPage({
       />
 
       <div className="mb-4">
-        <DateNav date={selectedDate} />
+        <DateNav date={selectedDate} basePath="/cash-register" />
       </div>
 
       <div className="mb-4 grid grid-cols-2 gap-3 sm:grid-cols-4">

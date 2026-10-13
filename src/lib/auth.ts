@@ -30,6 +30,8 @@ export const authOptions: AuthOptions = {
         const isValid = await bcrypt.compare(credentials.password, user.password);
         if (!isValid) return null;
 
+        await prisma.loginLog.create({ data: { userId: user.id } });
+
         return {
           id: String(user.id),
           name: user.name,

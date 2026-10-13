@@ -37,8 +37,21 @@ model User {
   cashEntries  CashEntry[]
   stockMoves   StockMovement[]
   prescriptions Prescription[]
+  loginLogs    LoginLog[]
 
   @@map("users")
+}
+
+// سجل تسجيلات الدخول (للسجل اليومي - متابعة نشاط الموظفين)
+model LoginLog {
+  id        Int      @id @default(autoincrement())
+  userId    Int
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  createdAt DateTime @default(now())
+
+  @@index([userId])
+  @@index([createdAt])
+  @@map("login_logs")
 }
 
 // ---------------------------------------------------------------------------

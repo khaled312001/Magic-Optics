@@ -6,13 +6,13 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { formatDate } from "@/lib/utils";
 
-export function DateNav({ date }: { date: string }) {
+export function DateNav({ date, basePath }: { date: string; basePath: string }) {
   const router = useRouter();
 
   function go(offsetDays: number) {
     const d = new Date(date);
     d.setDate(d.getDate() + offsetDays);
-    router.push(`/cash-register?date=${d.toISOString().slice(0, 10)}`);
+    router.push(`${basePath}?date=${d.toISOString().slice(0, 10)}`);
   }
 
   return (
@@ -23,7 +23,7 @@ export function DateNav({ date }: { date: string }) {
       <Input
         type="date"
         value={date}
-        onChange={(e) => router.push(`/cash-register?date=${e.target.value}`)}
+        onChange={(e) => router.push(`${basePath}?date=${e.target.value}`)}
         className="w-40"
       />
       <Button variant="outline" size="icon" onClick={() => go(1)} title="اليوم التالي">
