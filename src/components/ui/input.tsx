@@ -7,7 +7,7 @@ export const Input = forwardRef<HTMLInputElement, React.InputHTMLAttributes<HTML
       <input
         ref={ref}
         className={cn(
-          "h-10 w-full rounded-lg border border-border bg-surface px-3 text-sm text-foreground",
+          "h-10 w-full rounded-lg border border-slate-300 bg-surface px-3 text-sm text-foreground",
           "placeholder:text-muted",
           "focus:outline-none focus:ring-2 focus:ring-brand-teal/40 focus:border-brand-teal",
           "disabled:opacity-50 disabled:cursor-not-allowed",
@@ -26,7 +26,7 @@ export const Textarea = forwardRef<HTMLTextAreaElement, React.TextareaHTMLAttrib
       <textarea
         ref={ref}
         className={cn(
-          "w-full rounded-lg border border-border bg-surface px-3 py-2 text-sm text-foreground",
+          "w-full rounded-lg border border-slate-300 bg-surface px-3 py-2 text-sm text-foreground",
           "placeholder:text-muted",
           "focus:outline-none focus:ring-2 focus:ring-brand-teal/40 focus:border-brand-teal",
           "disabled:opacity-50 disabled:cursor-not-allowed",
@@ -45,7 +45,7 @@ export const Select = forwardRef<HTMLSelectElement, React.SelectHTMLAttributes<H
       <select
         ref={ref}
         className={cn(
-          "h-10 w-full rounded-lg border border-border bg-surface px-3 text-sm text-foreground",
+          "h-10 w-full rounded-lg border border-slate-300 bg-surface px-3 text-sm text-foreground",
           "focus:outline-none focus:ring-2 focus:ring-brand-teal/40 focus:border-brand-teal",
           "disabled:opacity-50 disabled:cursor-not-allowed",
           className

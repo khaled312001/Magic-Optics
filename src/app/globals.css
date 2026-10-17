@@ -15,21 +15,94 @@
   --brand-teal-light: #5eead4;
 }
 
+/* ألوان hex داخل @theme عادي (وليس inline) حتى يولّد Tailwind لكل لون شفاف
+   (مثل bg-brand-teal/5) قيمة hex احتياطية تعمل على Chrome 109 / Windows 7،
+   لأن @theme inline يحوّلها إلى oklab() غير المدعومة هناك. */
+@theme {
+  --color-background: #f3f5f9;
+  --color-surface: #ffffff;
+  --color-foreground: #16213e;
+  --color-muted: #667085;
+  --color-border: #e5e9f0;
+
+  --color-brand-navy: #0f2a52;
+  --color-brand-navy-dark: #081a36;
+  --color-brand-navy-light: #1f4785;
+  --color-brand-teal: #0eaea3;
+  --color-brand-teal-dark: #0a8a81;
+  --color-brand-teal-light: #5eead4;
+}
+
 @theme inline {
-  --color-background: var(--background);
-  --color-surface: var(--surface);
-  --color-foreground: var(--foreground);
-  --color-muted: var(--muted);
-  --color-border: var(--border);
-
-  --color-brand-navy: var(--brand-navy);
-  --color-brand-navy-dark: var(--brand-navy-dark);
-  --color-brand-navy-light: var(--brand-navy-light);
-  --color-brand-teal: var(--brand-teal);
-  --color-brand-teal-dark: var(--brand-teal-dark);
-  --color-brand-teal-light: var(--brand-teal-light);
-
   --font-sans: var(--font-cairo);
+}
+
+/* لوحة Tailwind الافتراضية مكتوبة بـ oklch() التي لا يعرضها Chrome 109
+   (آخر إصدار على Windows 7 المستخدم فى المحل)، فتختفي الألوان. نعيد تعريف
+   الدرجات المستخدمة بقيم hex مكافئة. */
+@theme {
+  --color-white: #ffffff;
+  --color-black: #000000;
+
+  --color-slate-50: #f8fafc;
+  --color-slate-100: #f1f5f9;
+  --color-slate-200: #e2e8f0;
+  --color-slate-300: #cbd5e1;
+  --color-slate-400: #94a3b8;
+  --color-slate-500: #64748b;
+  --color-slate-600: #475569;
+  --color-slate-700: #334155;
+  --color-slate-800: #1e293b;
+  --color-slate-900: #0f172a;
+  --color-slate-950: #020617;
+
+  --color-red-50: #fef2f2;
+  --color-red-100: #fee2e2;
+  --color-red-200: #fecaca;
+  --color-red-300: #fca5a5;
+  --color-red-400: #f87171;
+  --color-red-500: #ef4444;
+  --color-red-600: #dc2626;
+  --color-red-700: #b91c1c;
+  --color-red-800: #991b1b;
+  --color-red-900: #7f1d1d;
+  --color-red-950: #450a0a;
+
+  --color-amber-50: #fffbeb;
+  --color-amber-100: #fef3c7;
+  --color-amber-200: #fde68a;
+  --color-amber-300: #fcd34d;
+  --color-amber-400: #fbbf24;
+  --color-amber-500: #f59e0b;
+  --color-amber-600: #d97706;
+  --color-amber-700: #b45309;
+  --color-amber-800: #92400e;
+  --color-amber-900: #78350f;
+  --color-amber-950: #451a03;
+
+  --color-emerald-50: #ecfdf5;
+  --color-emerald-100: #d1fae5;
+  --color-emerald-200: #a7f3d0;
+  --color-emerald-300: #6ee7b7;
+  --color-emerald-400: #34d399;
+  --color-emerald-500: #10b981;
+  --color-emerald-600: #059669;
+  --color-emerald-700: #047857;
+  --color-emerald-800: #065f46;
+  --color-emerald-900: #064e3b;
+  --color-emerald-950: #022c22;
+
+  --color-blue-50: #eff6ff;
+  --color-blue-100: #dbeafe;
+  --color-blue-200: #bfdbfe;
+  --color-blue-300: #93c5fd;
+  --color-blue-400: #60a5fa;
+  --color-blue-500: #3b82f6;
+  --color-blue-600: #2563eb;
+  --color-blue-700: #1d4ed8;
+  --color-blue-800: #1e40af;
+  --color-blue-900: #1e3a8a;
+  --color-blue-950: #172554;
 }
 
 /* الوضع الفاتح (White) ثابت دائماً فى هذا النظام، بغض النظر عن إعداد نظام
@@ -56,7 +129,7 @@ body {
   background: transparent;
 }
 ::-webkit-scrollbar-thumb {
-  background: color-mix(in srgb, var(--muted) 40%, transparent);
+  background: rgba(102, 112, 133, 0.4);
   border-radius: 999px;
 }
 

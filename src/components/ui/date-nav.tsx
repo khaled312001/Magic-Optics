@@ -3,7 +3,7 @@
 import { useRouter } from "next/navigation";
 import { ChevronRight, ChevronLeft } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
+import { DateField } from "@/components/ui/date-field";
 import { formatDate } from "@/lib/utils";
 
 export function DateNav({ date, basePath }: { date: string; basePath: string }) {
@@ -20,12 +20,7 @@ export function DateNav({ date, basePath }: { date: string; basePath: string }) 
       <Button variant="outline" size="icon" onClick={() => go(-1)} title="اليوم السابق">
         <ChevronRight className="size-4" />
       </Button>
-      <Input
-        type="date"
-        value={date}
-        onChange={(e) => router.push(`${basePath}?date=${e.target.value}`)}
-        className="w-40"
-      />
+      <DateField value={date} onChange={(v) => v && router.push(`${basePath}?date=${v}`)} />
       <Button variant="outline" size="icon" onClick={() => go(1)} title="اليوم التالي">
         <ChevronLeft className="size-4" />
       </Button>

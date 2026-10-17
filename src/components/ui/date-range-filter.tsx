@@ -2,7 +2,7 @@
 
 import { useRouter, usePathname, useSearchParams } from "next/navigation";
 import { X } from "lucide-react";
-import { Input } from "@/components/ui/input";
+import { DateField } from "@/components/ui/date-field";
 
 export function DateRangeFilter({ fromKey = "from", toKey = "to" }: { fromKey?: string; toKey?: string }) {
   const router = useRouter();
@@ -26,9 +26,9 @@ export function DateRangeFilter({ fromKey = "from", toKey = "to" }: { fromKey?: 
 
   return (
     <div className="flex flex-wrap items-center gap-2">
-      <Input type="date" value={from} onChange={(e) => update({ from: e.target.value })} className="h-9 w-[150px]" aria-label="من تاريخ" />
+      <DateField value={from} onChange={(v) => update({ from: v })} className="h-9 w-40" aria-label="من تاريخ" />
       <span className="text-xs text-muted">إلى</span>
-      <Input type="date" value={to} onChange={(e) => update({ to: e.target.value })} className="h-9 w-[150px]" aria-label="إلى تاريخ" />
+      <DateField value={to} onChange={(v) => update({ to: v })} className="h-9 w-40" aria-label="إلى تاريخ" />
       {hasFilter && (
         <button
           type="button"

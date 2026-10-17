@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { Plus, User, UserPlus, Receipt } from "lucide-react";
+import { Plus, User, Receipt } from "lucide-react";
 import { Dialog } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Input, Label, Select, Textarea, FieldError } from "@/components/ui/input";
@@ -11,6 +11,7 @@ import { useActionForm } from "@/components/ui/use-action-form";
 import { createPrescription } from "@/server/customers";
 import { orderTypeLabels } from "@/lib/labels";
 import { formatCurrency } from "@/lib/utils";
+import { DateField, todayIso } from "@/components/ui/date-field";
 
 type CustomerOption = { id: number; name: string; phone: string | null };
 
@@ -23,7 +24,6 @@ export function PrescriptionFormDialog({
 }) {
   const router = useRouter();
   const [open, setOpen] = useState(false);
-  const [customerMode, setCustomerMode] = useState<"existing" | "new">("existing");
   const [selectedCustomer, setSelectedCustomer] = useState<CustomerOption | null>(null);
   const [withOrder, setWithOrder] = useState(false);
   const [totalAmount, setTotalAmount] = useState(0);
@@ -57,60 +57,60 @@ export function PrescriptionFormDialog({
           {customerId ? (
             <input type="hidden" name="customerId" value={customerId} />
           ) : (
-            <div>
-              <div className="mb-2 flex gap-1 rounded-lg bg-background p-1 text-xs">
-                <button
-                  type="button"
-                  onClick={() => setCustomerMode("existing")}
-                  className={`flex items-center gap-1 rounded-md px-2.5 py-1.5 font-medium ${customerMode === "existing" ? "bg-surface shadow-sm text-foreground" : "text-muted"}`}
-                >
-                  <User className="size-3.5" /> عميل حالي
-                </button>
-                <button
-                  type="button"
-                  onClick={() => {
-                    setCustomerMode("new");
-                    setSelectedCustomer(null);
-                  }}
-                  className={`flex items-center gap-1 rounded-md px-2.5 py-1.5 font-medium ${customerMode === "new" ? "bg-surface shadow-sm text-foreground" : "text-muted"}`}
-                >
-                  <UserPlus className="size-3.5" /> عميل جديد
-                </button>
-              </div>
-
-              {customerMode === "existing" ? (
-                <div>
-                  {selectedCustomer && <input type="hidden" name="customerId" value={selectedCustomer.id} />}
-                  <Label>اختر العميل</Label>
-                  <Combobox
-                    items={customerItems}
-                    placeholder="ابحث بالاسم أو الهاتف..."
-                    selectedLabel={selectedCustomer?.name}
-                    onSelect={(item) => {
-                      const c = (customers ?? []).find((x) => x.id === item.id);
-                      if (c) setSelectedCustomer(c);
-                    }}
-                  />
-                  <FieldError>{fieldErrors.customerId}</FieldError>
+            <div className="space-y-3">
+              {selectedCustomer ? (
+                <div className="flex items-center justify-between gap-3 rounded-lg border border-brand-teal/40 bg-brand-teal/5 px-3 py-2.5">
+                  <input type="hidden" name="customerId" value={selectedCustomer.id} />
+                  <div className="flex min-w-0 items-center gap-2 text-sm">
+                    <User className="size-4 shrink-0 text-brand-teal-dark" />
+                    <span className="truncate font-medium text-foreground">{selectedCustomer.name}</span>
+                    {selectedCustomer.phone && (
+                      <span className="text-muted" dir="ltr">
+                        {selectedCustomer.phone}
+                      </span>
+                    )}
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => setSelectedCustomer(null)}
+                    className="shrink-0 text-xs font-medium text-brand-navy hover:underline"
+                  >
+                    تغيير
+                  </button>
                 </div>
               ) : (
-                <div className="grid grid-cols-2 gap-3">
+                <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
                   <div>
                     <Label htmlFor="newCustomerName">اسم العميل *</Label>
                     <Input id="newCustomerName" name="newCustomerName" required />
                   </div>
                   <div>
-                    <Label htmlFor="newCustomerPhone">رقم الهاتف</Label>
-                    <Input id="newCustomerPhone" name="newCustomerPhone" dir="ltr" className="text-right" />
+                    <Label htmlFor="newCustomerPhone">رقم التليفون</Label>
+                    <Input id="newCustomerPhone" name="newCustomerPhone" inputMode="tel" dir="ltr" className="text-right" />
                   </div>
                 </div>
               )}
+
+              {!selectedCustomer && customerItems.length > 0 && (
+                <div>
+                  <Label className="text-xs text-muted">أو اختر عميل مسجل من قبل</Label>
+                  <Combobox
+                    items={customerItems}
+                    placeholder="ابحث بالاسم أو التليفون..."
+                    onSelect={(item) => {
+                      const c = (customers ?? []).find((x) => x.id === item.id);
+                      if (c) setSelectedCustomer(c);
+                    }}
+                  />
+                </div>
+              )}
+              <FieldError>{fieldErrors.customerId}</FieldError>
             </div>
           )}
 
           <div className="w-40">
             <Label htmlFor="p-date">التاريخ</Label>
-            <Input id="p-date" name="date" type="date" defaultValue={new Date().toISOString().slice(0, 10)} />
+            <DateField id="p-date" name="date" defaultValue={todayIso()} />
           </div>
 
           <div className="overflow-x-auto">
@@ -197,7 +197,7 @@ export function PrescriptionFormDialog({
                 </div>
                 <div>
                   <Label htmlFor="deliveryDate">ميعاد الاستلام</Label>
-                  <Input id="deliveryDate" name="deliveryDate" type="date" />
+                  <DateField id="deliveryDate" name="deliveryDate" className="w-full" />
                 </div>
                 <div className="col-span-2">
                   <Label htmlFor="orderDescription">اسم الصنف / تفاصيل الطلب</Label>

@@ -2,7 +2,7 @@
 
 import { useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
-import { Plus, Trash2, UserPlus, User, Eye } from "lucide-react";
+import { Plus, Trash2, User, Eye } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input, Label, Select, Textarea, FieldError } from "@/components/ui/input";
 import { Combobox, type ComboboxItem } from "@/components/ui/combobox";
@@ -11,6 +11,7 @@ import { useActionForm } from "@/components/ui/use-action-form";
 import { createOrder } from "@/server/orders";
 import { formatCurrency } from "@/lib/utils";
 import { orderTypeLabels, orderStatusLabels, productCategoryShortLabels } from "@/lib/labels";
+import { DateField } from "@/components/ui/date-field";
 
 type CustomerOption = { id: number; name: string; phone: string | null };
 type ProductOption = {
@@ -49,7 +50,6 @@ export function OrderForm({
   examFee?: number;
 }) {
   const router = useRouter();
-  const [customerMode, setCustomerMode] = useState<"existing" | "new">(preselectedCustomer ? "existing" : "existing");
   const [selectedCustomer, setSelectedCustomer] = useState<CustomerOption | null>(preselectedCustomer ?? null);
   const [items, setItems] = useState<ItemRow[]>([emptyRow()]);
   const [orderType, setOrderType] = useState("MEDICAL");
@@ -86,7 +86,9 @@ export function OrderForm({
       products.map((p) => ({
         id: p.id,
         label: p.name,
-        sublabel: `${productCategoryShortLabels[p.category as keyof typeof productCategoryShortLabels]} · ${formatCurrency(p.sellPrice)}`,
+        sublabel: [p.code, productCategoryShortLabels[p.category as keyof typeof productCategoryShortLabels]].filter(Boolean).join(" · "),
+        trailing: formatCurrency(p.sellPrice),
+        keywords: p.code ?? undefined,
       })),
     [products]
   );
@@ -111,61 +113,57 @@ export function OrderForm({
       <Card>
         <CardHeader>
           <CardTitle>بيانات العميل</CardTitle>
-          {!preselectedCustomer && (
-            <div className="flex gap-1 rounded-lg bg-background p-1 text-xs">
-              <button
-                type="button"
-                onClick={() => setCustomerMode("existing")}
-                className={`flex items-center gap-1 rounded-md px-2.5 py-1.5 font-medium ${customerMode === "existing" ? "bg-surface shadow-sm text-foreground" : "text-muted"}`}
-              >
-                <User className="size-3.5" /> عميل حالي
-              </button>
-              <button
-                type="button"
-                onClick={() => {
-                  setCustomerMode("new");
-                  setSelectedCustomer(null);
-                }}
-                className={`flex items-center gap-1 rounded-md px-2.5 py-1.5 font-medium ${customerMode === "new" ? "bg-surface shadow-sm text-foreground" : "text-muted"}`}
-              >
-                <UserPlus className="size-3.5" /> عميل جديد
-              </button>
-            </div>
-          )}
         </CardHeader>
         <CardContent>
-          {customerMode === "existing" ? (
-            <div>
-              <Label>اختر العميل</Label>
-              {preselectedCustomer ? (
-                <p className="rounded-lg border border-border bg-background px-3 py-2.5 text-sm font-medium text-foreground">
-                  {preselectedCustomer.name} {preselectedCustomer.phone && `· ${preselectedCustomer.phone}`}
-                </p>
-              ) : (
-                <Combobox
-                  items={customerItems}
-                  placeholder="ابحث بالاسم أو الهاتف..."
-                  selectedLabel={selectedCustomer?.name}
-                  onSelect={(item) => {
-                    const c = customers.find((x) => x.id === item.id);
-                    if (c) setSelectedCustomer(c);
-                  }}
-                />
+          {selectedCustomer ? (
+            <div className="flex items-center justify-between gap-3 rounded-lg border border-brand-teal/40 bg-brand-teal/5 px-3 py-2.5">
+              <div className="flex min-w-0 items-center gap-2 text-sm">
+                <User className="size-4 shrink-0 text-brand-teal-dark" />
+                <span className="truncate font-medium text-foreground">{selectedCustomer.name}</span>
+                {selectedCustomer.phone && (
+                  <span className="text-muted" dir="ltr">
+                    {selectedCustomer.phone}
+                  </span>
+                )}
+              </div>
+              {!preselectedCustomer && (
+                <button
+                  type="button"
+                  onClick={() => setSelectedCustomer(null)}
+                  className="shrink-0 text-xs font-medium text-brand-navy hover:underline"
+                >
+                  تغيير
+                </button>
               )}
-              {!selectedCustomer && <p className="mt-1.5 text-xs text-muted">أو بدّل إلى &quot;عميل جديد&quot; لإضافة عميل غير مسجل</p>}
             </div>
           ) : (
-            <div className="grid grid-cols-2 gap-3">
-              <div>
-                <Label htmlFor="newCustomerName">اسم العميل *</Label>
-                <Input id="newCustomerName" name="newCustomerName" required />
+            <div className="space-y-3">
+              <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+                <div>
+                  <Label htmlFor="newCustomerName">اسم العميل *</Label>
+                  <Input id="newCustomerName" name="newCustomerName" required />
+                </div>
+                <div>
+                  <Label htmlFor="newCustomerPhone">رقم التليفون</Label>
+                  <Input id="newCustomerPhone" name="newCustomerPhone" inputMode="tel" dir="ltr" className="text-right" />
+                </div>
               </div>
-              <div>
-                <Label htmlFor="newCustomerPhone">رقم الهاتف</Label>
-                <Input id="newCustomerPhone" name="newCustomerPhone" dir="ltr" className="text-right" />
-              </div>
+              {customerItems.length > 0 && (
+                <div>
+                  <Label className="text-xs text-muted">أو اختر عميل مسجل من قبل</Label>
+                  <Combobox
+                    items={customerItems}
+                    placeholder="ابحث بالاسم أو التليفون..."
+                    onSelect={(item) => {
+                      const c = customers.find((x) => x.id === item.id);
+                      if (c) setSelectedCustomer(c);
+                    }}
+                  />
+                </div>
+              )}
             </div>
           )}
+          <FieldError>{fieldErrors.customerId}</FieldError>
 
           {preselectedCustomer && preselectedCustomer.prescriptions.length > 0 && (
             <div className="mt-4">
@@ -226,7 +224,7 @@ export function OrderForm({
 
           <div>
             <Label htmlFor="deliveryDate">موعد التسليم</Label>
-            <Input id="deliveryDate" name="deliveryDate" type="date" className="w-48" />
+            <DateField id="deliveryDate" name="deliveryDate" className="w-48" />
           </div>
         </CardContent>
       </Card>
@@ -246,7 +244,7 @@ export function OrderForm({
               <div className="col-span-12 sm:col-span-5">
                 <Combobox
                   items={productItems}
-                  placeholder="اختر من المخزون (اختياري)..."
+                  placeholder="ابحث بالكود أو الاسم..."
                   selectedLabel={row.productId ? products.find((p) => p.id === row.productId)?.name : undefined}
                   onSelect={(item) => {
                     const p = products.find((x) => x.id === item.id);
