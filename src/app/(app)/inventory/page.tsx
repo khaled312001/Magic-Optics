@@ -17,7 +17,7 @@ import { StockAdjustDialog } from "@/components/inventory/stock-adjust-dialog";
 import { DeleteButton } from "@/components/ui/delete-button";
 import { deleteProduct } from "@/server/products";
 import { formatCurrency } from "@/lib/utils";
-import { productCategoryShortLabels } from "@/lib/labels";
+import { isStockTracked, productCategoryShortLabels } from "@/lib/labels";
 import type { Prisma, ProductCategory } from "@prisma/client";
 
 export const dynamic = "force-dynamic";
@@ -101,16 +101,20 @@ export default async function InventoryPage({
                   <td className="px-4 py-3 text-muted">{productCategoryShortLabels[p.category]}</td>
                   <td className="px-4 py-3 font-semibold text-brand-teal-dark">{formatCurrency(p.sellPrice)}</td>
                   <td className="px-4 py-3">
-                    <Badge
-                      color={p.quantity === 0 ? "red" : p.quantity <= p.minQuantity ? "amber" : "green"}
-                      solid={p.quantity === 0}
-                    >
-                      {p.quantity}
-                    </Badge>
+                    {isStockTracked(p.category) ? (
+                      <Badge
+                        color={p.quantity === 0 ? "red" : p.quantity <= p.minQuantity ? "amber" : "green"}
+                        solid={p.quantity === 0}
+                      >
+                        {p.quantity}
+                      </Badge>
+                    ) : (
+                      <span className="text-xs text-muted">من الشركة</span>
+                    )}
                   </td>
                   <td className="px-4 py-3">
                     <div className="flex items-center justify-end gap-1">
-                      {canEditInventory && <StockAdjustDialog product={p} />}
+                      {canEditInventory && isStockTracked(p.category) && <StockAdjustDialog product={p} />}
                       {canEditInventory && <ProductFormDialog product={p} isAdmin={isAdmin} />}
                       {isAdmin && <DeleteButton action={deleteProduct.bind(null, p.id)} confirmMessage={`حذف "${p.name}" نهائياً؟`} />}
                     </div>

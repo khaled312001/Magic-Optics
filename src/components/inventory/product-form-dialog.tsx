@@ -7,7 +7,7 @@ import { Button } from "@/components/ui/button";
 import { Input, Label, Textarea, Select, FieldError } from "@/components/ui/input";
 import { useActionForm } from "@/components/ui/use-action-form";
 import { createProduct, updateProduct } from "@/server/products";
-import { productCategoryLabels } from "@/lib/labels";
+import { isStockTracked, productCategoryLabels } from "@/lib/labels";
 import type { SerializedProduct } from "@/types/serialized";
 
 export function ProductFormDialog({
@@ -21,6 +21,7 @@ export function ProductFormDialog({
   isAdmin: boolean;
 }) {
   const [open, setOpen] = useState(false);
+  const [category, setCategory] = useState<string | undefined>(product?.category ?? defaultCategory);
   const isEdit = Boolean(product);
 
   const { onSubmit, isPending, fieldErrors } = useActionForm(
@@ -55,7 +56,13 @@ export function ProductFormDialog({
           <div className="grid grid-cols-2 gap-3">
             <div>
               <Label htmlFor="category">الفئة *</Label>
-              <Select id="category" name="category" defaultValue={product?.category ?? defaultCategory} required>
+              <Select
+                id="category"
+                name="category"
+                defaultValue={product?.category ?? defaultCategory}
+                onChange={(e) => setCategory(e.target.value)}
+                required
+              >
                 {Object.entries(productCategoryLabels).map(([value, label]) => (
                   <option key={value} value={value}>
                     {label}
@@ -112,16 +119,24 @@ export function ProductFormDialog({
 
           {!isAdmin && <input type="hidden" name="costPrice" value={product?.costPrice?.toString() ?? "0"} />}
 
-          <div className="grid grid-cols-2 gap-3">
-            <div>
-              <Label htmlFor="quantity">الكمية بالمخزون *</Label>
-              <Input id="quantity" name="quantity" type="number" min="0" required defaultValue={product?.quantity ?? 0} />
+          {isStockTracked(category) ? (
+            <div className="grid grid-cols-2 gap-3">
+              <div>
+                <Label htmlFor="quantity">الكمية بالمخزون *</Label>
+                <Input id="quantity" name="quantity" type="number" min="0" required defaultValue={product?.quantity ?? 0} />
+              </div>
+              <div>
+                <Label htmlFor="minQuantity">حد التنبيه</Label>
+                <Input id="minQuantity" name="minQuantity" type="number" min="0" defaultValue={product?.minQuantity ?? 3} />
+              </div>
             </div>
-            <div>
-              <Label htmlFor="minQuantity">حد التنبيه</Label>
-              <Input id="minQuantity" name="minQuantity" type="number" min="0" defaultValue={product?.minQuantity ?? 3} />
-            </div>
-          </div>
+          ) : (
+            <>
+              <input type="hidden" name="quantity" value="0" />
+              <input type="hidden" name="minQuantity" value="0" />
+              <p className="rounded-lg bg-background px-3 py-2 text-xs text-muted">العدسات تُطلب من الشركة - بدون كمية بالمخزون</p>
+            </>
+          )}
 
           <div>
             <Label htmlFor="notes">ملاحظات</Label>

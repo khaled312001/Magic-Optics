@@ -44,7 +44,7 @@ export default async function StockCountPage() {
         }
       />
 
-      <div className="mb-4 grid grid-cols-2 gap-3 lg:grid-cols-4">
+      <div className="mb-4 grid grid-cols-2 gap-3 lg:grid-cols-3">
         <div className="rounded-xl border border-border bg-surface p-4 shadow-sm">
           <p className="text-xs text-muted">عدد الأصناف</p>
           <p className="mt-1 text-xl font-extrabold text-foreground">{valuation.items}</p>
@@ -52,10 +52,6 @@ export default async function StockCountPage() {
         <div className="rounded-xl border border-border bg-surface p-4 shadow-sm">
           <p className="text-xs text-muted">عدد القطع فى المحل</p>
           <p className="mt-1 text-xl font-extrabold text-foreground">{valuation.quantity}</p>
-        </div>
-        <div className="rounded-xl border-2 border-brand-navy bg-brand-navy p-4 text-white shadow-md shadow-brand-navy/20">
-          <p className="text-xs text-white/80">قيمة البضاعة بسعر التكلفة</p>
-          <p className="mt-1 text-xl font-extrabold">{formatCurrency(valuation.costValue)}</p>
         </div>
         <div className="rounded-xl border-2 border-emerald-200 bg-emerald-50 p-4 shadow-sm">
           <p className="text-xs font-medium text-emerald-700">قيمة البضاعة بسعر البيع</p>

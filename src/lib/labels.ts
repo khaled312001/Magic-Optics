@@ -11,6 +11,13 @@ export const productCategoryLabels = {
   ACCESSORY: "إكسسوارات",
 } as const;
 
+/** العدسات تُطلب من الشركة حسب كل كشف، فلا كمية لها بالمحل: لا تدخل فى المخزون ولا الجرد ولا تُخصم عند البيع */
+export const NON_STOCK_CATEGORIES = ["LENS", "LENS_CONTRACT"] as const;
+
+export function isStockTracked(category: string | null | undefined) {
+  return !(NON_STOCK_CATEGORIES as readonly string[]).includes(category ?? "");
+}
+
 export const productCategoryShortLabels = {
   FRAME_MEDICAL: "إطار طبي",
   FRAME_SUNGLASSES: "إطار شمسي",

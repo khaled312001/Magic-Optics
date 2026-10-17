@@ -3,9 +3,10 @@
 import { useMemo, useState } from "react";
 import { Check, Package } from "lucide-react";
 import { Input } from "@/components/ui/input";
+import { isStockTracked } from "@/lib/labels";
 import { cn, formatCurrency } from "@/lib/utils";
 
-export type PickerProduct = { id: number; name: string; code: string | null; sellPrice: number; quantity: number };
+export type PickerProduct = { id: number; name: string; code: string | null; sellPrice: number; quantity: number; category?: string };
 
 /**
  * خانة نص حرة مع اقتراحات من المخزون: اختيار صنف يربطه بالفاتورة (فيُخصم من المخزون بسعره)،
@@ -81,7 +82,8 @@ export function ProductPickerInput({
       {picked && <input type="hidden" name={productIdName} value={picked.id} />}
       {picked && (
         <p className="mt-0.5 truncate text-[11px] text-brand-teal-dark">
-          من المخزون · {formatCurrency(picked.sellPrice)} · متبقي {picked.quantity}
+          من المخزون · {formatCurrency(picked.sellPrice)}
+          {isStockTracked(picked.category) && ` · متبقي ${picked.quantity}`}
         </p>
       )}
 
@@ -108,7 +110,9 @@ export function ProductPickerInput({
               </span>
               <span className="shrink-0 text-xs">
                 <span className="font-bold text-brand-navy">{formatCurrency(p.sellPrice)}</span>
-                <span className={cn("mr-1.5", p.quantity > 0 ? "text-muted" : "text-red-600")}>({p.quantity})</span>
+                {isStockTracked(p.category) && (
+                  <span className={cn("mr-1.5", p.quantity > 0 ? "text-muted" : "text-red-600")}>({p.quantity})</span>
+                )}
               </span>
             </button>
           ))}

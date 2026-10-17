@@ -1,10 +1,11 @@
 import "server-only";
 import { prisma } from "@/lib/prisma";
+import { NON_STOCK_CATEGORIES } from "@/lib/labels";
 
 /** قيمة البضاعة الموجودة حالياً (بسعر التكلفة والبيع) - إجمالي ولكل فئة */
 export async function getStockValuation() {
   const products = await prisma.product.findMany({
-    where: { active: true },
+    where: { active: true, category: { notIn: [...NON_STOCK_CATEGORIES] } },
     select: { category: true, quantity: true, costPrice: true, sellPrice: true },
   });
 

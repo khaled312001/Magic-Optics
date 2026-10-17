@@ -2,6 +2,7 @@
 
 import { revalidatePath } from "next/cache";
 import { prisma } from "@/lib/prisma";
+import { isStockTracked } from "@/lib/labels";
 import { requireUser, requireAdmin } from "@/lib/auth-helpers";
 import { orderSchema, paymentSchema, orderItemSchema, rxSchema } from "@/lib/validations";
 import { ActionResult, handleActionError, okResult } from "@/server/action-result";
@@ -100,7 +101,7 @@ export async function createOrder(formData: FormData): Promise<ActionResult<{ id
       for (const it of items) {
         if (!it.productId) continue;
         const product = await tx.product.findUnique({ where: { id: it.productId } });
-        if (!product) continue;
+        if (!product || !isStockTracked(product.category)) continue;
         await tx.product.update({
           where: { id: it.productId },
           data: { quantity: { decrement: it.quantity } },

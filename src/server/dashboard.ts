@@ -4,6 +4,7 @@ import { getCashDayView, getOutstanding, nextAutoCloseAt } from "@/server/cash-u
 import { getSalesOverTime } from "@/server/reports";
 import { addDays, cairoDateStr, cairoDayRange, cairoMonthRange, dbDate } from "@/lib/cairo-time";
 import { getShopSettings } from "@/server/settings";
+import { NON_STOCK_CATEGORIES } from "@/lib/labels";
 
 export async function getDashboardData() {
   const today = cairoDateStr();
@@ -34,7 +35,7 @@ export async function getDashboardData() {
     prisma.order.count({ where: { status: "PENDING" } }),
     prisma.order.count({ where: { status: "READY" } }),
     prisma.product.findMany({
-      where: { active: true },
+      where: { active: true, category: { notIn: [...NON_STOCK_CATEGORIES] } },
       orderBy: { quantity: "asc" },
     }),
     prisma.order.findMany({

@@ -7,7 +7,7 @@ import { customerSchema, prescriptionSchema } from "@/lib/validations";
 import { createPaymentWithCash } from "@/server/cash-utils";
 import { ActionResult, handleActionError, okResult } from "@/server/action-result";
 import { generateReceiptNumber } from "@/lib/utils";
-import { orderTypeLabels } from "@/lib/labels";
+import { isStockTracked, orderTypeLabels } from "@/lib/labels";
 
 export async function createCustomer(formData: FormData): Promise<ActionResult<{ id: number }>> {
   try {
@@ -161,6 +161,8 @@ export async function createPrescription(
         // خصم الفريم/العدسة المختارين من المخزون
         for (const l of lines) {
           if (!l.productId) continue;
+          const product = await tx.product.findUnique({ where: { id: l.productId }, select: { category: true } });
+          if (!product || !isStockTracked(product.category)) continue;
           await tx.product.update({ where: { id: l.productId }, data: { quantity: { decrement: 1 } } });
           await tx.stockMovement.create({
             data: {

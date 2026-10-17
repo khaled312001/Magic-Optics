@@ -2,6 +2,7 @@ import "server-only";
 import { prisma } from "@/lib/prisma";
 import { dateRangeFilter } from "@/lib/utils";
 import { getStockValuation } from "@/server/stock-utils";
+import { NON_STOCK_CATEGORIES } from "@/lib/labels";
 import { addDays, cairoDateStr, cairoDayStart, cairoMonthRange, dbDate } from "@/lib/cairo-time";
 
 export type ReportRange = number | { from: Date; until: Date };
@@ -86,7 +87,7 @@ export async function getOutstandingBalances() {
 }
 
 export async function getLowStockReport() {
-  const products = await prisma.product.findMany({ where: { active: true }, orderBy: { quantity: "asc" } });
+  const products = await prisma.product.findMany({ where: { active: true, category: { notIn: [...NON_STOCK_CATEGORIES] } }, orderBy: { quantity: "asc" } });
   return products.filter((p) => p.quantity <= p.minQuantity);
 }
 

@@ -6,6 +6,7 @@ import { prisma } from "@/lib/prisma";
 import { requireAdmin, requireInventoryEdit } from "@/lib/auth-helpers";
 import { ActionResult, handleActionError, okResult } from "@/server/action-result";
 import { cairoDateStr } from "@/lib/cairo-time";
+import { NON_STOCK_CATEGORIES } from "@/lib/labels";
 
 const MONTHS = ["يناير", "فبراير", "مارس", "أبريل", "مايو", "يونيو", "يوليو", "أغسطس", "سبتمبر", "أكتوبر", "نوفمبر", "ديسمبر"];
 
@@ -16,7 +17,7 @@ export async function startStockCount(): Promise<ActionResult<{ id: number }>> {
     const open = await prisma.stockCount.findFirst({ where: { status: "OPEN" } });
     if (open) return { ok: false, error: `يوجد جرد مفتوح بالفعل (${open.title}) - أكمله أو احذفه أولاً` };
 
-    const products = await prisma.product.findMany({ where: { active: true } });
+    const products = await prisma.product.findMany({ where: { active: true, category: { notIn: [...NON_STOCK_CATEGORIES] } } });
     const [y, m] = cairoDateStr().split("-").map(Number);
 
     const count = await prisma.stockCount.create({
