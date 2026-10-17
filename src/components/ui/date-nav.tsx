@@ -17,14 +17,14 @@ export function DateNav({ date, basePath }: { date: string; basePath: string }) 
 
   return (
     <div className="flex flex-wrap items-center gap-2">
-      <Button variant="outline" size="icon" onClick={() => go(-1)} title="اليوم السابق">
+      <Button variant="outline" size="icon" className="size-10" onClick={() => go(-1)} title="اليوم السابق">
         <ChevronRight className="size-4" />
       </Button>
       <DateField value={date} onChange={(v) => v && router.push(`${basePath}?date=${v}`)} />
-      <Button variant="outline" size="icon" onClick={() => go(1)} title="اليوم التالي">
+      <Button variant="outline" size="icon" className="size-10" onClick={() => go(1)} title="اليوم التالي">
         <ChevronLeft className="size-4" />
       </Button>
-      <span className="text-sm text-muted">{formatDate(date)}</span>
+      <span className="rounded-lg bg-background px-3 py-2 text-sm font-medium text-foreground">{formatDate(date)}</span>
     </div>
   );
 }

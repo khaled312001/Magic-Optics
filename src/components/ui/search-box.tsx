@@ -26,7 +26,7 @@ export function SearchBox({ placeholder = "بحث..." }: { placeholder?: string 
   }, [value]);
 
   return (
-    <div className="relative w-full sm:w-72">
+    <div className="relative w-full lg:w-80">
       <Search className="absolute right-3 top-1/2 size-4 -translate-y-1/2 text-muted" />
       <Input
         value={value}

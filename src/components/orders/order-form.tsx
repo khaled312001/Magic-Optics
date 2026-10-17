@@ -1,8 +1,8 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useMemo, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
-import { Plus, Trash2, User, Eye } from "lucide-react";
+import { Plus, Trash2, User, Eye, CheckCircle2, Pencil } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input, Label, Select, Textarea, FieldError } from "@/components/ui/input";
 import { Combobox, type ComboboxItem } from "@/components/ui/combobox";
@@ -11,7 +11,9 @@ import { useActionForm } from "@/components/ui/use-action-form";
 import { createOrder } from "@/server/orders";
 import { formatCurrency } from "@/lib/utils";
 import { orderTypeLabels, orderStatusLabels, productCategoryShortLabels } from "@/lib/labels";
-import { DateField } from "@/components/ui/date-field";
+import { DateField, todayIso } from "@/components/ui/date-field";
+import { Dialog } from "@/components/ui/dialog";
+import { RxTable, type RxValues } from "@/components/customers/rx-table";
 
 type CustomerOption = { id: number; name: string; phone: string | null };
 type ProductOption = {
@@ -55,6 +57,19 @@ export function OrderForm({
   const [orderType, setOrderType] = useState("MEDICAL");
 
   const hasExamFeeItem = items.some((i) => i.description === EXAM_FEE_DESCRIPTION);
+  const [rx, setRx] = useState<(RxValues & { date?: string; notes?: string; doctorName?: string; frame?: string; lensType?: string }) | null>(null);
+  const [rxOpen, setRxOpen] = useState(false);
+  const rxRef = useRef<HTMLDivElement>(null);
+
+  function saveRx() {
+    const values: Record<string, string> = {};
+    rxRef.current?.querySelectorAll<HTMLInputElement>("input[name]").forEach((input) => {
+      values[input.name] = input.value;
+    });
+    setRx(values);
+    if (!hasExamFeeItem) toggleExamFee(true);
+    setRxOpen(false);
+  }
 
   function toggleExamFee(checked: boolean) {
     if (checked) {
@@ -107,6 +122,7 @@ export function OrderForm({
     <form onSubmit={onSubmit} className="space-y-6">
       <input type="hidden" name="items" value={JSON.stringify(items.filter((i) => i.description.trim()))} />
       {selectedCustomer && <input type="hidden" name="customerId" value={selectedCustomer.id} />}
+      {rx && <input type="hidden" name="prescription" value={JSON.stringify(rx)} />}
 
       {error && <div className="rounded-lg bg-red-50 px-4 py-3 text-sm text-red-700">{error}</div>}
 
@@ -210,16 +226,36 @@ export function OrderForm({
           </div>
 
           {orderType === "MEDICAL" && (
-            <label className="flex items-center gap-2 rounded-lg border border-dashed border-brand-teal/40 bg-brand-teal/5 px-3 py-2.5 text-sm text-foreground">
-              <input
-                type="checkbox"
-                checked={hasExamFeeItem}
-                onChange={(e) => toggleExamFee(e.target.checked)}
-                className="size-4 rounded"
-              />
-              <Eye className="size-4 text-brand-teal-dark" />
-              إضافة كشف نظر عدسات على الفاتورة ({formatCurrency(examFee)})
-            </label>
+            <div className="flex flex-wrap items-center justify-between gap-2 rounded-lg border border-dashed border-brand-teal/50 bg-brand-teal/5 px-3 py-2.5">
+              <label className="flex items-center gap-2 text-sm text-foreground">
+                <input
+                  type="checkbox"
+                  checked={hasExamFeeItem}
+                  onChange={(e) => {
+                    if (e.target.checked) setRxOpen(true);
+                    else {
+                      toggleExamFee(false);
+                      setRx(null);
+                    }
+                  }}
+                  className="size-4 rounded"
+                />
+                <Eye className="size-4 text-brand-teal-dark" />
+                إضافة كشف نظر عدسات على الفاتورة ({formatCurrency(examFee)})
+              </label>
+              {rx && (
+                <button
+                  type="button"
+                  onClick={() => setRxOpen(true)}
+                  className="flex items-center gap-1.5 text-xs font-semibold text-brand-teal-dark hover:underline"
+                >
+                  <CheckCircle2 className="size-4" />
+                  تم إدخال الكشف
+                  <Pencil className="size-3" />
+                  تعديل
+                </button>
+              )}
+            </div>
           )}
 
           <div>
@@ -308,6 +344,44 @@ export function OrderForm({
           </div>
         </CardContent>
       </Card>
+
+      <Dialog open={rxOpen} onClose={() => setRxOpen(false)} title="كشف النظر" maxWidth="max-w-3xl">
+        <div ref={rxRef} className="space-y-4">
+          <div className="w-48">
+            <Label htmlFor="rx-date">تاريخ الكشف</Label>
+            <DateField id="rx-date" name="date" defaultValue={rx?.date || todayIso()} className="w-full" />
+          </div>
+          <div className="rounded-xl border border-border bg-background p-2">
+            <RxTable defaultValues={rx ?? undefined} />
+          </div>
+          <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
+            <div>
+              <Label htmlFor="rx-doctor">اسم الطبيب</Label>
+              <Input id="rx-doctor" name="doctorName" defaultValue={rx?.doctorName} />
+            </div>
+            <div>
+              <Label htmlFor="rx-frame">الفريم</Label>
+              <Input id="rx-frame" name="frame" defaultValue={rx?.frame} />
+            </div>
+            <div>
+              <Label htmlFor="rx-lens">نوع العدسات</Label>
+              <Input id="rx-lens" name="lensType" defaultValue={rx?.lensType} />
+            </div>
+            <div>
+              <Label htmlFor="rx-notes">ملاحظات</Label>
+              <Input id="rx-notes" name="notes" defaultValue={rx?.notes} />
+            </div>
+          </div>
+          <div className="flex justify-end gap-2">
+            <Button type="button" variant="outline" onClick={() => setRxOpen(false)}>
+              إلغاء
+            </Button>
+            <Button type="button" onClick={saveRx}>
+              حفظ الكشف وإضافته للفاتورة
+            </Button>
+          </div>
+        </div>
+      </Dialog>
 
       <div className="flex justify-end gap-2">
         <Button type="button" variant="outline" onClick={() => router.back()}>

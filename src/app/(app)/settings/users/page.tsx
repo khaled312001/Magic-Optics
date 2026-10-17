@@ -1,6 +1,6 @@
 import { redirect } from "next/navigation";
 import { getServerSession } from "next-auth";
-import { Users } from "lucide-react";
+import { Users, UserCog } from "lucide-react";
 import { authOptions } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { PageHeader } from "@/components/ui/page-header";
@@ -22,7 +22,7 @@ export default async function UsersSettingsPage() {
 
   return (
     <div>
-      <PageHeader title="المستخدمون" description={`${users.length} مستخدم`} action={<UserFormDialog />} />
+      <PageHeader icon={UserCog} title="المستخدمون" description={`${users.length} مستخدم`} action={<UserFormDialog />} />
 
       <Card className="overflow-hidden">
         <div className="divide-y divide-border">

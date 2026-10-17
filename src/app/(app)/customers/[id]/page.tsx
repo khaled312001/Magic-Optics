@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import { Phone, MapPin, Plus, ChevronRight, FileText, Receipt } from "lucide-react";
+import { Phone, MapPin, Plus, ChevronRight, FileText, Receipt, UserRound } from "lucide-react";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
@@ -47,7 +47,7 @@ export default async function CustomerDetailPage({
         العملاء
       </Link>
 
-      <PageHeader
+      <PageHeader icon={UserRound}
         title={customer.name}
         description={
           [customer.phone, customer.address].filter(Boolean).join(" · ") || "لا توجد بيانات إضافية"

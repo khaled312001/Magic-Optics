@@ -1,7 +1,9 @@
 import { clsx, type ClassValue } from "clsx";
+import { twMerge } from "tailwind-merge";
 
+/** يدمج الكلاسات بحيث يتغلب الكلاس المُمرَّر لاحقاً (مثل h-9) على الافتراضي (h-10) */
 export function cn(...inputs: ClassValue[]) {
-  return clsx(inputs);
+  return twMerge(clsx(inputs));
 }
 
 // نستخدم أرقاماً إنجليزية (0-9) رغم أن اللغة عربية، لأن هذا هو المعتاد فى

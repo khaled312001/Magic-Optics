@@ -103,6 +103,11 @@ model Prescription {
   ipdNear Float? // المسافة بين الحدقتين - قريب
   notes   String? @db.Text
 
+  // بيانات ورقة الكشف المطبوعة
+  doctorName String? @db.VarChar(150) // اسم الطبيب
+  frame      String? @db.VarChar(200) // الفريم
+  lensType   String? @db.VarChar(200) // نوع العدسات
+
   createdById Int?
   createdBy   User?   @relation(fields: [createdById], references: [id], onDelete: SetNull)
 

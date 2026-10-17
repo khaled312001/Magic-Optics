@@ -4,6 +4,7 @@ import { getServerSession } from "next-auth";
 import { History, LogIn, Receipt, Wallet, Eye, Glasses, UserX, ChevronLeft } from "lucide-react";
 import { authOptions } from "@/lib/auth";
 import { PageHeader } from "@/components/ui/page-header";
+import { Toolbar } from "@/components/ui/toolbar";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { StatCard } from "@/components/ui/stat-card";
@@ -51,11 +52,11 @@ export default async function DailyLogPage({
 
   return (
     <div>
-      <PageHeader title="السجل اليومي" description="ملخص تسجيلات الدخول والعمليات لكل المستخدمين فى اليوم المحدد" />
+      <PageHeader icon={History} title="السجل اليومي" description="ملخص تسجيلات الدخول والعمليات لكل المستخدمين فى اليوم المحدد" />
 
-      <div className="mb-4">
+      <Toolbar>
         <DateNav date={selectedDate} basePath="/daily-log" />
-      </div>
+      </Toolbar>
 
       <div className="mb-4 grid grid-cols-2 gap-3 sm:grid-cols-4">
         <StatCard label="تسجيلات الدخول" value={String(totalLogins)} icon={LogIn} tone="navy" highlight />

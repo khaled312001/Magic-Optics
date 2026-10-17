@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { redirect } from "next/navigation";
 import { getServerSession } from "next-auth";
-import { TrendingUp, AlertTriangle, Users, Wallet, CalendarCheck, ChevronLeft } from "lucide-react";
+import { TrendingUp, AlertTriangle, Users, Wallet, CalendarCheck, ChevronLeft, BarChart3 } from "lucide-react";
 import { authOptions } from "@/lib/auth";
 import { PageHeader } from "@/components/ui/page-header";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
@@ -83,7 +83,7 @@ export default async function ReportsPage({
 
   return (
     <div>
-      <PageHeader
+      <PageHeader icon={BarChart3}
         title="التقارير"
         description={`أداء المحل خلال ${periodLabel}`}
         action={

@@ -5,13 +5,14 @@ import { useRouter } from "next/navigation";
 import { Plus, User, Receipt } from "lucide-react";
 import { Dialog } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
-import { Input, Label, Select, Textarea, FieldError } from "@/components/ui/input";
+import { Input, Label, Select, FieldError } from "@/components/ui/input";
 import { Combobox, type ComboboxItem } from "@/components/ui/combobox";
 import { useActionForm } from "@/components/ui/use-action-form";
 import { createPrescription } from "@/server/customers";
 import { orderTypeLabels } from "@/lib/labels";
 import { formatCurrency } from "@/lib/utils";
 import { DateField, todayIso } from "@/components/ui/date-field";
+import { RxTable } from "@/components/customers/rx-table";
 
 type CustomerOption = { id: number; name: string; phone: string | null };
 
@@ -50,20 +51,21 @@ export function PrescriptionFormDialog({
         كشف جديد
       </Button>
 
-      <Dialog open={open} onClose={() => setOpen(false)} title="إضافة كشف نظر" maxWidth="max-w-2xl">
-        <form onSubmit={onSubmit} className="space-y-5">
-          {error && <div className="rounded-lg bg-red-50 px-4 py-3 text-sm text-red-700">{error}</div>}
+      <Dialog open={open} onClose={() => setOpen(false)} title="إضافة كشف نظر" maxWidth="max-w-4xl">
+        <form onSubmit={onSubmit} className="space-y-4">
+          {error && <div className="rounded-lg bg-red-50 px-4 py-2.5 text-sm text-red-700">{error}</div>}
 
-          {customerId ? (
-            <input type="hidden" name="customerId" value={customerId} />
-          ) : (
-            <div className="space-y-3">
-              {selectedCustomer ? (
-                <div className="flex items-center justify-between gap-3 rounded-lg border border-brand-teal/40 bg-brand-teal/5 px-3 py-2.5">
+          <div className="grid grid-cols-2 gap-3 sm:grid-cols-12">
+            {customerId ? (
+              <input type="hidden" name="customerId" value={customerId} />
+            ) : selectedCustomer ? (
+              <div className="col-span-2 sm:col-span-9">
+                <Label>العميل</Label>
+                <div className="flex h-10 items-center justify-between gap-3 rounded-lg border border-brand-teal/50 bg-brand-teal/10 px-3">
                   <input type="hidden" name="customerId" value={selectedCustomer.id} />
                   <div className="flex min-w-0 items-center gap-2 text-sm">
                     <User className="size-4 shrink-0 text-brand-teal-dark" />
-                    <span className="truncate font-medium text-foreground">{selectedCustomer.name}</span>
+                    <span className="truncate font-semibold text-foreground">{selectedCustomer.name}</span>
                     {selectedCustomer.phone && (
                       <span className="text-muted" dir="ltr">
                         {selectedCustomer.phone}
@@ -73,27 +75,24 @@ export function PrescriptionFormDialog({
                   <button
                     type="button"
                     onClick={() => setSelectedCustomer(null)}
-                    className="shrink-0 text-xs font-medium text-brand-navy hover:underline"
+                    className="shrink-0 text-xs font-semibold text-brand-navy hover:underline"
                   >
                     تغيير
                   </button>
                 </div>
-              ) : (
-                <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
-                  <div>
-                    <Label htmlFor="newCustomerName">اسم العميل *</Label>
-                    <Input id="newCustomerName" name="newCustomerName" required />
-                  </div>
-                  <div>
-                    <Label htmlFor="newCustomerPhone">رقم التليفون</Label>
-                    <Input id="newCustomerPhone" name="newCustomerPhone" inputMode="tel" dir="ltr" className="text-right" />
-                  </div>
+              </div>
+            ) : (
+              <>
+                <div className="col-span-2 sm:col-span-3">
+                  <Label htmlFor="newCustomerName">اسم العميل *</Label>
+                  <Input id="newCustomerName" name="newCustomerName" required />
                 </div>
-              )}
-
-              {!selectedCustomer && customerItems.length > 0 && (
-                <div>
-                  <Label className="text-xs text-muted">أو اختر عميل مسجل من قبل</Label>
+                <div className="col-span-1 sm:col-span-3">
+                  <Label htmlFor="newCustomerPhone">رقم التليفون</Label>
+                  <Input id="newCustomerPhone" name="newCustomerPhone" inputMode="tel" dir="ltr" className="text-right" />
+                </div>
+                <div className="col-span-1 sm:col-span-3">
+                  <Label>أو عميل مسجل</Label>
                   <Combobox
                     items={customerItems}
                     placeholder="ابحث بالاسم أو التليفون..."
@@ -103,75 +102,43 @@ export function PrescriptionFormDialog({
                     }}
                   />
                 </div>
-              )}
-              <FieldError>{fieldErrors.customerId}</FieldError>
+              </>
+            )}
+            <div className="col-span-2 sm:col-span-3">
+              <Label htmlFor="p-date">التاريخ</Label>
+              <DateField id="p-date" name="date" defaultValue={todayIso()} className="w-full" />
             </div>
-          )}
-
-          <div className="w-40">
-            <Label htmlFor="p-date">التاريخ</Label>
-            <DateField id="p-date" name="date" defaultValue={todayIso()} />
+            {fieldErrors.customerId && (
+              <div className="col-span-2 sm:col-span-12">
+                <FieldError>{fieldErrors.customerId}</FieldError>
+              </div>
+            )}
           </div>
 
-          <div className="overflow-x-auto">
-            <table className="w-full min-w-[620px] border-collapse text-sm">
-              <thead>
-                <tr className="text-xs text-muted">
-                  <th className="w-16 text-right"></th>
-                  <th colSpan={3} className="pb-2 text-center font-semibold text-brand-teal-dark">
-                    العين اليسرى (Left)
-                  </th>
-                  <th className="w-20 pb-2 text-center font-semibold text-foreground">IPD</th>
-                  <th colSpan={3} className="pb-2 text-center font-semibold text-brand-navy">
-                    العين اليمنى (Right)
-                  </th>
-                </tr>
-                <tr className="text-xs text-muted">
-                  <th></th>
-                  <th className="pb-2 font-normal">AXIS</th>
-                  <th className="pb-2 font-normal">CYL</th>
-                  <th className="pb-2 font-normal">SPH</th>
-                  <th></th>
-                  <th className="pb-2 font-normal">AXIS</th>
-                  <th className="pb-2 font-normal">CYL</th>
-                  <th className="pb-2 font-normal">SPH</th>
-                </tr>
-              </thead>
-              <tbody>
-                <tr>
-                  <td className="py-1 pl-2 text-xs font-medium text-foreground">D</td>
-                  <RxCell name="leftAxisFar" />
-                  <RxCell name="leftCylFar" />
-                  <RxCell name="leftSphFar" />
-                  <td className="px-0.5 py-1">
-                    <Input id="ipdFar" name="ipdFar" type="number" step="0.5" className="h-9 px-2 text-center" />
-                  </td>
-                  <RxCell name="rightAxisFar" />
-                  <RxCell name="rightCylFar" />
-                  <RxCell name="rightSphFar" />
-                </tr>
-                <tr>
-                  <td className="py-1 pl-2 text-xs font-medium text-foreground">R</td>
-                  <RxCell name="leftAxisNear" />
-                  <RxCell name="leftCylNear" />
-                  <RxCell name="leftSphNear" />
-                  <td className="px-0.5 py-1">
-                    <Input id="ipdNear" name="ipdNear" type="number" step="0.5" className="h-9 px-2 text-center" />
-                  </td>
-                  <RxCell name="rightAxisNear" />
-                  <RxCell name="rightCylNear" />
-                  <RxCell name="rightSphNear" />
-                </tr>
-              </tbody>
-            </table>
+          <div className="rounded-xl border border-border bg-background p-2">
+            <RxTable />
           </div>
 
-          <div>
-            <Label htmlFor="p-notes">ملاحظات</Label>
-            <Textarea id="p-notes" name="notes" rows={2} />
+          <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
+            <div>
+              <Label htmlFor="p-doctor">اسم الطبيب</Label>
+              <Input id="p-doctor" name="doctorName" />
+            </div>
+            <div>
+              <Label htmlFor="p-frame">الفريم</Label>
+              <Input id="p-frame" name="frame" />
+            </div>
+            <div>
+              <Label htmlFor="p-lens">نوع العدسات</Label>
+              <Input id="p-lens" name="lensType" />
+            </div>
+            <div>
+              <Label htmlFor="p-notes">ملاحظات</Label>
+              <Input id="p-notes" name="notes" />
+            </div>
           </div>
 
-          <div className="rounded-lg border border-dashed border-brand-teal/40 bg-brand-teal/5 p-3">
+          <div className="rounded-xl border border-dashed border-brand-teal/50 bg-brand-teal/5 px-3 py-2.5">
             <label className="flex items-center gap-2 text-sm font-medium text-foreground">
               <input
                 type="checkbox"
@@ -184,7 +151,7 @@ export function PrescriptionFormDialog({
             </label>
 
             {withOrder && (
-              <div className="mt-3 grid grid-cols-2 gap-3">
+              <div className="mt-3 grid grid-cols-2 gap-3 sm:grid-cols-4">
                 <div>
                   <Label htmlFor="orderType">نوع الطلب</Label>
                   <Select id="orderType" name="orderType" defaultValue="MEDICAL">
@@ -198,10 +165,6 @@ export function PrescriptionFormDialog({
                 <div>
                   <Label htmlFor="deliveryDate">ميعاد الاستلام</Label>
                   <DateField id="deliveryDate" name="deliveryDate" className="w-full" />
-                </div>
-                <div className="col-span-2">
-                  <Label htmlFor="orderDescription">اسم الصنف / تفاصيل الطلب</Label>
-                  <Input id="orderDescription" name="orderDescription" placeholder="مثال: نظارة طبية + عدسات سيلفر" />
                 </div>
                 <div>
                   <Label htmlFor="totalAmount">القيمة</Label>
@@ -228,15 +191,17 @@ export function PrescriptionFormDialog({
                     onChange={(e) => setPaidAmount(Number(e.target.value) || 0)}
                   />
                 </div>
-                <div className="col-span-2 flex items-center justify-between rounded-lg bg-background px-3 py-2 text-sm">
-                  <span className="text-muted">الباقي</span>
-                  <span className="font-bold text-red-600">{formatCurrency(remaining)}</span>
+                <div className="col-span-2 sm:col-span-4">
+                  <Label>الباقي</Label>
+                  <div className="flex h-10 items-center justify-center rounded-lg bg-red-50 text-sm font-bold text-red-600">
+                    {formatCurrency(remaining)}
+                  </div>
                 </div>
               </div>
             )}
           </div>
 
-          <div className="flex justify-end gap-2 pt-2">
+          <div className="flex justify-end gap-2">
             <Button type="button" variant="outline" onClick={() => setOpen(false)}>
               إلغاء
             </Button>
@@ -247,13 +212,5 @@ export function PrescriptionFormDialog({
         </form>
       </Dialog>
     </>
-  );
-}
-
-function RxCell({ name }: { name: string }) {
-  return (
-    <td className="px-0.5 py-1">
-      <Input name={name} type="number" step="0.25" className="h-9 px-2 text-center" />
-    </td>
   );
 }

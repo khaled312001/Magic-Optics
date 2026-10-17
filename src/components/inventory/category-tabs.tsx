@@ -21,7 +21,7 @@ export function CategoryTabs() {
   const q = searchParams.get("q");
 
   return (
-    <div className="flex flex-wrap gap-2 border-b border-border pb-3">
+    <div className="flex flex-wrap gap-1.5">
       {categories.map((c) => {
         const params = new URLSearchParams();
         if (c.value) params.set("category", c.value);
@@ -33,8 +33,8 @@ export function CategoryTabs() {
             key={c.value}
             href={href}
             className={cn(
-              "rounded-full px-3.5 py-1.5 text-sm font-medium transition-colors",
-              isActive ? "bg-brand-navy text-white" : "bg-background text-muted hover:text-foreground"
+              "rounded-lg px-3.5 py-2 text-sm font-medium transition-colors",
+              isActive ? "bg-brand-teal text-white shadow-sm" : "bg-background text-muted hover:text-foreground"
             )}
           >
             {c.label}

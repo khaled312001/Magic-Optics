@@ -15,17 +15,17 @@
    (مثل bg-brand-teal/5) قيمة hex احتياطية تعمل على Chrome 109 / Windows 7،
    لأن @theme inline يحوّلها إلى oklab() غير المدعومة هناك. */
 @theme {
-  --color-background: #f3f5f9;
-  --color-surface: #ffffff;
-  --color-foreground: #16213e;
-  --color-muted: #667085;
-  --color-border: #e5e9f0;
+  --color-background: #e4e9f1;
+  --color-surface: #f7f9fc;
+  --color-foreground: #0d1a33;
+  --color-muted: #4a5568;
+  --color-border: #c9d2df;
 
-  --color-brand-navy: #0f2a52;
-  --color-brand-navy-dark: #081a36;
-  --color-brand-navy-light: #1f4785;
-  --color-brand-teal: #0eaea3;
-  --color-brand-teal-dark: #0a8a81;
+  --color-brand-navy: #0c2550;
+  --color-brand-navy-dark: #061632;
+  --color-brand-navy-light: #1a4389;
+  --color-brand-teal: #0a978d;
+  --color-brand-teal-dark: #077269;
   --color-brand-teal-light: #5eead4;
 }
 
@@ -43,7 +43,7 @@
   --color-slate-50: #f8fafc;
   --color-slate-100: #f1f5f9;
   --color-slate-200: #e2e8f0;
-  --color-slate-300: #cbd5e1;
+  --color-slate-300: #b5c0d0;
   --color-slate-400: #94a3b8;
   --color-slate-500: #64748b;
   --color-slate-600: #475569;

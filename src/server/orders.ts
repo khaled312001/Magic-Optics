@@ -3,7 +3,7 @@
 import { revalidatePath } from "next/cache";
 import { prisma } from "@/lib/prisma";
 import { requireUser, requireAdmin } from "@/lib/auth-helpers";
-import { orderSchema, paymentSchema, orderItemSchema } from "@/lib/validations";
+import { orderSchema, paymentSchema, orderItemSchema, rxSchema } from "@/lib/validations";
 import { ActionResult, handleActionError, okResult } from "@/server/action-result";
 import { generateReceiptNumber } from "@/lib/utils";
 import { z } from "zod";
@@ -19,6 +19,9 @@ export async function createOrder(formData: FormData): Promise<ActionResult<{ id
       ...Object.fromEntries(formData),
       items,
     });
+
+    const rxRaw = formData.get("prescription");
+    const rx = rxRaw ? rxSchema.parse(JSON.parse(String(rxRaw))) : null;
 
     if (!data.customerId && !data.newCustomerName) {
       return { ok: false, error: "اختر عميلاً أو أدخل اسم عميل جديد" };
@@ -38,11 +41,27 @@ export async function createOrder(formData: FormData): Promise<ActionResult<{ id
         customerId = newCustomer.id;
       }
 
+      // كشف النظر المُدخل من شاشة الفاتورة يُحفظ ككشف للعميل ويُربط بالفاتورة
+      let prescriptionId = data.prescriptionId ?? null;
+      if (rx && customerId) {
+        const { date, notes, ...measurements } = rx;
+        const prescription = await tx.prescription.create({
+          data: {
+            customerId,
+            ...measurements,
+            date: date ? new Date(date) : undefined,
+            notes: notes || null,
+            createdById: Number(user.id),
+          },
+        });
+        prescriptionId = prescription.id;
+      }
+
       const created = await tx.order.create({
         data: {
           receiptNumber: generateReceiptNumber(),
           customerId,
-          prescriptionId: data.prescriptionId ?? null,
+          prescriptionId,
           type: data.type,
           status: data.status,
           totalAmount,

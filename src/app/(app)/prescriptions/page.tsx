@@ -4,6 +4,7 @@ import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { PageHeader } from "@/components/ui/page-header";
+import { Toolbar } from "@/components/ui/toolbar";
 import { Card } from "@/components/ui/card";
 import { EmptyState } from "@/components/ui/empty-state";
 import { SearchBox } from "@/components/ui/search-box";
@@ -37,7 +38,7 @@ export default async function PrescriptionsPage({
 
   return (
     <div>
-      <PageHeader
+      <PageHeader icon={Eye}
         title="كشوفات النظر"
         description={
           totalCount > prescriptions.length
@@ -47,10 +48,10 @@ export default async function PrescriptionsPage({
         action={<PrescriptionFormDialog customers={customers} />}
       />
 
-      <div className="mb-4 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+      <Toolbar>
         <SearchBox placeholder="ابحث باسم العميل أو رقم الهاتف..." />
         <DateRangeFilter />
-      </div>
+      </Toolbar>
 
       {prescriptions.length === 0 ? (
         <EmptyState icon={Eye} title="لا توجد كشوفات نظر" description="ابدأ بإضافة أول كشف نظر لعميل" />

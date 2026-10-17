@@ -9,10 +9,19 @@ export const customerSchema = z.object({
 });
 export type CustomerInput = z.infer<typeof customerSchema>;
 
-const numOrEmpty = z
-  .union([z.coerce.number(), z.literal("")])
-  .optional()
-  .transform((v) => (v === "" || v === undefined ? null : v));
+const optText = (max: number) =>
+  z
+    .string()
+    .trim()
+    .max(max)
+    .optional()
+    .transform((v) => v || null);
+
+// الخانة الفاضية = null (وليس 0) - z.coerce.number("") كانت ترجع 0 فتتسجل القياسات الفاضية كأصفار
+const numOrEmpty = z.preprocess(
+  (v) => (v === "" || v === undefined || v === null ? null : v),
+  z.coerce.number().nullable()
+);
 
 export const prescriptionSchema = z
   .object({
@@ -35,6 +44,9 @@ export const prescriptionSchema = z
     ipdNear: numOrEmpty,
     date: z.string().optional().or(z.literal("")),
     notes: z.string().trim().max(2000).optional().or(z.literal("")),
+    doctorName: optText(150),
+    frame: optText(200),
+    lensType: optText(200),
     // تفاصيل الطلب المرتبط (اختياري) - تطابق سلّة الكشف الورقية التي تجمع بيانات الفحص والطلب فى إيصال واحد
     orderType: z.enum(["MEDICAL", "SUNGLASSES", "LENS_CHANGE", "OTHER"]).optional(),
     orderDescription: z.string().trim().max(200).optional().or(z.literal("")),
@@ -47,6 +59,29 @@ export const prescriptionSchema = z
     path: ["customerId"],
   });
 export type PrescriptionInput = z.infer<typeof prescriptionSchema>;
+
+/** قياسات كشف النظر المُدخلة من شاشة الفاتورة (تُحفظ ككشف مرتبط بالفاتورة) */
+export const rxSchema = z.object({
+  rightSphFar: numOrEmpty,
+  rightCylFar: numOrEmpty,
+  rightAxisFar: numOrEmpty,
+  leftSphFar: numOrEmpty,
+  leftCylFar: numOrEmpty,
+  leftAxisFar: numOrEmpty,
+  rightSphNear: numOrEmpty,
+  rightCylNear: numOrEmpty,
+  rightAxisNear: numOrEmpty,
+  leftSphNear: numOrEmpty,
+  leftCylNear: numOrEmpty,
+  leftAxisNear: numOrEmpty,
+  ipdFar: numOrEmpty,
+  ipdNear: numOrEmpty,
+  date: z.string().optional().or(z.literal("")),
+  notes: z.string().trim().max(2000).optional().or(z.literal("")),
+  doctorName: optText(150),
+  frame: optText(200),
+  lensType: optText(200),
+});
 
 export const productCategorySchema = z.enum([
   "FRAME_MEDICAL",

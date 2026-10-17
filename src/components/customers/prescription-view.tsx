@@ -20,6 +20,7 @@ export function PrescriptionView({ prescription, canDelete }: { prescription: Pr
           <span className="font-medium text-foreground">{formatDate(prescription.date)}</span>
           <span>· الكود #{prescription.id}</span>
           {prescription.createdBy && <span>· {prescription.createdBy.name}</span>}
+          {prescription.doctorName && <span>· د. {prescription.doctorName}</span>}
         </div>
         <div className="flex items-center gap-1">
           <Link
@@ -83,6 +84,22 @@ export function PrescriptionView({ prescription, canDelete }: { prescription: Pr
         </table>
       </div>
 
+      {(prescription.frame || prescription.lensType) && (
+        <div className="mt-2 flex flex-wrap gap-x-4 gap-y-1 text-xs">
+          {prescription.frame && (
+            <span>
+              <span className="text-muted">الفريم: </span>
+              <span className="font-medium text-foreground">{prescription.frame}</span>
+            </span>
+          )}
+          {prescription.lensType && (
+            <span>
+              <span className="text-muted">نوع العدسات: </span>
+              <span className="font-medium text-foreground">{prescription.lensType}</span>
+            </span>
+          )}
+        </div>
+      )}
       {prescription.notes && <p className="mt-2 text-xs text-muted">{prescription.notes}</p>}
     </div>
   );

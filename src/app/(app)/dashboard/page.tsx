@@ -1,13 +1,5 @@
 import Link from "next/link";
-import {
-  Banknote,
-  ShoppingBag,
-  Clock,
-  PackageCheck,
-  Users,
-  AlertTriangle,
-  Plus,
-} from "lucide-react";
+import { Banknote, ShoppingBag, Clock, PackageCheck, Users, AlertTriangle, Plus, LayoutDashboard } from "lucide-react";
 import { PageHeader } from "@/components/ui/page-header";
 import { StatCard } from "@/components/ui/stat-card";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
@@ -25,7 +17,7 @@ export default async function DashboardPage() {
 
   return (
     <div>
-      <PageHeader
+      <PageHeader icon={LayoutDashboard}
         title="لوحة التحكم"
         description="نظرة عامة على نشاط المحل اليوم"
         action={

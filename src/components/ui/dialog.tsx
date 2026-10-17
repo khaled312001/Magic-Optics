@@ -34,7 +34,7 @@ export function Dialog({
   if (!open || typeof document === "undefined") return null;
 
   return createPortal(
-    <div className="fixed inset-0 z-50 flex items-start sm:items-center justify-center overflow-y-auto bg-slate-950/50 p-4 py-8">
+    <div className="fixed inset-0 z-50 flex items-start sm:items-center justify-center overflow-y-auto bg-slate-950/60 p-3 sm:p-4">
       <div
         className={cn(
           "w-full rounded-2xl bg-surface shadow-xl border border-border animate-dialog-in",
@@ -43,7 +43,7 @@ export function Dialog({
         role="dialog"
         aria-modal="true"
       >
-        <div className="flex items-center justify-between border-b border-border px-5 py-4">
+        <div className="flex items-center justify-between border-b border-border px-5 py-3">
           <h2 className="text-base font-semibold text-foreground">{title}</h2>
           <button
             onClick={onClose}
@@ -53,7 +53,7 @@ export function Dialog({
             <X className="size-4" />
           </button>
         </div>
-        <div className="p-5">{children}</div>
+        <div className="p-4 sm:p-5">{children}</div>
       </div>
     </div>,
     document.body

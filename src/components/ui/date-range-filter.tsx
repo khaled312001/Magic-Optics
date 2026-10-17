@@ -1,7 +1,7 @@
 "use client";
 
 import { useRouter, usePathname, useSearchParams } from "next/navigation";
-import { X } from "lucide-react";
+import { CalendarDays, X } from "lucide-react";
 import { DateField } from "@/components/ui/date-field";
 
 export function DateRangeFilter({ fromKey = "from", toKey = "to" }: { fromKey?: string; toKey?: string }) {
@@ -26,14 +26,18 @@ export function DateRangeFilter({ fromKey = "from", toKey = "to" }: { fromKey?: 
 
   return (
     <div className="flex flex-wrap items-center gap-2">
-      <DateField value={from} onChange={(v) => update({ from: v })} className="h-9 w-40" aria-label="من تاريخ" />
-      <span className="text-xs text-muted">إلى</span>
-      <DateField value={to} onChange={(v) => update({ to: v })} className="h-9 w-40" aria-label="إلى تاريخ" />
+      <span className="flex items-center gap-1.5 text-sm text-muted">
+        <CalendarDays className="size-4" />
+        من
+      </span>
+      <DateField value={from} onChange={(v) => update({ from: v })} className="w-40" aria-label="من تاريخ" />
+      <span className="text-sm text-muted">إلى</span>
+      <DateField value={to} onChange={(v) => update({ to: v })} className="w-40" aria-label="إلى تاريخ" />
       {hasFilter && (
         <button
           type="button"
           onClick={() => update({ from: "", to: "" })}
-          className="inline-flex h-9 items-center gap-1 rounded-lg px-2 text-xs text-muted hover:text-foreground"
+          className="inline-flex h-10 items-center gap-1 rounded-lg px-2 text-sm text-muted hover:bg-background hover:text-foreground"
         >
           <X className="size-3.5" />
           مسح

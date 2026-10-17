@@ -3,6 +3,7 @@ import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { PageHeader } from "@/components/ui/page-header";
+import { Toolbar } from "@/components/ui/toolbar";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { EmptyState } from "@/components/ui/empty-state";
@@ -51,7 +52,7 @@ export default async function InventoryPage({
 
   return (
     <div>
-      <PageHeader
+      <PageHeader icon={Glasses}
         title="المخزون"
         description={`${products.length} صنف`}
         action={
@@ -62,10 +63,10 @@ export default async function InventoryPage({
         }
       />
 
-      <div className="mb-4 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+      <Toolbar>
         <CategoryTabs />
         <SearchBox placeholder={isLensCategory ? "ابحث بنوع العدسة..." : "ابحث بالكود..."} />
-      </div>
+      </Toolbar>
 
       {products.length === 0 ? (
         <EmptyState icon={Glasses} title="لا توجد أصناف" description="أضف أول صنف لهذه الفئة" />

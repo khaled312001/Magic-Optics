@@ -10,7 +10,7 @@ import { deletePrescription } from "@/server/customers";
 import { PrintButton } from "@/components/orders/print-button";
 import { DeleteButton } from "@/components/ui/delete-button";
 import { ForceLight } from "@/components/layout/force-light";
-import { formatDate } from "@/lib/utils";
+import { formatCurrency, formatDate } from "@/lib/utils";
 
 export const dynamic = "force-dynamic";
 
@@ -31,6 +31,17 @@ export default async function PrescriptionPrintPage({ params }: { params: Promis
   if (!prescription) notFound();
 
   const isAdmin = session?.user?.role === "ADMIN";
+  // أحدث فاتورة مرتبطة بالكشف - منها القيمة والمدفوع والباقي وموعد التسليم كما فى الورقة
+  const order = prescription.linkedOrders[0];
+  const slipRows: [string, string | null][] = [
+    ["اسم الطبيب", prescription.doctorName],
+    ["الفريم", prescription.frame],
+    ["نوع العدسات", prescription.lensType],
+    ["القيمة", order ? formatCurrency(order.totalAmount) : null],
+    ["المدفوع", order ? formatCurrency(order.paidAmount) : null],
+    ["الباقي", order ? formatCurrency(Number(order.totalAmount) - Number(order.paidAmount)) : null],
+    ["موعد التسليم", order?.deliveryDate ? formatDate(order.deliveryDate) : null],
+  ];
 
   return (
     <div className="min-h-dvh bg-background py-8">
@@ -135,6 +146,19 @@ export default async function PrescriptionPrintPage({ params }: { params: Promis
             </tr>
           </tbody>
         </table>
+
+        {slipRows.some(([, value]) => value) && (
+          <div className="mb-2 space-y-1 border-t border-dashed border-border pt-2 text-sm">
+            {slipRows
+              .filter(([, value]) => value)
+              .map(([label, value]) => (
+                <div key={label} className="flex justify-between gap-3">
+                  <span className="text-muted">{label}</span>
+                  <span className={label === "الباقي" ? "font-bold text-foreground" : "text-foreground"}>{value}</span>
+                </div>
+              ))}
+          </div>
+        )}
 
         {prescription.notes && (
           <div className="mb-2 border-t border-dashed border-border pt-2 text-sm">

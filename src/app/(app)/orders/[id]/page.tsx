@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import { ChevronRight, Printer, User, Calendar, FileText, Eye } from "lucide-react";
+import { ChevronRight, Printer, User, Calendar, FileText, Eye, Receipt } from "lucide-react";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
@@ -45,7 +45,7 @@ export default async function OrderDetailPage({ params }: { params: Promise<{ id
         الفواتير
       </Link>
 
-      <PageHeader
+      <PageHeader icon={Receipt}
         title={`فاتورة #${order.receiptNumber}`}
         description={formatDateTime(order.createdAt)}
         action={

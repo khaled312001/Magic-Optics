@@ -64,7 +64,7 @@ export function DateField({
   }
 
   const digits = (v: string, max: number) => v.replace(/\D/g, "").slice(0, max);
-  const segment = "w-full min-w-0 bg-transparent text-center text-sm text-foreground placeholder:text-muted focus:outline-none";
+  const segment = "min-w-0 bg-transparent text-center text-sm text-foreground placeholder:text-muted focus:outline-none";
 
   return (
     <div
@@ -111,7 +111,7 @@ export function DateField({
         aria-label="السنة"
         value={parts.y}
         onChange={(e) => update({ ...parts, y: digits(e.target.value, 4) })}
-        className={cn(segment, "flex-1")}
+        className={cn(segment, "w-full flex-1")}
       />
       {name && <input type="hidden" name={name} value={toIso(parts)} />}
     </div>

@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { ChevronRight } from "lucide-react";
+import { ChevronRight, FilePlus } from "lucide-react";
 import { prisma } from "@/lib/prisma";
 import { PageHeader } from "@/components/ui/page-header";
 import { OrderForm } from "@/components/orders/order-form";
@@ -37,7 +37,7 @@ export default async function NewOrderPage({
         <ChevronRight className="size-4" />
         الفواتير
       </Link>
-      <PageHeader title="فاتورة جديدة" description="إنشاء فاتورة / طلب جديد" />
+      <PageHeader icon={FilePlus} title="فاتورة جديدة" description="إنشاء فاتورة / طلب جديد" />
 
       <OrderForm
         customers={customers}

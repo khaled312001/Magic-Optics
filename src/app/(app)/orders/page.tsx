@@ -4,6 +4,7 @@ import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { PageHeader } from "@/components/ui/page-header";
+import { Toolbar } from "@/components/ui/toolbar";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -66,7 +67,7 @@ export default async function OrdersPage({
 
   return (
     <div>
-      <PageHeader
+      <PageHeader icon={Receipt}
         title="الفواتير"
         description={
           totalCount > orders.length
@@ -86,13 +87,13 @@ export default async function OrdersPage({
         }
       />
 
-      <div className="mb-4 flex flex-col gap-3">
-        <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-          <StatusTabs />
+      <Toolbar>
+        <StatusTabs />
+        <div className="flex flex-col gap-3 sm:flex-row sm:flex-wrap sm:items-center">
+          <DateRangeFilter />
           <SearchBox placeholder="ابحث برقم الإيصال أو اسم العميل أو الهاتف..." />
         </div>
-        <DateRangeFilter />
-      </div>
+      </Toolbar>
 
       {orders.length === 0 ? (
         <EmptyState icon={Receipt} title="لا توجد فواتير" />

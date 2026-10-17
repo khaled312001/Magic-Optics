@@ -118,6 +118,9 @@ export async function createPrescription(
         ipdFar: data.ipdFar,
         ipdNear: data.ipdNear,
         notes: data.notes || null,
+        doctorName: data.doctorName,
+        frame: data.frame,
+        lensType: data.lensType,
         createdById: Number(user.id),
       },
     });
@@ -142,7 +145,10 @@ export async function createPrescription(
           items: {
             create: [
               {
-                description: data.orderDescription?.trim() || orderTypeLabels[orderType],
+                description:
+                  data.orderDescription?.trim() ||
+                  [data.frame, data.lensType].filter(Boolean).join(" + ") ||
+                  orderTypeLabels[orderType],
                 quantity: 1,
                 unitPrice: data.totalAmount,
                 subtotal: data.totalAmount,

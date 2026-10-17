@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { getServerSession } from "next-auth";
-import { Users, Store, KeyRound, ChevronLeft } from "lucide-react";
+import { Users, Store, KeyRound, ChevronLeft, Settings } from "lucide-react";
 import { authOptions } from "@/lib/auth";
 import { PageHeader } from "@/components/ui/page-header";
 import { Card } from "@/components/ui/card";
@@ -23,7 +23,7 @@ export default async function SettingsPage() {
 
   return (
     <div>
-      <PageHeader title="الإعدادات" />
+      <PageHeader icon={Settings} title="الإعدادات" />
       <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
         {links.map((l) => (
           <Link key={l.href} href={l.href}>

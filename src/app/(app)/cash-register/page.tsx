@@ -2,6 +2,7 @@ import { getServerSession } from "next-auth";
 import { Wallet } from "lucide-react";
 import { authOptions } from "@/lib/auth";
 import { PageHeader } from "@/components/ui/page-header";
+import { Toolbar } from "@/components/ui/toolbar";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { EmptyState } from "@/components/ui/empty-state";
@@ -38,7 +39,7 @@ export default async function CashRegisterPage({
 
   return (
     <div>
-      <PageHeader
+      <PageHeader icon={Wallet}
         title="الخزنة اليومية"
         description="متابعة الوارد والمنصرف يومياً"
         action={
@@ -49,9 +50,9 @@ export default async function CashRegisterPage({
         }
       />
 
-      <div className="mb-4">
+      <Toolbar>
         <DateNav date={selectedDate} basePath="/cash-register" />
-      </div>
+      </Toolbar>
 
       <div className="mb-4 grid grid-cols-2 gap-3 sm:grid-cols-4">
         <div className="rounded-xl border-2 border-brand-navy/20 bg-surface p-4 shadow-sm">
