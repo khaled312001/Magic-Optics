@@ -204,7 +204,7 @@ export const shopSettingsSchema = z.object({
   phone: z.string().trim().max(30).optional().or(z.literal("")),
   phone2: z.string().trim().max(30).optional().or(z.literal("")),
   taxNumber: z.string().trim().max(50).optional().or(z.literal("")),
-  facilityNumber: z.string().trim().max(50).optional().or(z.literal("")),
+  commercialRegister: z.string().trim().max(50).optional().or(z.literal("")),
   examFee: z.coerce.number().min(0).default(0),
   discountPercent: z.coerce.number().min(0).max(100).default(20),
   autoClose: z.enum(["NONE", "DAILY", "MONTHLY"]).default("NONE"),

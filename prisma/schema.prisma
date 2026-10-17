@@ -344,8 +344,8 @@ model ShopSettings {
   address         String        @default("قنا - قفط - أمام فرع اتصالات")
   phone           String        @default("01012135456")
   phone2          String?
-  taxNumber       String?       @db.VarChar(50) // رقم السجل الضريبي (يُطبع على الفاتورة)
-  facilityNumber  String?       @db.VarChar(50) // رقم المنشأة (يُطبع على الفاتورة)
+  commercialRegister String?    @db.VarChar(50) // رقم السجل التجاري (يُطبع على الفاتورة)
+  taxNumber       String?       @db.VarChar(50) // رقم البطاقة الضريبية (يُطبع على الفاتورة)
   examFee         Decimal       @default(50) @db.Decimal(10, 2) // سعر كشف نظر العدسات على الفاتورة
   discountPercent Decimal       @default(20) @db.Decimal(5, 2) // نسبة خصم الشنابر (الإطارات) المطبوعة أسفل الفاتورة
   autoClose       AutoCloseMode @default(NONE) // الإقفال التلقائي للخزنة
