@@ -13,15 +13,19 @@ import { orderTypeLabels } from "@/lib/labels";
 import { formatCurrency } from "@/lib/utils";
 import { DateField, todayIso } from "@/components/ui/date-field";
 import { RxTable } from "@/components/customers/rx-table";
+import { ProductPickerInput, type PickerProduct } from "@/components/customers/product-picker-input";
 
 type CustomerOption = { id: number; name: string; phone: string | null };
+export type RxProductOption = PickerProduct & { category: string };
 
 export function PrescriptionFormDialog({
   customerId,
   customers,
+  products = [],
 }: {
   customerId?: number;
   customers?: CustomerOption[];
+  products?: RxProductOption[];
 }) {
   const router = useRouter();
   const [open, setOpen] = useState(false);
@@ -29,6 +33,20 @@ export function PrescriptionFormDialog({
   const [totalAmount, setTotalAmount] = useState(0);
   const [paidAmount, setPaidAmount] = useState(0);
   const remaining = Math.max(0, totalAmount - paidAmount);
+  const [framePick, setFramePick] = useState<PickerProduct | null>(null);
+  const [lensPick, setLensPick] = useState<PickerProduct | null>(null);
+  const frames = products.filter((p) => p.category === "FRAME_MEDICAL" || p.category === "FRAME_SUNGLASSES");
+  const lenses = products.filter((p) => p.category === "LENS" || p.category === "LENS_CONTRACT");
+
+  // اختيار فريم/عدسة من المخزون يملأ القيمة تلقائياً بمجموع أسعارهما (ويمكن تعديلها)
+  function onPick(kind: "frame" | "lens", product: PickerProduct | null) {
+    const frame = kind === "frame" ? product : framePick;
+    const lens = kind === "lens" ? product : lensPick;
+    if (kind === "frame") setFramePick(product);
+    else setLensPick(product);
+    const sum = (frame?.sellPrice ?? 0) + (lens?.sellPrice ?? 0);
+    if (sum > 0) setTotalAmount(sum);
+  }
 
   const { onSubmit, isPending, fieldErrors, error } = useActionForm(createPrescription, {
     successMessage: "تم حفظ الكشف الطبي",
@@ -51,6 +69,8 @@ export function PrescriptionFormDialog({
         onClick={() => {
           setTotalAmount(0);
           setPaidAmount(0);
+          setFramePick(null);
+          setLensPick(null);
           setOpen(true);
         }}
       >
@@ -133,11 +153,23 @@ export function PrescriptionFormDialog({
             </div>
             <div>
               <Label htmlFor="p-frame">الفريم</Label>
-              <Input id="p-frame" name="frame" />
+              <ProductPickerInput
+                id="p-frame"
+                name="frame"
+                productIdName="frameProductId"
+                products={frames}
+                onPick={(p) => onPick("frame", p)}
+              />
             </div>
             <div>
               <Label htmlFor="p-lens">نوع العدسات</Label>
-              <Input id="p-lens" name="lensType" />
+              <ProductPickerInput
+                id="p-lens"
+                name="lensType"
+                productIdName="lensProductId"
+                products={lenses}
+                onPick={(p) => onPick("lens", p)}
+              />
             </div>
             <div>
               <Label htmlFor="p-notes">ملاحظات</Label>

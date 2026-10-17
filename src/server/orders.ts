@@ -7,6 +7,7 @@ import { orderSchema, paymentSchema, orderItemSchema, rxSchema } from "@/lib/val
 import { ActionResult, handleActionError, okResult } from "@/server/action-result";
 import { generateReceiptNumber } from "@/lib/utils";
 import { z } from "zod";
+import { createPaymentWithCash } from "@/server/cash-utils";
 
 export async function createOrder(formData: FormData): Promise<ActionResult<{ id: number }>> {
   try {
@@ -78,11 +79,12 @@ export async function createOrder(formData: FormData): Promise<ActionResult<{ id
               subtotal: it.quantity * it.unitPrice,
             })),
           },
-          payments: data.paidAmount > 0
-            ? { create: [{ amount: data.paidAmount, createdById: Number(user.id) }] }
-            : undefined,
         },
       });
+
+      if (data.paidAmount > 0) {
+        await createPaymentWithCash(tx, { orderId: created.id, amount: data.paidAmount, userId: Number(user.id) });
+      }
 
       for (const it of items) {
         if (!it.productId) continue;
@@ -109,6 +111,7 @@ export async function createOrder(formData: FormData): Promise<ActionResult<{ id
     revalidatePath("/orders");
     revalidatePath("/inventory");
     revalidatePath("/dashboard");
+    revalidatePath("/cash-register");
     return okResult({ id: order.id });
   } catch (err) {
     return handleActionError(err);
@@ -139,24 +142,18 @@ export async function addPayment(formData: FormData): Promise<ActionResult> {
       return { ok: false, error: `المبلغ المتبقي فقط ${remaining} ج.م` };
     }
 
-    await prisma.$transaction([
-      prisma.payment.create({
-        data: {
-          orderId: data.orderId,
-          amount: data.amount,
-          note: data.note || null,
-          createdById: Number(user.id),
-        },
-      }),
-      prisma.order.update({
+    await prisma.$transaction(async (tx) => {
+      await createPaymentWithCash(tx, { orderId: data.orderId, amount: data.amount, note: data.note, userId: Number(user.id) });
+      await tx.order.update({
         where: { id: data.orderId },
         data: { paidAmount: { increment: data.amount } },
-      }),
-    ]);
+      });
+    });
 
     revalidatePath(`/orders/${data.orderId}`);
     revalidatePath("/orders");
     revalidatePath("/dashboard");
+    revalidatePath("/cash-register");
     return okResult(undefined);
   } catch (err) {
     return handleActionError(err);
@@ -177,9 +174,10 @@ export async function updateOrderNotes(id: number, notes: string): Promise<Actio
 export async function deleteOrder(id: number): Promise<ActionResult> {
   try {
     await requireAdmin();
-    await prisma.order.delete({ where: { id } });
+    await prisma.order.delete({ where: { id } }); // دفعاتها وحركاتها فى الخزنة تُحذف معها
     revalidatePath("/orders");
     revalidatePath("/dashboard");
+    revalidatePath("/cash-register");
     return okResult(undefined);
   } catch (err) {
     return handleActionError(err);

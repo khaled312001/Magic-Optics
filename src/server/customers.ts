@@ -4,6 +4,7 @@ import { revalidatePath } from "next/cache";
 import { prisma } from "@/lib/prisma";
 import { requireUser, requireAdmin } from "@/lib/auth-helpers";
 import { customerSchema, prescriptionSchema } from "@/lib/validations";
+import { createPaymentWithCash } from "@/server/cash-utils";
 import { ActionResult, handleActionError, okResult } from "@/server/action-result";
 import { generateReceiptNumber } from "@/lib/utils";
 import { orderTypeLabels } from "@/lib/labels";
@@ -125,42 +126,63 @@ export async function createPrescription(
       },
     });
 
-    // لو العميل كتب قيمة الطلب، يتولد فاتورة مرتبطة بهذا الكشف تلقائياً (زي سلّة الفحص الورقية التي تجمع الكشف والطلب معاً)
+    // لو كُتبت قيمة الطلب، تتولد فاتورة مرتبطة بهذا الكشف (زي ورقة الكشف التي تجمع الكشف والطلب معاً)
     let orderId: number | undefined;
-    if (data.totalAmount && data.totalAmount > 0) {
+    const totalAmount = data.totalAmount ?? 0;
+    if (totalAmount > 0) {
       const orderType = data.orderType ?? "MEDICAL";
-      const paidAmount = Math.min(data.paidAmount ?? 0, data.totalAmount);
+      const paidAmount = Math.min(data.paidAmount ?? 0, totalAmount);
+      const lines = await buildPrescriptionOrderLines(data, totalAmount, orderTypeLabels[orderType]);
 
-      const order = await prisma.order.create({
-        data: {
-          receiptNumber: generateReceiptNumber(),
-          customerId,
-          prescriptionId: prescription.id,
-          type: orderType,
-          status: "PENDING",
-          totalAmount: data.totalAmount,
-          paidAmount,
-          deliveryDate: data.deliveryDate ? new Date(data.deliveryDate) : null,
-          createdById: Number(user.id),
-          items: {
-            create: [
-              {
-                description:
-                  data.orderDescription?.trim() ||
-                  [data.frame, data.lensType].filter(Boolean).join(" + ") ||
-                  orderTypeLabels[orderType],
+      const order = await prisma.$transaction(async (tx) => {
+        const created = await tx.order.create({
+          data: {
+            receiptNumber: generateReceiptNumber(),
+            customerId,
+            prescriptionId: prescription.id,
+            type: orderType,
+            status: "PENDING",
+            totalAmount,
+            paidAmount,
+            deliveryDate: data.deliveryDate ? new Date(data.deliveryDate) : null,
+            createdById: Number(user.id),
+            items: {
+              create: lines.map((l) => ({
+                productId: l.productId,
+                description: l.description,
                 quantity: 1,
-                unitPrice: data.totalAmount,
-                subtotal: data.totalAmount,
-              },
-            ],
+                unitPrice: l.price,
+                subtotal: l.price,
+              })),
+            },
           },
-          payments: paidAmount > 0 ? { create: [{ amount: paidAmount, createdById: Number(user.id) }] } : undefined,
-        },
+        });
+
+        // خصم الفريم/العدسة المختارين من المخزون
+        for (const l of lines) {
+          if (!l.productId) continue;
+          await tx.product.update({ where: { id: l.productId }, data: { quantity: { decrement: 1 } } });
+          await tx.stockMovement.create({
+            data: {
+              productId: l.productId,
+              type: "OUT",
+              quantity: 1,
+              note: `فاتورة رقم ${created.receiptNumber}`,
+              createdById: Number(user.id),
+            },
+          });
+        }
+
+        if (paidAmount > 0) {
+          await createPaymentWithCash(tx, { orderId: created.id, amount: paidAmount, userId: Number(user.id) });
+        }
+        return created;
       });
       orderId = order.id;
       revalidatePath("/orders");
+      revalidatePath("/inventory");
       revalidatePath("/dashboard");
+      revalidatePath("/cash-register");
     }
 
     revalidatePath(`/customers/${customerId}`);
@@ -169,6 +191,45 @@ export async function createPrescription(
   } catch (err) {
     return handleActionError(err);
   }
+}
+
+/**
+ * أصناف فاتورة الكشف: الفريم والعدسة المختاران من المخزون بأسعارهما، وما كُتب يدوياً بدون اختيار
+ * يُضاف كبند بفرق القيمة. لو القيمة المكتوبة أقل من أسعار الأصناف، يُخصم الفرق من الفريم أولاً.
+ */
+async function buildPrescriptionOrderLines(
+  data: { frame: string | null; lensType: string | null; frameProductId: number | null; lensProductId: number | null; orderDescription?: string },
+  totalAmount: number,
+  fallbackLabel: string
+) {
+  const ids = [data.frameProductId, data.lensProductId].filter((id): id is number => !!id);
+  const products = ids.length ? await prisma.product.findMany({ where: { id: { in: ids } } }) : [];
+  const lines: { productId: number | null; description: string; price: number }[] = ids
+    .map((id) => products.find((p) => p.id === id))
+    .filter((p) => p !== undefined)
+    .map((p) => ({ productId: p.id, description: p.name, price: Number(p.sellPrice) }));
+
+  const freeText = [
+    data.frameProductId ? null : data.frame,
+    data.lensProductId ? null : data.lensType,
+  ].filter(Boolean).join(" + ");
+
+  if (lines.length === 0) {
+    return [{ productId: null, description: data.orderDescription?.trim() || freeText || fallbackLabel, price: totalAmount }];
+  }
+
+  const diff = Math.round((totalAmount - lines.reduce((s, l) => s + l.price, 0)) * 100) / 100;
+  if (diff > 0) {
+    lines.push({ productId: null, description: freeText || "إضافات", price: diff });
+  } else if (diff < 0) {
+    let rest = -diff;
+    for (const l of lines) {
+      const cut = Math.min(l.price, rest);
+      l.price -= cut;
+      rest -= cut;
+    }
+  }
+  return lines;
 }
 
 export async function deletePrescription(id: number, customerId: number): Promise<ActionResult> {

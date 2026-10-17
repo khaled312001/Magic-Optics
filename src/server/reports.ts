@@ -1,6 +1,7 @@
 import "server-only";
 import { prisma } from "@/lib/prisma";
 import { dateRangeFilter } from "@/lib/utils";
+import { addDays, cairoDateStr, cairoDayStart, cairoMonthRange, dbDate } from "@/lib/cairo-time";
 
 export type ReportRange = number | { from: Date; until: Date };
 
@@ -14,12 +15,12 @@ export function resolveReportRange(from?: string, to?: string, defaultDays = 30)
 function resolveRange(range: ReportRange): { from: Date; until: Date } {
   if (typeof range !== "number") return range;
 
-  const from = new Date();
-  from.setDate(from.getDate() - (range - 1));
-  from.setHours(0, 0, 0, 0);
-  const until = new Date();
-  until.setHours(23, 59, 59, 999);
-  return { from, until };
+  // آخر N يوم بتوقيت القاهرة (اليوم الحالي ضمنها)
+  const today = cairoDateStr();
+  return {
+    from: cairoDayStart(addDays(today, -(range - 1))),
+    until: new Date(cairoDayStart(addDays(today, 1)).getTime() - 1),
+  };
 }
 
 export async function getSalesOverTime(range: ReportRange) {
@@ -31,18 +32,16 @@ export async function getSalesOverTime(range: ReportRange) {
   });
 
   const buckets = new Map<string, number>();
-  const cursor = new Date(from);
-  cursor.setHours(0, 0, 0, 0);
-  const lastDay = new Date(until);
-  lastDay.setHours(0, 0, 0, 0);
+  const lastDay = cairoDateStr(until);
+  let cursor = cairoDateStr(from);
   let guard = 0;
   while (cursor <= lastDay && guard < 400) {
-    buckets.set(cursor.toISOString().slice(0, 10), 0);
-    cursor.setDate(cursor.getDate() + 1);
+    buckets.set(cursor, 0);
+    cursor = addDays(cursor, 1);
     guard++;
   }
   for (const o of orders) {
-    const key = o.createdAt.toISOString().slice(0, 10);
+    const key = cairoDateStr(o.createdAt);
     buckets.set(key, (buckets.get(key) ?? 0) + Number(o.totalAmount));
   }
 
@@ -111,8 +110,8 @@ export async function getProfitSummary(range: ReportRange) {
 /** مصروفات الخزنة (مصروفات + سحب/مرتبات) خلال مدى معين - لا تشمل المشتريات أو الإيداع البنكي (ليست "مصروفاً" بل تحويل نقدية) */
 export async function getCashExpenses(range: ReportRange) {
   const { from, until } = resolveRange(range);
-  const fromDate = new Date(Date.UTC(from.getFullYear(), from.getMonth(), from.getDate()));
-  const untilDate = new Date(Date.UTC(until.getFullYear(), until.getMonth(), until.getDate()));
+  const fromDate = dbDate(cairoDateStr(from));
+  const untilDate = dbDate(cairoDateStr(until));
 
   const entries = await prisma.cashEntry.findMany({
     where: {
@@ -125,22 +124,70 @@ export async function getCashExpenses(range: ReportRange) {
   return entries.reduce((s, e) => s + Number(e.amount), 0);
 }
 
-/** ملخص مالي كامل (إيراد / تكلفة بضاعة / مصروفات / صافي ربح) لمدى معين */
+/** المحصّل فعلياً (كل دفعات الفواتير) خلال مدى معين */
+export async function getCollected(range: ReportRange) {
+  const { from, until } = resolveRange(range);
+  const result = await prisma.payment.aggregate({
+    where: { createdAt: { gte: from, lte: until } },
+    _sum: { amount: true },
+  });
+  return Number(result._sum.amount ?? 0);
+}
+
+/** المتبقي عند العملاء من فواتير مدى معين (الفاتورة - المدفوع، بدون الملغاة) */
+export async function getRangeOutstanding(range: ReportRange) {
+  const { from, until } = resolveRange(range);
+  const orders = await prisma.order.findMany({
+    where: { createdAt: { gte: from, lte: until }, status: { not: "CANCELLED" } },
+    select: { totalAmount: true, paidAmount: true },
+  });
+  return orders.reduce((s, o) => s + Math.max(0, Number(o.totalAmount) - Number(o.paidAmount)), 0);
+}
+
+/** ملخص مالي كامل لمدى معين: المبيعات (قيمة الفواتير) / المحصّل / المتبقي / تكلفة البضاعة / المصروفات / صافي الربح */
 export async function getFinancialSummary(range: ReportRange) {
-  const [profit, expenses] = await Promise.all([getProfitSummary(range), getCashExpenses(range)]);
+  const [profit, expenses, collected, outstanding] = await Promise.all([
+    getProfitSummary(range),
+    getCashExpenses(range),
+    getCollected(range),
+    getRangeOutstanding(range),
+  ]);
   return {
     revenue: profit.revenue,
     cost: profit.cost,
     expenses,
     netProfit: profit.revenue - profit.cost - expenses,
+    collected,
+    outstanding,
   };
 }
 
-/** يحسب ملخص شهر كامل (1 وحتى آخر يوم فيه) من بياناته، بصرف النظر عن اليوم الحالي */
+/** يحسب ملخص شهر كامل (1 وحتى آخر يوم فيه) بتوقيت القاهرة، بصرف النظر عن اليوم الحالي */
 export async function getMonthSummary(year: number, month: number) {
-  const from = new Date(Date.UTC(year, month - 1, 1));
-  const until = new Date(Date.UTC(year, month, 0, 23, 59, 59, 999)); // آخر يوم فى الشهر
-  return getFinancialSummary({ from, until });
+  const { start, end } = cairoMonthRange(year, month);
+  return getFinancialSummary({ from: start, until: new Date(end.getTime() - 1) });
+}
+
+/** المبيعات والمحصّل والمتبقي عند العملاء لكل شهر (حسب شهر الفاتورة) */
+export async function getOutstandingByMonth(limit = 12) {
+  const orders = await prisma.order.findMany({
+    where: { status: { not: "CANCELLED" } },
+    select: { createdAt: true, totalAmount: true, paidAmount: true },
+  });
+
+  const months = new Map<string, { key: string; invoiced: number; paid: number; remaining: number; count: number }>();
+  for (const o of orders) {
+    const key = cairoDateStr(o.createdAt).slice(0, 7);
+    const m = months.get(key) ?? { key, invoiced: 0, paid: 0, remaining: 0, count: 0 };
+    m.invoiced += Number(o.totalAmount);
+    m.paid += Number(o.paidAmount);
+    m.remaining += Math.max(0, Number(o.totalAmount) - Number(o.paidAmount));
+    m.count++;
+    months.set(key, m);
+  }
+  return Array.from(months.values())
+    .sort((a, b) => b.key.localeCompare(a.key))
+    .slice(0, limit);
 }
 
 /** ينشئ (أو يحدّث) السجل الشهري المحفوظ لشهر معين - يُستدعى تلقائياً فى نهاية كل شهر عبر cron، أو يدوياً */

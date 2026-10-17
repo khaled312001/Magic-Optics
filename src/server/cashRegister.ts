@@ -5,57 +5,15 @@ import { prisma } from "@/lib/prisma";
 import { requireUser, requireAdmin, UnauthorizedError } from "@/lib/auth-helpers";
 import { cashEntrySchema } from "@/lib/validations";
 import { ActionResult, handleActionError, okResult } from "@/server/action-result";
+import { CLOSING_CATEGORIES, ensureCashDay, performCashClose } from "@/server/cash-utils";
+import { generateAndSaveMonthlyReport } from "@/server/reports";
+import { dbDate } from "@/lib/cairo-time";
 
-function startOfDay(dateStr: string) {
-  // يبني تاريخ UTC منتصف الليل صراحة من "YYYY-MM-DD" بغض النظر عن توقيت الخادم المحلي،
-  // لتفادي انزياح اليوم عند التخزين في عمود MySQL من نوع DATE
-  const [y, m, d] = dateStr.slice(0, 10).split("-").map(Number);
-  return new Date(Date.UTC(y, m - 1, d));
-}
-
-/** يجلب يوم الخزنة لتاريخ معين، وينشئه برصيد افتتاحي = رصيد آخر يوم سابق إن لم يكن موجوداً */
-export async function getOrCreateCashDay(dateStr: string) {
-  const date = startOfDay(dateStr);
-
-  const existing = await prisma.cashRegisterDay.findUnique({
-    where: { date },
-    include: { entries: { orderBy: { createdAt: "asc" }, include: { createdBy: true } } },
-  });
-  if (existing) return existing;
-
-  const previous = await prisma.cashRegisterDay.findFirst({
-    where: { date: { lt: date } },
-    orderBy: { date: "desc" },
-    include: { entries: true },
-  });
-
-  let openingBalance = 0;
-  if (previous) {
-    const inSum = previous.entries
-      .filter((e) => e.type === "IN")
-      .reduce((s, e) => s + Number(e.amount), 0);
-    const outSum = previous.entries
-      .filter((e) => e.type === "OUT")
-      .reduce((s, e) => s + Number(e.amount), 0);
-    openingBalance = Number(previous.openingBalance) + inSum - outSum;
-  }
-
-  try {
-    const created = await prisma.cashRegisterDay.create({
-      data: { date, openingBalance },
-      include: { entries: { orderBy: { createdAt: "asc" }, include: { createdBy: true } } },
-    });
-    return created;
-  } catch (err) {
-    // سباق نادر: طلبان متزامنان أنشآ نفس اليوم في نفس اللحظة - أعد قراءة السجل الذي أنشأه الآخر
-    if (err && typeof err === "object" && "code" in err && (err as { code: string }).code === "P2002") {
-      return prisma.cashRegisterDay.findUniqueOrThrow({
-        where: { date },
-        include: { entries: { orderBy: { createdAt: "asc" }, include: { createdBy: true } } },
-      });
-    }
-    throw err;
-  }
+function revalidateMoney() {
+  revalidatePath("/cash-register");
+  revalidatePath("/dashboard");
+  revalidatePath("/reports");
+  revalidatePath("/orders");
 }
 
 export async function addCashEntry(formData: FormData): Promise<ActionResult> {
@@ -67,55 +25,98 @@ export async function addCashEntry(formData: FormData): Promise<ActionResult> {
       throw new UnauthorizedError("ليس لديك صلاحية تسجيل حركات المنصرف، راجع المدير");
     }
 
-    const day = await getOrCreateCashDay(data.date);
+    const existing = await prisma.cashRegisterDay.findUnique({ where: { date: dbDate(data.date) } });
+    if (existing?.closed) {
+      return { ok: false, error: "هذا اليوم مقفول - افتح اليوم أولاً لإضافة حركات" };
+    }
 
-    await prisma.cashEntry.create({
-      data: {
-        dayId: day.id,
-        category: data.category,
-        type: data.type,
-        amount: data.amount,
-        note: data.note || null,
-        createdById: Number(user.id),
-      },
+    await prisma.$transaction(async (tx) => {
+      const day = await ensureCashDay(tx, data.date);
+      await tx.cashEntry.create({
+        data: {
+          dayId: day.id,
+          category: data.category,
+          type: data.type,
+          amount: data.amount,
+          note: data.note || null,
+          createdById: Number(user.id),
+        },
+      });
     });
 
-    revalidatePath("/cash-register");
-    revalidatePath("/dashboard");
+    revalidateMoney();
     return okResult(undefined);
   } catch (err) {
     return handleActionError(err);
   }
 }
 
+/**
+ * حذف حركة خزنة. حركة تحصيل الفاتورة تعني حذف الدفعة نفسها (فيرجع المبلغ متبقياً على الفاتورة)،
+ * وحذف حركة التسليم يعيد فتح اليوم.
+ */
 export async function deleteCashEntry(id: number): Promise<ActionResult> {
   try {
     await requireAdmin();
-    await prisma.cashEntry.delete({ where: { id } });
-    revalidatePath("/cash-register");
-    revalidatePath("/dashboard");
+    const entry = await prisma.cashEntry.findUniqueOrThrow({ where: { id }, include: { payment: true } });
+
+    await prisma.$transaction(async (tx) => {
+      if (entry.payment) {
+        await tx.order.update({
+          where: { id: entry.payment.orderId },
+          data: { paidAmount: { decrement: entry.payment.amount } },
+        });
+        await tx.payment.delete({ where: { id: entry.payment.id } }); // تحذف الحركة معها
+      } else {
+        await tx.cashEntry.delete({ where: { id } });
+      }
+      if (CLOSING_CATEGORIES.includes(entry.category)) {
+        await tx.cashRegisterDay.update({ where: { id: entry.dayId }, data: { closed: false } });
+      }
+    });
+
+    if (entry.payment) revalidatePath(`/orders/${entry.payment.orderId}`);
+    revalidateMoney();
     return okResult(undefined);
   } catch (err) {
     return handleActionError(err);
   }
 }
 
-export async function closeCashDay(dayId: number): Promise<ActionResult> {
+/**
+ * إقفال اليوم (أو الشهر): يُسجَّل رصيد الخزنة كاملاً كحركة "تسليم" فيصبح الرصيد صفراً،
+ * ويُقفل اليوم فلا تُضاف عليه حركات يدوية. إقفال الشهر يحفظ أيضاً التقرير الشهري.
+ */
+export async function closeCash(dateStr: string, scope: "DAY" | "MONTH"): Promise<ActionResult> {
   try {
-    await requireAdmin();
-    await prisma.cashRegisterDay.update({ where: { id: dayId }, data: { closed: true } });
-    revalidatePath("/cash-register");
+    const user = await requireAdmin();
+    await performCashClose(dateStr, scope, Number(user.id));
+
+    if (scope === "MONTH") {
+      const [year, month] = dateStr.split("-").map(Number);
+      await generateAndSaveMonthlyReport(year, month);
+    }
+
+    revalidateMoney();
     return okResult(undefined);
   } catch (err) {
     return handleActionError(err);
   }
 }
 
-export async function reopenCashDay(dayId: number): Promise<ActionResult> {
+/** فتح يوم مقفول: يلغي حركات التسليم فيرجع الرصيد كما كان */
+export async function reopenCash(dateStr: string): Promise<ActionResult> {
   try {
     await requireAdmin();
-    await prisma.cashRegisterDay.update({ where: { id: dayId }, data: { closed: false } });
-    revalidatePath("/cash-register");
+    const day = await prisma.cashRegisterDay.findUnique({ where: { date: dbDate(dateStr) } });
+    if (!day) return okResult(undefined);
+
+    await prisma.$transaction([
+      prisma.cashEntry.deleteMany({ where: { dayId: day.id, category: { in: CLOSING_CATEGORIES } } }),
+      prisma.cashRegisterDay.update({ where: { id: day.id }, data: { closed: false } }),
+    ]);
+
+    revalidateMoney();
     return okResult(undefined);
   } catch (err) {
     return handleActionError(err);

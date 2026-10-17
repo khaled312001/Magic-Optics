@@ -53,6 +53,8 @@ export const cashCategoryLabels = {
   EXPENSE: "مصروفات",
   WITHDRAWAL: "سحب / مرتبات",
   OTHER: "أخرى",
+  DAY_CLOSING: "إقفال اليوم (تسليم)",
+  MONTH_CLOSING: "إقفال الشهر (تسليم)",
 } as const;
 
 /** يحدد نوع الحركة المنطقي لكل بند، لتصفية قائمة "البند" حسب وارد/منصرف فى نموذج الخزنة */
@@ -69,6 +71,9 @@ export const cashCategoryDirection = {
   EXPENSE: "OUT",
   WITHDRAWAL: "OUT",
   OTHER: "BOTH",
+  // تُسجَّل تلقائياً عند الإقفال فقط - لا تظهر فى نموذج الحركة اليدوية
+  DAY_CLOSING: "SYSTEM",
+  MONTH_CLOSING: "SYSTEM",
 } as const;
 
 export const stockMovementTypeLabels = {

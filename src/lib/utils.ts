@@ -1,5 +1,6 @@
 import { clsx, type ClassValue } from "clsx";
 import { twMerge } from "tailwind-merge";
+import { addDays, cairoDayStart } from "@/lib/cairo-time";
 
 /** يدمج الكلاسات بحيث يتغلب الكلاس المُمرَّر لاحقاً (مثل h-9) على الافتراضي (h-10) */
 export function cn(...inputs: ClassValue[]) {
@@ -65,16 +66,12 @@ export function formatDateUTC(date: Date | string) {
   }).format(d);
 }
 
-/** يبني فلتر تاريخ لـ Prisma (gte/lt) من قيم "YYYY-MM-DD" قادمة من مُدخلات تاريخ */
+/** يبني فلتر تاريخ لـ Prisma (gte/lt) من قيم "YYYY-MM-DD" - حدود الأيام بتوقيت القاهرة */
 export function dateRangeFilter(from?: string, to?: string): { gte?: Date; lt?: Date } | undefined {
   if (!from && !to) return undefined;
   const filter: { gte?: Date; lt?: Date } = {};
-  if (from) filter.gte = new Date(`${from}T00:00:00.000Z`);
-  if (to) {
-    const end = new Date(`${to}T00:00:00.000Z`);
-    end.setUTCDate(end.getUTCDate() + 1);
-    filter.lt = end;
-  }
+  if (from) filter.gte = cairoDayStart(from);
+  if (to) filter.lt = cairoDayStart(addDays(to, 1));
   return filter;
 }
 

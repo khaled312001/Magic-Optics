@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { redirect } from "next/navigation";
 import { getServerSession } from "next-auth";
-import { TrendingUp, AlertTriangle, Users, Wallet, CalendarCheck, ChevronLeft, BarChart3 } from "lucide-react";
+import { TrendingUp, AlertTriangle, Users, Wallet, CalendarCheck, ChevronLeft, BarChart3, HandCoins } from "lucide-react";
 import { authOptions } from "@/lib/auth";
 import { PageHeader } from "@/components/ui/page-header";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
@@ -17,21 +17,23 @@ import {
   getLowStockReport,
   getProfitSummary,
   getCashExpenses,
+  getCollected,
+  getRangeOutstanding,
+  getOutstandingByMonth,
   listMonthlyReports,
   resolveReportRange,
 } from "@/server/reports";
-import { getOrCreateCashDay } from "@/server/cashRegister";
+import { getCashDayView } from "@/server/cash-utils";
 import { formatCurrency, formatDateUTC } from "@/lib/utils";
+import { cairoDateStr } from "@/lib/cairo-time";
 
 export const dynamic = "force-dynamic";
 
 function monthStartStr() {
-  const now = new Date();
-  return `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}-01`;
+  return `${cairoDateStr().slice(0, 7)}-01`;
 }
 function todayStr() {
-  const now = new Date();
-  return `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}-${String(now.getDate()).padStart(2, "0")}`;
+  return cairoDateStr();
 }
 
 const monthNames = [
@@ -56,7 +58,7 @@ export default async function ReportsPage({
   const salesRange = resolveReportRange(from, to, 14);
 
   const todayDateStr = todayStr();
-  const [sales, topProducts, debtors, lowStock, profit, expenses, monthlyHistory, cashDay] = await Promise.all([
+  const [sales, topProducts, debtors, lowStock, profit, expenses, monthlyHistory, cashDay, collected, rangeOutstanding, byMonth] = await Promise.all([
     getSalesOverTime(salesRange),
     getTopProducts(range),
     getOutstandingBalances(),
@@ -64,12 +66,13 @@ export default async function ReportsPage({
     getProfitSummary(range),
     getCashExpenses(range),
     listMonthlyReports(12),
-    getOrCreateCashDay(todayDateStr),
+    getCashDayView(todayDateStr),
+    getCollected(range),
+    getRangeOutstanding(range),
+    getOutstandingByMonth(12),
   ]);
 
-  const cashIn = cashDay.entries.filter((e) => e.type === "IN").reduce((s, e) => s + Number(e.amount), 0);
-  const cashOut = cashDay.entries.filter((e) => e.type === "OUT").reduce((s, e) => s + Number(e.amount), 0);
-  const cashBalance = Number(cashDay.openingBalance) + cashIn - cashOut;
+  const cashBalance = cashDay.closingBalance;
 
   const netProfit = profit.profit - expenses;
   const totalOutstanding = debtors.reduce((s, d) => s + d.remaining, 0);
@@ -112,8 +115,16 @@ export default async function ReportsPage({
           <Card>
             <CardContent className="space-y-3 py-5">
               <div className="flex items-center justify-between">
-                <span className="text-sm text-muted">الإيرادات ({periodLabel})</span>
+                <span className="text-sm text-muted">المبيعات (قيمة الفواتير)</span>
                 <span className="font-bold text-foreground">{formatCurrency(profit.revenue)}</span>
+              </div>
+              <div className="flex items-center justify-between">
+                <span className="text-sm text-muted">المحصّل فعلياً</span>
+                <span className="font-semibold text-emerald-600">{formatCurrency(collected)}</span>
+              </div>
+              <div className="flex items-center justify-between border-b border-dashed border-border pb-3">
+                <span className="text-sm text-muted">المتبقي عند العملاء من فواتير الفترة</span>
+                <span className="font-semibold text-amber-600">{formatCurrency(rangeOutstanding)}</span>
               </div>
               <div className="flex items-center justify-between">
                 <span className="text-sm text-muted">تكلفة البضاعة المباعة</span>
@@ -152,10 +163,57 @@ export default async function ReportsPage({
       <Card className="mt-4">
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
+            <HandCoins className="size-4 text-amber-600" />
+            المتبقي عند العملاء لكل شهر
+          </CardTitle>
+          {totalOutstanding > 0 && <Badge color="red">الإجمالي {formatCurrency(totalOutstanding)}</Badge>}
+        </CardHeader>
+        <CardContent className="p-0">
+          {byMonth.length === 0 ? (
+            <p className="p-5 text-sm text-muted">لا توجد فواتير بعد</p>
+          ) : (
+            <div className="overflow-x-auto">
+              <table className="w-full text-sm">
+                <thead>
+                  <tr className="border-b border-border text-right text-xs text-muted">
+                    <th className="px-5 py-2.5 font-medium">الشهر</th>
+                    <th className="px-5 py-2.5 font-medium">عدد الفواتير</th>
+                    <th className="px-5 py-2.5 font-medium">قيمة الفواتير</th>
+                    <th className="px-5 py-2.5 font-medium">المدفوع</th>
+                    <th className="px-5 py-2.5 font-medium">المتبقي عند العملاء</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-border">
+                  {byMonth.map((m) => {
+                    const [y, mo] = m.key.split("-").map(Number);
+                    return (
+                      <tr key={m.key}>
+                        <td className="px-5 py-3 font-medium text-foreground">
+                          {monthNames[mo - 1]} {y}
+                        </td>
+                        <td className="px-5 py-3 text-muted">{m.count}</td>
+                        <td className="px-5 py-3 text-foreground">{formatCurrency(m.invoiced)}</td>
+                        <td className="px-5 py-3 text-emerald-600">{formatCurrency(m.paid)}</td>
+                        <td className={`px-5 py-3 font-bold ${m.remaining > 0 ? "text-red-600" : "text-muted"}`}>
+                          {formatCurrency(m.remaining)}
+                        </td>
+                      </tr>
+                    );
+                  })}
+                </tbody>
+              </table>
+            </div>
+          )}
+        </CardContent>
+      </Card>
+
+      <Card className="mt-4">
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
             <CalendarCheck className="size-4 text-brand-teal-dark" />
             التقارير الشهرية
           </CardTitle>
-          <p className="text-xs text-muted">تُحفظ تلقائياً فى نهاية كل شهر</p>
+          <p className="text-xs text-muted">تُحفظ عند إقفال الشهر من الخزنة، وتلقائياً فى نهاية كل شهر</p>
         </CardHeader>
         <CardContent className="p-0">
           {monthlyHistory.length === 0 ? (
@@ -166,8 +224,10 @@ export default async function ReportsPage({
                 <thead>
                   <tr className="border-b border-border text-right text-xs text-muted">
                     <th className="px-5 py-2.5 font-medium">الشهر</th>
-                    <th className="px-5 py-2.5 font-medium">الإيراد</th>
-                    <th className="px-5 py-2.5 font-medium">المصروفات</th>
+                    <th className="px-5 py-2.5 font-medium">المبيعات</th>
+                    <th className="px-5 py-2.5 font-medium">المحصّل</th>
+                    <th className="px-5 py-2.5 font-medium">المتبقي</th>
+                    <th className="px-5 py-2.5 font-medium">التكلفة والمصروفات</th>
                     <th className="px-5 py-2.5 font-medium">صافي الربح</th>
                     <th className="px-5 py-2.5 font-medium"></th>
                   </tr>
@@ -183,6 +243,8 @@ export default async function ReportsPage({
                           {monthNames[m.month - 1]} {m.year}
                         </td>
                         <td className="px-5 py-3 text-foreground">{formatCurrency(m.revenue)}</td>
+                        <td className="px-5 py-3 text-emerald-600">{formatCurrency(m.collected)}</td>
+                        <td className="px-5 py-3 text-amber-600">{formatCurrency(m.outstanding)}</td>
                         <td className="px-5 py-3 text-red-600">{formatCurrency(Number(m.cost) + Number(m.expenses))}</td>
                         <td className="px-5 py-3 font-bold text-emerald-700">{formatCurrency(m.netProfit)}</td>
                         <td className="px-5 py-3">
@@ -229,10 +291,16 @@ export default async function ReportsPage({
             ) : (
               <div className="max-h-80 divide-y divide-border overflow-y-auto">
                 {debtors.map((o) => (
-                  <div key={o.id} className="flex items-center justify-between px-5 py-3 text-sm">
-                    <span className="truncate text-foreground">{o.customer?.name ?? "-"}</span>
+                  <Link
+                    key={o.id}
+                    href={`/orders/${o.id}`}
+                    className="flex items-center justify-between px-5 py-3 text-sm hover:bg-background"
+                  >
+                    <span className="truncate text-foreground">
+                      {o.customer?.name ?? "-"} <span className="text-xs text-muted">#{o.receiptNumber}</span>
+                    </span>
                     <span className="shrink-0 font-medium text-red-600">{formatCurrency(o.remaining)}</span>
-                  </div>
+                  </Link>
                 ))}
               </div>
             )}

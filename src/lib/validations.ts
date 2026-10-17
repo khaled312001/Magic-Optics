@@ -18,6 +18,11 @@ const optText = (max: number) =>
     .transform((v) => v || null);
 
 // الخانة الفاضية = null (وليس 0) - z.coerce.number("") كانت ترجع 0 فتتسجل القياسات الفاضية كأصفار
+const optId = z.preprocess(
+  (v) => (v === "" || v === undefined || v === null ? null : v),
+  z.coerce.number().int().positive().nullable()
+);
+
 const numOrEmpty = z.preprocess(
   (v) => (v === "" || v === undefined || v === null ? null : v),
   z.coerce.number().nullable()
@@ -47,6 +52,9 @@ export const prescriptionSchema = z
     doctorName: optText(150),
     frame: optText(200),
     lensType: optText(200),
+    // الفريم والعدسة المختاران من المخزون (يُخصمان من المخزون عند عمل الفاتورة)
+    frameProductId: optId,
+    lensProductId: optId,
     // تفاصيل الطلب المرتبط (اختياري) - تطابق سلّة الكشف الورقية التي تجمع بيانات الفحص والطلب فى إيصال واحد
     orderType: z.enum(["MEDICAL", "SUNGLASSES", "LENS_CHANGE", "OTHER"]).optional(),
     orderDescription: z.string().trim().max(200).optional().or(z.literal("")),
@@ -197,5 +205,6 @@ export const shopSettingsSchema = z.object({
   phone2: z.string().trim().max(30).optional().or(z.literal("")),
   examFee: z.coerce.number().min(0).default(0),
   discountPercent: z.coerce.number().min(0).max(100).default(20),
+  autoClose: z.enum(["NONE", "DAILY", "MONTHLY"]).default("NONE"),
 });
 export type ShopSettingsInput = z.infer<typeof shopSettingsSchema>;

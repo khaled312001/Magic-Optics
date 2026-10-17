@@ -40,6 +40,14 @@ export default async function CustomerDetailPage({
 
   if (!customer) notFound();
 
+  const rxProducts = (
+    await prisma.product.findMany({
+      where: { active: true, category: { in: ["FRAME_MEDICAL", "FRAME_SUNGLASSES", "LENS", "LENS_CONTRACT"] } },
+      select: { id: true, name: true, code: true, sellPrice: true, quantity: true, category: true },
+      orderBy: { name: "asc" },
+    })
+  ).map((p) => ({ ...p, sellPrice: Number(p.sellPrice) }));
+
   return (
     <div>
       <Link href="/customers" className="mb-3 inline-flex items-center gap-1 text-sm text-muted hover:text-foreground">
@@ -98,7 +106,7 @@ export default async function CustomerDetailPage({
               <FileText className="size-4" />
               الكشوفات الطبية
             </CardTitle>
-            <PrescriptionFormDialog customerId={customer.id} />
+            <PrescriptionFormDialog customerId={customer.id} products={rxProducts} />
           </CardHeader>
           <CardContent>
             {customer.prescriptions.length === 0 ? (

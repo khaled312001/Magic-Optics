@@ -28,6 +28,7 @@ export async function updateShopSettings(formData: FormData): Promise<ActionResu
         phone2: data.phone2 || null,
         examFee: data.examFee,
         discountPercent: data.discountPercent,
+        autoClose: data.autoClose,
       },
       update: {
         name: data.name,
@@ -36,10 +37,13 @@ export async function updateShopSettings(formData: FormData): Promise<ActionResu
         phone2: data.phone2 || null,
         examFee: data.examFee,
         discountPercent: data.discountPercent,
+        autoClose: data.autoClose,
       },
     });
 
     revalidatePath("/settings/shop");
+    revalidatePath("/dashboard");
+    revalidatePath("/cash-register");
     revalidatePath("/");
     return okResult(undefined);
   } catch (err) {

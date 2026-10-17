@@ -37,7 +37,7 @@ export async function getDailyActivity(dateStr: string): Promise<UserDailyActivi
     prisma.payment.findMany({ where: { createdAt: range }, include: { order: { include: { customer: true } } } }),
     prisma.prescription.findMany({ where: { createdAt: range }, include: { customer: true } }),
     prisma.stockMovement.findMany({ where: { createdAt: range }, include: { product: true } }),
-    prisma.cashEntry.findMany({ where: { createdAt: range }, include: { day: true } }),
+    prisma.cashEntry.findMany({ where: { createdAt: range, paymentId: null }, include: { day: true } }),
   ]);
 
   const byUser = new Map<number, UserDailyActivity>();

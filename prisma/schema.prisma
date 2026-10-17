@@ -250,6 +250,8 @@ model Payment {
   createdBy   User?   @relation(fields: [createdById], references: [id], onDelete: SetNull)
   createdAt DateTime @default(now())
 
+  cashEntry CashEntry? // كل دفعة تدخل الخزنة تلقائياً كحركة وارد
+
   @@index([orderId])
   @@map("payments")
 }
@@ -271,6 +273,8 @@ enum CashCategory {
   EXPENSE // مصروفات
   WITHDRAWAL // سحب / مرتبات
   OTHER // أخرى
+  DAY_CLOSING // إقفال اليوم - تسليم النقدية وتصفير الخزنة
+  MONTH_CLOSING // إقفال الشهر - تسليم النقدية وتصفير الخزنة
 }
 
 enum CashEntryType {
@@ -302,6 +306,10 @@ model CashEntry {
   createdBy   User?            @relation(fields: [createdById], references: [id], onDelete: SetNull)
   createdAt   DateTime         @default(now())
 
+  // حركة وارد مولّدة من دفعة فاتورة (تُحذف مع الدفعة)
+  paymentId Int?     @unique
+  payment   Payment? @relation(fields: [paymentId], references: [id], onDelete: Cascade)
+
   @@index([dayId])
   @@map("cash_entries")
 }
@@ -309,6 +317,12 @@ model CashEntry {
 // ---------------------------------------------------------------------------
 // إعدادات المحل
 // ---------------------------------------------------------------------------
+
+enum AutoCloseMode {
+  NONE // يدوي فقط
+  DAILY // كل يوم الساعة 12 بالليل
+  MONTHLY // آخر يوم فى كل شهر
+}
 
 model ShopSettings {
   id      Int    @id @default(1)
@@ -318,6 +332,7 @@ model ShopSettings {
   phone2  String?
   examFee Decimal @db.Decimal(10, 2) @default(50) // سعر كشف نظر العدسات على الفاتورة
   discountPercent Decimal @db.Decimal(5, 2) @default(20) // نسبة خصم الشنابر (الإطارات) المطبوعة أسفل الفاتورة
+  autoClose AutoCloseMode @default(NONE) // الإقفال التلقائي للخزنة
 
   @@map("shop_settings")
 }
@@ -334,6 +349,8 @@ model MonthlyReport {
   cost        Decimal  @db.Decimal(12, 2) // تكلفة البضاعة المباعة
   expenses    Decimal  @db.Decimal(12, 2) // مصروفات/سحب من الخزنة
   netProfit   Decimal  @db.Decimal(12, 2)
+  collected   Decimal  @db.Decimal(12, 2) @default(0) // المحصّل فعلياً خلال الشهر
+  outstanding Decimal  @db.Decimal(12, 2) @default(0) // المتبقي عند العملاء من فواتير الشهر
   generatedAt DateTime @default(now())
 
   @@unique([year, month])

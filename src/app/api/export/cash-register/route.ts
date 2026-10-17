@@ -1,36 +1,35 @@
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
-import { getOrCreateCashDay } from "@/server/cashRegister";
+import { getCashDayView } from "@/server/cash-utils";
 import { buildWorkbookBuffer, excelResponse } from "@/lib/excel";
 import { cashCategoryLabels } from "@/lib/labels";
+import { cairoDateStr } from "@/lib/cairo-time";
 
 export async function GET(request: Request) {
   const session = await getServerSession(authOptions);
   if (!session) return new Response("Unauthorized", { status: 401 });
 
   const { searchParams } = new URL(request.url);
-  const date = searchParams.get("date") || new Date().toISOString().slice(0, 10);
+  const date = searchParams.get("date") || cairoDateStr();
 
-  const day = await getOrCreateCashDay(date);
+  const day = await getCashDayView(date);
 
-  const cashIn = day.entries.filter((e) => e.type === "IN").reduce((s, e) => s + Number(e.amount), 0);
-  const cashOut = day.entries.filter((e) => e.type === "OUT").reduce((s, e) => s + Number(e.amount), 0);
-  const closingBalance = Number(day.openingBalance) + cashIn - cashOut;
-
-  const rows = day.entries.map((e) => [
+  const rows: (string | number)[][] = day.entries.map((e) => [
     cashCategoryLabels[e.category],
     e.type === "IN" ? "وارد" : "منصرف",
     e.type === "IN" ? Number(e.amount) : -Number(e.amount),
     e.note ?? "",
     e.createdBy?.name ?? "",
-    e.createdAt.toLocaleTimeString("ar-EG-u-nu-latn", { hour: "2-digit", minute: "2-digit" }),
+    e.createdAt.toLocaleTimeString("ar-EG-u-nu-latn", { hour: "2-digit", minute: "2-digit", timeZone: "Africa/Cairo" }),
   ]);
 
   rows.push(["", "", "", "", "", ""]);
-  rows.push(["رصيد أول اليوم", "", Number(day.openingBalance), "", "", ""]);
-  rows.push(["إجمالي الوارد", "", cashIn, "", "", ""]);
-  rows.push(["إجمالي المنصرف", "", -cashOut, "", "", ""]);
-  rows.push(["رصيد آخر اليوم", "", closingBalance, "", "", ""]);
+  rows.push(["رصيد أول اليوم", "", day.openingBalance, "", "", ""]);
+  rows.push(["إجمالي الوارد", "", day.cashIn, "", "", ""]);
+  rows.push(["منها تحصيل فواتير", "", day.collected, "", "", ""]);
+  rows.push(["إجمالي المنصرف", "", -day.cashOut, "", "", ""]);
+  if (day.handedOver > 0) rows.push(["تسليم عند الإقفال", "", -day.handedOver, "", "", ""]);
+  rows.push(["رصيد آخر اليوم", "", day.closingBalance, "", "", ""]);
 
   const buffer = buildWorkbookBuffer(
     "الخزنة اليومية",

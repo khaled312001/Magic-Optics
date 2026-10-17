@@ -1,19 +1,14 @@
 import "server-only";
 import { prisma } from "@/lib/prisma";
-import { getOrCreateCashDay } from "@/server/cashRegister";
+import { getCashDayView, getOutstanding, nextAutoCloseAt } from "@/server/cash-utils";
 import { getSalesOverTime } from "@/server/reports";
-
-function todayStr() {
-  const d = new Date();
-  return d.toISOString().slice(0, 10);
-}
+import { addDays, cairoDateStr, cairoDayRange, cairoMonthRange, dbDate } from "@/lib/cairo-time";
+import { getShopSettings } from "@/server/settings";
 
 export async function getDashboardData() {
-  const now = new Date();
-  const startOfToday = new Date(now);
-  startOfToday.setHours(0, 0, 0, 0);
-  const endOfToday = new Date(startOfToday);
-  endOfToday.setDate(endOfToday.getDate() + 1);
+  const today = cairoDateStr();
+  const { start: startOfToday, end: endOfToday } = cairoDayRange(today);
+  const [year, month] = today.split("-").map(Number);
 
   const [
     todayOrders,
@@ -26,6 +21,11 @@ export async function getDashboardData() {
     productsCount,
     cashDay,
     salesTrend,
+    todayCollectedAgg,
+    monthOutstanding,
+    settings,
+    dueTodayCount,
+    overdueCount,
   ] = await Promise.all([
     prisma.order.findMany({
       where: { createdAt: { gte: startOfToday, lt: endOfToday }, status: { not: "CANCELLED" } },
@@ -47,9 +47,19 @@ export async function getDashboardData() {
     }),
     prisma.customer.count(),
     prisma.product.count({ where: { active: true } }),
-    getOrCreateCashDay(todayStr()),
+    getCashDayView(today),
     getSalesOverTime(7),
+    prisma.payment.aggregate({ where: { createdAt: { gte: startOfToday, lt: endOfToday } }, _sum: { amount: true } }),
+    getOutstanding(cairoMonthRange(year, month)),
+    getShopSettings(),
+    // موعد التسليم محفوظ كتاريخ فقط (منتصف ليل UTC)
+    prisma.order.count({
+      where: { status: { in: ["PENDING", "READY"] }, deliveryDate: { gte: dbDate(today), lt: dbDate(addDays(today, 1)) } },
+    }),
+    prisma.order.count({ where: { status: { in: ["PENDING", "READY"] }, deliveryDate: { lt: dbDate(today) } } }),
   ]);
+
+  const nextCloseAt = nextAutoCloseAt(settings.autoClose);
 
   const todaySalesTotal = todayOrders.reduce((s, o) => s + Number(o.totalAmount), 0);
   const todayOrdersCount = todayOrders.length;
@@ -63,9 +73,7 @@ export async function getDashboardData() {
 
   const totalOutstanding = debtors.reduce((s, o) => s + o.remaining, 0);
 
-  const cashIn = cashDay.entries.filter((e) => e.type === "IN").reduce((s, e) => s + Number(e.amount), 0);
-  const cashOut = cashDay.entries.filter((e) => e.type === "OUT").reduce((s, e) => s + Number(e.amount), 0);
-  const cashBalance = Number(cashDay.openingBalance) + cashIn - cashOut;
+  const todayCollected = Number(todayCollectedAgg._sum.amount ?? 0);
 
   return {
     todaySalesTotal,
@@ -76,9 +84,16 @@ export async function getDashboardData() {
     recentOrders,
     debtors: debtors.slice(0, 6),
     totalOutstanding,
+    monthOutstanding,
     customersCount,
     productsCount,
-    cashBalance,
+    cashBalance: cashDay.closingBalance,
+    cashDayClosed: cashDay.closed,
+    todayCollected,
     salesTrend,
+    autoClose: settings.autoClose,
+    nextCloseAt,
+    dueTodayCount,
+    overdueCount,
   };
 }

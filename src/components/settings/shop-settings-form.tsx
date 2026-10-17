@@ -1,6 +1,6 @@
 "use client";
 
-import { Input, Label, FieldError } from "@/components/ui/input";
+import { Input, Label, Select, FieldError } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { useActionForm } from "@/components/ui/use-action-form";
 import { updateShopSettings } from "@/server/settings";
@@ -64,6 +64,15 @@ export function ShopSettingsForm({ settings }: { settings: SerializedShopSetting
           defaultValue={settings.discountPercent.toString()}
         />
         <p className="mt-1 text-xs text-muted">تُطبع أسفل كل فاتورة - خصم على الشنابر فقط، لا يشمل العدسات</p>
+      </div>
+      <div>
+        <Label htmlFor="autoClose">الإقفال التلقائي للخزنة</Label>
+        <Select id="autoClose" name="autoClose" defaultValue={settings.autoClose} className="w-72">
+          <option value="NONE">يدوي فقط (من صفحة الخزنة)</option>
+          <option value="DAILY">كل يوم الساعة 12 بالليل</option>
+          <option value="MONTHLY">آخر يوم فى كل شهر</option>
+        </Select>
+        <p className="mt-1 text-xs text-muted">عند الإقفال يُسجَّل رصيد الخزنة كتسليم نقدية فيبدأ اليوم التالي من صفر</p>
       </div>
       <Button type="submit" loading={isPending}>
         حفظ التغييرات

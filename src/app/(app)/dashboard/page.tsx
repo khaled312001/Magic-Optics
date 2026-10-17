@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { Banknote, ShoppingBag, Clock, PackageCheck, Users, AlertTriangle, Plus, LayoutDashboard } from "lucide-react";
+import { Banknote, ShoppingBag, Clock, PackageCheck, Users, AlertTriangle, Plus, LayoutDashboard, HandCoins, Wallet } from "lucide-react";
 import { PageHeader } from "@/components/ui/page-header";
 import { StatCard } from "@/components/ui/stat-card";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
@@ -11,9 +11,19 @@ import { getDashboardData } from "@/server/dashboard";
 import { formatCurrency, formatDateTime } from "@/lib/utils";
 import { orderStatusLabels, orderStatusColors } from "@/lib/labels";
 import { TrendingUp } from "lucide-react";
+import { getServerSession } from "next-auth";
+import { authOptions } from "@/lib/auth";
+import { WelcomeBanner, type BannerAlert } from "@/components/dashboard/welcome-banner";
 
 export default async function DashboardPage() {
-  const data = await getDashboardData();
+  const [data, session] = await Promise.all([getDashboardData(), getServerSession(authOptions)]);
+
+  const alerts: BannerAlert[] = [];
+  if (data.overdueCount > 0) alerts.push({ tone: "red", text: `${data.overdueCount} فاتورة متأخرة عن موعد التسليم`, href: "/orders" });
+  if (data.dueTodayCount > 0) alerts.push({ tone: "amber", text: `${data.dueTodayCount} فاتورة موعد تسليمها النهارده`, href: "/orders" });
+  if (data.readyCount > 0) alerts.push({ tone: "green", text: `${data.readyCount} فاتورة جاهزة للاستلام - كلّم العملاء`, href: "/orders?status=READY" });
+  if (data.totalOutstanding > 0) alerts.push({ tone: "blue", text: `متبقي عند العملاء ${formatCurrency(data.totalOutstanding)}`, href: "/reports" });
+  if (data.lowStock.length > 0) alerts.push({ tone: "amber", text: `${data.lowStock.length} صنف مخزونه منخفض`, href: "/inventory" });
 
   return (
     <div>
@@ -30,12 +40,35 @@ export default async function DashboardPage() {
         }
       />
 
-      <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-6">
-        <StatCard label="مبيعات اليوم" value={formatCurrency(data.todaySalesTotal)} icon={Banknote} tone="teal" highlight />
+      <WelcomeBanner
+        name={session?.user?.name ?? ""}
+        isAdmin={session?.user?.role === "ADMIN"}
+        autoClose={data.autoClose}
+        nextCloseAt={data.nextCloseAt}
+        alerts={alerts}
+      />
+
+      <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
+        <StatCard label="مبيعات اليوم (قيمة الفواتير)" value={formatCurrency(data.todaySalesTotal)} icon={Banknote} tone="teal" highlight />
+        <StatCard label="المحصّل اليوم" value={formatCurrency(data.todayCollected)} icon={Wallet} tone="green" />
+        <StatCard
+          label="رصيد الخزنة اليوم"
+          value={formatCurrency(data.cashBalance)}
+          icon={Banknote}
+          tone="navy"
+          highlight
+          hint={data.cashDayClosed ? "اليوم مقفول" : undefined}
+        />
+        <StatCard
+          label="المتبقي عند العملاء"
+          value={formatCurrency(data.totalOutstanding)}
+          icon={HandCoins}
+          tone="amber"
+          hint={`من فواتير هذا الشهر ${formatCurrency(data.monthOutstanding)}`}
+        />
         <StatCard label="فواتير اليوم" value={String(data.todayOrdersCount)} icon={ShoppingBag} tone="navy" />
         <StatCard label="قيد التجهيز" value={String(data.pendingCount)} icon={Clock} tone="amber" />
         <StatCard label="جاهزة للاستلام" value={String(data.readyCount)} icon={PackageCheck} tone="green" />
-        <StatCard label="رصيد الخزنة اليوم" value={formatCurrency(data.cashBalance)} icon={Banknote} tone="navy" highlight />
         <StatCard label="إجمالي العملاء" value={String(data.customersCount)} icon={Users} tone="teal" />
       </div>
 

@@ -31,10 +31,16 @@ export default async function PrescriptionsPage({
   const session = await getServerSession(authOptions);
   const isAdmin = session?.user?.role === "ADMIN";
 
-  const [{ prescriptions, totalCount }, customers] = await Promise.all([
+  const [{ prescriptions, totalCount }, customers, products] = await Promise.all([
     getPrescriptions(q, from, to),
     prisma.customer.findMany({ select: { id: true, name: true, phone: true }, orderBy: { name: "asc" } }),
+    prisma.product.findMany({
+      where: { active: true, category: { in: ["FRAME_MEDICAL", "FRAME_SUNGLASSES", "LENS", "LENS_CONTRACT"] } },
+      select: { id: true, name: true, code: true, sellPrice: true, quantity: true, category: true },
+      orderBy: { name: "asc" },
+    }),
   ]);
+  const rxProducts = products.map((p) => ({ ...p, sellPrice: Number(p.sellPrice) }));
 
   return (
     <div>
@@ -45,7 +51,7 @@ export default async function PrescriptionsPage({
             ? `عرض ${prescriptions.length} من ${totalCount} كشف - ضيّق البحث لرؤية الباقي`
             : `${totalCount} كشف نظر`
         }
-        action={<PrescriptionFormDialog customers={customers} />}
+        action={<PrescriptionFormDialog customers={customers} products={rxProducts} />}
       />
 
       <Toolbar>
