@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { getServerSession } from "next-auth";
-import { Wallet, Lock, HandCoins, ChevronLeft } from "lucide-react";
+import { Wallet, Lock, HandCoins, ChevronLeft, History } from "lucide-react";
+import { Button } from "@/components/ui/button";
 import { authOptions } from "@/lib/auth";
 import { PageHeader } from "@/components/ui/page-header";
 import { Toolbar } from "@/components/ui/toolbar";
@@ -50,6 +51,12 @@ export default async function CashRegisterPage({
         description="الوارد (تحصيل الفواتير والحركات) والمنصرف يومياً"
         action={
           <>
+            <Link href="/cash-register/closings">
+              <Button variant="outline">
+                <History className="size-4" />
+                سجل الإقفالات
+              </Button>
+            </Link>
             <ExportButton href={`/api/export/cash-register?date=${selectedDate}`} />
             {isAdmin && <CashClosingActions date={selectedDate} closed={day.closed} balance={day.closingBalance} />}
             {!day.closed && <AddCashEntryDialog date={selectedDate} canManageExpenses={canManageExpenses} />}

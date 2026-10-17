@@ -23,6 +23,7 @@ export default async function DashboardPage() {
   if (data.dueTodayCount > 0) alerts.push({ tone: "amber", text: `${data.dueTodayCount} فاتورة موعد تسليمها النهارده`, href: "/orders" });
   if (data.readyCount > 0) alerts.push({ tone: "green", text: `${data.readyCount} فاتورة جاهزة للاستلام - كلّم العملاء`, href: "/orders?status=READY" });
   if (data.totalOutstanding > 0) alerts.push({ tone: "blue", text: `متبقي عند العملاء ${formatCurrency(data.totalOutstanding)}`, href: "/reports" });
+  if (data.stockCountReminder) alerts.push({ tone: "amber", text: "آخر الشهر - اعمل جرد البضاعة قبل الإقفال", href: "/stock-count" });
   if (data.lowStock.length > 0) alerts.push({ tone: "amber", text: `${data.lowStock.length} صنف مخزونه منخفض`, href: "/inventory" });
 
   return (

@@ -26,6 +26,7 @@ export async function getDashboardData() {
     settings,
     dueTodayCount,
     overdueCount,
+    monthCountsCount,
   ] = await Promise.all([
     prisma.order.findMany({
       where: { createdAt: { gte: startOfToday, lt: endOfToday }, status: { not: "CANCELLED" } },
@@ -57,7 +58,11 @@ export async function getDashboardData() {
       where: { status: { in: ["PENDING", "READY"] }, deliveryDate: { gte: dbDate(today), lt: dbDate(addDays(today, 1)) } },
     }),
     prisma.order.count({ where: { status: { in: ["PENDING", "READY"] }, deliveryDate: { lt: dbDate(today) } } }),
+    prisma.stockCount.count({ where: { createdAt: { gte: cairoMonthRange(year, month).start } } }),
   ]);
+
+  const daysLeftInMonth = Math.ceil((cairoMonthRange(year, month).end.getTime() - Date.now()) / 86_400_000);
+  const stockCountReminder = daysLeftInMonth <= 3 && monthCountsCount === 0;
 
   const nextCloseAt = nextAutoCloseAt(settings.autoClose);
 
@@ -95,5 +100,6 @@ export async function getDashboardData() {
     nextCloseAt,
     dueTodayCount,
     overdueCount,
+    stockCountReminder,
   };
 }

@@ -69,10 +69,12 @@ export function ShopSettingsForm({ settings }: { settings: SerializedShopSetting
         <Label htmlFor="autoClose">الإقفال التلقائي للخزنة</Label>
         <Select id="autoClose" name="autoClose" defaultValue={settings.autoClose} className="w-72">
           <option value="NONE">يدوي فقط (من صفحة الخزنة)</option>
-          <option value="DAILY">كل يوم الساعة 12 بالليل</option>
-          <option value="MONTHLY">آخر يوم فى كل شهر</option>
+          <option value="DAILY">يومي (12 بالليل) + إقفال الشهر آخر يوم</option>
+          <option value="MONTHLY">شهري فقط (آخر يوم فى الشهر)</option>
         </Select>
-        <p className="mt-1 text-xs text-muted">عند الإقفال يُسجَّل رصيد الخزنة كتسليم نقدية فيبدأ اليوم التالي من صفر</p>
+        <p className="mt-1 text-xs text-muted">
+          عند الإقفال يُسجَّل رصيد الخزنة كتسليم نقدية فيبدأ اليوم التالي من صفر. إقفال الشهر يحفظ التقرير الشهري ولقطة المخزون.
+        </p>
       </div>
       <Button type="submit" loading={isPending}>
         حفظ التغييرات

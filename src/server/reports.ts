@@ -1,6 +1,7 @@
 import "server-only";
 import { prisma } from "@/lib/prisma";
 import { dateRangeFilter } from "@/lib/utils";
+import { getStockValuation } from "@/server/stock-utils";
 import { addDays, cairoDateStr, cairoDayStart, cairoMonthRange, dbDate } from "@/lib/cairo-time";
 
 export type ReportRange = number | { from: Date; until: Date };
@@ -192,11 +193,13 @@ export async function getOutstandingByMonth(limit = 12) {
 
 /** ينشئ (أو يحدّث) السجل الشهري المحفوظ لشهر معين - يُستدعى تلقائياً فى نهاية كل شهر عبر cron، أو يدوياً */
 export async function generateAndSaveMonthlyReport(year: number, month: number) {
-  const summary = await getMonthSummary(year, month);
+  const [summary, stock] = await Promise.all([getMonthSummary(year, month), getStockValuation()]);
+  // لقطة المخزون وقت الإقفال (عدد القطع وقيمتها بالتكلفة والبيع)
+  const snapshot = { stockQuantity: stock.quantity, stockCostValue: stock.costValue, stockSellValue: stock.sellValue };
   return prisma.monthlyReport.upsert({
     where: { year_month: { year, month } },
-    create: { year, month, ...summary, generatedAt: new Date() },
-    update: { ...summary, generatedAt: new Date() },
+    create: { year, month, ...summary, ...snapshot, generatedAt: new Date() },
+    update: { ...summary, ...snapshot, generatedAt: new Date() },
   });
 }
 

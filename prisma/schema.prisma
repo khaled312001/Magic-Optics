@@ -20,24 +20,26 @@ enum Role {
 }
 
 model User {
-  id        Int      @id @default(autoincrement())
-  name      String
-  username  String   @unique
-  password  String
-  role      Role     @default(EMPLOYEE)
-  active    Boolean  @default(true)
+  id                Int      @id @default(autoincrement())
+  name              String
+  username          String   @unique
+  password          String
+  role              Role     @default(EMPLOYEE)
+  active            Boolean  @default(true)
   // صلاحيات دقيقة للموظفين (المدير دائماً لديه كل الصلاحيات بغض النظر عن هذه القيم)
   canEditInventory  Boolean  @default(true) // تعديل/إضافة أصناف المخزون وتسوية الكميات
   canManageExpenses Boolean  @default(true) // تسجيل حركات "منصرف" بالخزنة (مصروفات/مشتريات/سحب)
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
 
-  orders       Order[]
-  payments     Payment[]
-  cashEntries  CashEntry[]
-  stockMoves   StockMovement[]
-  prescriptions Prescription[]
-  loginLogs    LoginLog[]
+  orders           Order[]
+  payments         Payment[]
+  cashEntries      CashEntry[]
+  stockMoves       StockMovement[]
+  prescriptions    Prescription[]
+  stockCounts      StockCount[]
+  loginLogs        LoginLog[]
+  cashRegisterDays CashRegisterDay[]
 
   @@map("users")
 }
@@ -109,7 +111,7 @@ model Prescription {
   lensType   String? @db.VarChar(200) // نوع العدسات
 
   createdById Int?
-  createdBy   User?   @relation(fields: [createdById], references: [id], onDelete: SetNull)
+  createdBy   User? @relation(fields: [createdById], references: [id], onDelete: SetNull)
 
   orders Order[]
 
@@ -146,8 +148,9 @@ model Product {
   createdAt   DateTime        @default(now())
   updatedAt   DateTime        @updatedAt
 
-  orderItems     OrderItem[]
-  stockMovements StockMovement[]
+  orderItems      OrderItem[]
+  stockMovements  StockMovement[]
+  stockCountItems StockCountItem[]
 
   @@index([category])
   @@index([name])
@@ -161,15 +164,15 @@ enum StockMovementType {
 }
 
 model StockMovement {
-  id        Int               @id @default(autoincrement())
-  productId Int
-  product   Product           @relation(fields: [productId], references: [id], onDelete: Cascade)
-  type      StockMovementType
-  quantity  Int
-  note      String?
+  id          Int               @id @default(autoincrement())
+  productId   Int
+  product     Product           @relation(fields: [productId], references: [id], onDelete: Cascade)
+  type        StockMovementType
+  quantity    Int
+  note        String?
   createdById Int?
-  createdBy   User?   @relation(fields: [createdById], references: [id], onDelete: SetNull)
-  createdAt DateTime          @default(now())
+  createdBy   User?             @relation(fields: [createdById], references: [id], onDelete: SetNull)
+  createdAt   DateTime          @default(now())
 
   @@index([productId])
   @@map("stock_movements")
@@ -204,14 +207,14 @@ model Order {
   type   OrderType   @default(MEDICAL)
   status OrderStatus @default(PENDING)
 
-  totalAmount  Decimal @db.Decimal(10, 2)
-  paidAmount   Decimal @db.Decimal(10, 2) @default(0)
+  totalAmount Decimal @db.Decimal(10, 2)
+  paidAmount  Decimal @default(0) @db.Decimal(10, 2)
 
   deliveryDate DateTime?
   notes        String?   @db.Text
 
   createdById Int?
-  createdBy   User?   @relation(fields: [createdById], references: [id], onDelete: SetNull)
+  createdBy   User? @relation(fields: [createdById], references: [id], onDelete: SetNull)
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -241,14 +244,14 @@ model OrderItem {
 }
 
 model Payment {
-  id        Int      @id @default(autoincrement())
-  orderId   Int
-  order     Order    @relation(fields: [orderId], references: [id], onDelete: Cascade)
-  amount    Decimal  @db.Decimal(10, 2)
-  note      String?
+  id          Int      @id @default(autoincrement())
+  orderId     Int
+  order       Order    @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  amount      Decimal  @db.Decimal(10, 2)
+  note        String?
   createdById Int?
-  createdBy   User?   @relation(fields: [createdById], references: [id], onDelete: SetNull)
-  createdAt DateTime @default(now())
+  createdBy   User?    @relation(fields: [createdById], references: [id], onDelete: SetNull)
+  createdAt   DateTime @default(now())
 
   cashEntry CashEntry? // كل دفعة تدخل الخزنة تلقائياً كحركة وارد
 
@@ -282,12 +285,23 @@ enum CashEntryType {
   OUT
 }
 
+enum CashCloseScope {
+  DAY
+  MONTH
+}
+
 model CashRegisterDay {
   id             Int      @id @default(autoincrement())
   date           DateTime @unique @db.Date
-  openingBalance Decimal  @db.Decimal(10, 2) @default(0)
+  openingBalance Decimal  @default(0) @db.Decimal(10, 2)
   closed         Boolean  @default(false)
   createdAt      DateTime @default(now())
+
+  // بيانات الإقفال (لسجل الإقفالات) - closedById فاضي مع closed = إقفال تلقائي
+  closedAt   DateTime?
+  closeScope CashCloseScope?
+  closedById Int?
+  closedBy   User?           @relation(fields: [closedById], references: [id], onDelete: SetNull)
 
   entries CashEntry[]
 
@@ -295,16 +309,16 @@ model CashRegisterDay {
 }
 
 model CashEntry {
-  id          Int              @id @default(autoincrement())
+  id          Int             @id @default(autoincrement())
   dayId       Int
-  day         CashRegisterDay  @relation(fields: [dayId], references: [id], onDelete: Cascade)
+  day         CashRegisterDay @relation(fields: [dayId], references: [id], onDelete: Cascade)
   category    CashCategory
   type        CashEntryType
-  amount      Decimal          @db.Decimal(10, 2)
+  amount      Decimal         @db.Decimal(10, 2)
   note        String?
   createdById Int?
-  createdBy   User?            @relation(fields: [createdById], references: [id], onDelete: SetNull)
-  createdAt   DateTime         @default(now())
+  createdBy   User?           @relation(fields: [createdById], references: [id], onDelete: SetNull)
+  createdAt   DateTime        @default(now())
 
   // حركة وارد مولّدة من دفعة فاتورة (تُحذف مع الدفعة)
   paymentId Int?     @unique
@@ -325,14 +339,14 @@ enum AutoCloseMode {
 }
 
 model ShopSettings {
-  id      Int    @id @default(1)
-  name    String @default("Magic Optics - مركز ماجيك للبصريات")
-  address String @default("قنا - قفط - أمام فرع اتصالات")
-  phone   String @default("01012135456")
-  phone2  String?
-  examFee Decimal @db.Decimal(10, 2) @default(50) // سعر كشف نظر العدسات على الفاتورة
-  discountPercent Decimal @db.Decimal(5, 2) @default(20) // نسبة خصم الشنابر (الإطارات) المطبوعة أسفل الفاتورة
-  autoClose AutoCloseMode @default(NONE) // الإقفال التلقائي للخزنة
+  id              Int           @id @default(1)
+  name            String        @default("Magic Optics - مركز ماجيك للبصريات")
+  address         String        @default("قنا - قفط - أمام فرع اتصالات")
+  phone           String        @default("01012135456")
+  phone2          String?
+  examFee         Decimal       @default(50) @db.Decimal(10, 2) // سعر كشف نظر العدسات على الفاتورة
+  discountPercent Decimal       @default(20) @db.Decimal(5, 2) // نسبة خصم الشنابر (الإطارات) المطبوعة أسفل الفاتورة
+  autoClose       AutoCloseMode @default(NONE) // الإقفال التلقائي للخزنة
 
   @@map("shop_settings")
 }
@@ -342,17 +356,60 @@ model ShopSettings {
 // ---------------------------------------------------------------------------
 
 model MonthlyReport {
-  id          Int      @id @default(autoincrement())
-  year        Int
-  month       Int // 1-12
-  revenue     Decimal  @db.Decimal(12, 2)
-  cost        Decimal  @db.Decimal(12, 2) // تكلفة البضاعة المباعة
-  expenses    Decimal  @db.Decimal(12, 2) // مصروفات/سحب من الخزنة
-  netProfit   Decimal  @db.Decimal(12, 2)
-  collected   Decimal  @db.Decimal(12, 2) @default(0) // المحصّل فعلياً خلال الشهر
-  outstanding Decimal  @db.Decimal(12, 2) @default(0) // المتبقي عند العملاء من فواتير الشهر
-  generatedAt DateTime @default(now())
+  id             Int      @id @default(autoincrement())
+  year           Int
+  month          Int // 1-12
+  revenue        Decimal  @db.Decimal(12, 2)
+  cost           Decimal  @db.Decimal(12, 2) // تكلفة البضاعة المباعة
+  expenses       Decimal  @db.Decimal(12, 2) // مصروفات/سحب من الخزنة
+  netProfit      Decimal  @db.Decimal(12, 2)
+  collected      Decimal  @default(0) @db.Decimal(12, 2) // المحصّل فعلياً خلال الشهر
+  outstanding    Decimal  @default(0) @db.Decimal(12, 2) // المتبقي عند العملاء من فواتير الشهر
+  // لقطة المخزون وقت إقفال الشهر
+  stockQuantity  Int      @default(0) // عدد القطع
+  stockCostValue Decimal  @default(0) @db.Decimal(12, 2) // قيمة المخزون بسعر التكلفة
+  stockSellValue Decimal  @default(0) @db.Decimal(12, 2) // قيمة المخزون بسعر البيع
+  generatedAt    DateTime @default(now())
 
   @@unique([year, month])
   @@map("monthly_reports")
+}
+
+enum StockCountStatus {
+  OPEN // جاري العد
+  APPROVED // معتمد - تمت تسوية المخزون
+}
+
+/// جرد البضاعة: لقطة من المخزون وقت البدء، يُكتب أمام كل صنف العدد الفعلي ثم يُعتمد
+model StockCount {
+  id          Int              @id @default(autoincrement())
+  title       String
+  status      StockCountStatus @default(OPEN)
+  notes       String?          @db.Text
+  createdById Int?
+  createdBy   User?            @relation(fields: [createdById], references: [id], onDelete: SetNull)
+  createdAt   DateTime         @default(now())
+  approvedAt  DateTime?
+
+  items StockCountItem[]
+
+  @@map("stock_counts")
+}
+
+model StockCountItem {
+  id         Int             @id @default(autoincrement())
+  countId    Int
+  count      StockCount      @relation(fields: [countId], references: [id], onDelete: Cascade)
+  productId  Int?
+  product    Product?        @relation(fields: [productId], references: [id], onDelete: SetNull)
+  name       String
+  code       String?
+  category   ProductCategory
+  systemQty  Int // الكمية بالسيستم وقت بدء الجرد
+  countedQty Int? // الكمية الفعلية (فاضية = لم يُعد بعد)
+  costPrice  Decimal         @db.Decimal(10, 2)
+  sellPrice  Decimal         @db.Decimal(10, 2)
+
+  @@index([countId])
+  @@map("stock_count_items")
 }

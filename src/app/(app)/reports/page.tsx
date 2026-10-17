@@ -228,6 +228,7 @@ export default async function ReportsPage({
                     <th className="px-5 py-2.5 font-medium">المحصّل</th>
                     <th className="px-5 py-2.5 font-medium">المتبقي</th>
                     <th className="px-5 py-2.5 font-medium">التكلفة والمصروفات</th>
+                    <th className="px-5 py-2.5 font-medium">المخزون وقت الإقفال</th>
                     <th className="px-5 py-2.5 font-medium">صافي الربح</th>
                     <th className="px-5 py-2.5 font-medium"></th>
                   </tr>
@@ -246,6 +247,9 @@ export default async function ReportsPage({
                         <td className="px-5 py-3 text-emerald-600">{formatCurrency(m.collected)}</td>
                         <td className="px-5 py-3 text-amber-600">{formatCurrency(m.outstanding)}</td>
                         <td className="px-5 py-3 text-red-600">{formatCurrency(Number(m.cost) + Number(m.expenses))}</td>
+                        <td className="px-5 py-3 text-muted">
+                          {m.stockQuantity > 0 ? `${m.stockQuantity} قطعة · ${formatCurrency(m.stockCostValue)}` : "-"}
+                        </td>
                         <td className="px-5 py-3 font-bold text-emerald-700">{formatCurrency(m.netProfit)}</td>
                         <td className="px-5 py-3">
                           <div className="flex justify-end gap-2">

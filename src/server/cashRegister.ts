@@ -71,7 +71,10 @@ export async function deleteCashEntry(id: number): Promise<ActionResult> {
         await tx.cashEntry.delete({ where: { id } });
       }
       if (CLOSING_CATEGORIES.includes(entry.category)) {
-        await tx.cashRegisterDay.update({ where: { id: entry.dayId }, data: { closed: false } });
+        await tx.cashRegisterDay.update({
+          where: { id: entry.dayId },
+          data: { closed: false, closedAt: null, closeScope: null, closedById: null },
+        });
       }
     });
 
@@ -113,7 +116,10 @@ export async function reopenCash(dateStr: string): Promise<ActionResult> {
 
     await prisma.$transaction([
       prisma.cashEntry.deleteMany({ where: { dayId: day.id, category: { in: CLOSING_CATEGORIES } } }),
-      prisma.cashRegisterDay.update({ where: { id: day.id }, data: { closed: false } }),
+      prisma.cashRegisterDay.update({
+        where: { id: day.id },
+        data: { closed: false, closedAt: null, closeScope: null, closedById: null },
+      }),
     ]);
 
     revalidateMoney();

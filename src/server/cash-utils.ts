@@ -128,7 +128,10 @@ export async function performCashClose(dateStr: string, scope: "DAY" | "MONTH", 
         },
       });
     }
-    await tx.cashRegisterDay.update({ where: { id: view.id }, data: { closed: true } });
+    await tx.cashRegisterDay.update({
+      where: { id: view.id },
+      data: { closed: true, closedAt: new Date(), closeScope: scope, closedById: userId },
+    });
   });
   return { closed: true, amount: balance };
 }
@@ -140,4 +143,75 @@ export function nextAutoCloseAt(mode: "NONE" | "DAILY" | "MONTHLY") {
   if (mode === "DAILY") return cairoDayStart(addDays(today, 1)).getTime();
   if (mode === "MONTHLY") return cairoMonthRange(year, month).end.getTime();
   return null;
+}
+
+/**
+ * سجل الخزنة والإقفالات: كل يوم فيه حركات أو تم إقفاله، بأرصدته ومن قفله، مجمّع بالشهور (الأحدث أولاً).
+ */
+export async function getCashClosingLog() {
+  const days = await prisma.cashRegisterDay.findMany({
+    orderBy: { date: "asc" },
+    include: {
+      entries: { select: { type: true, category: true, amount: true, paymentId: true, createdById: true } },
+      closedBy: { select: { name: true } },
+    },
+  });
+
+  let running = 0;
+  const rows = [];
+  for (const d of days) {
+    const opening = running;
+    let cashIn = 0;
+    let cashOut = 0;
+    let handedOver = 0;
+    let collected = 0;
+    let closingCategory: CashCategory | null = null;
+    for (const e of d.entries) {
+      const amount = Number(e.amount);
+      if (e.type === "IN") {
+        cashIn += amount;
+        if (e.paymentId !== null) collected += amount;
+      } else if (CLOSING_CATEGORIES.includes(e.category)) {
+        handedOver += amount;
+        closingCategory = e.category;
+      } else {
+        cashOut += amount;
+      }
+    }
+    running = opening + cashIn - cashOut - handedOver;
+    if (d.entries.length === 0 && !d.closed) continue;
+
+    const scope = d.closeScope ?? (closingCategory === "MONTH_CLOSING" ? "MONTH" : closingCategory ? "DAY" : null);
+    rows.push({
+      date: d.date.toISOString().slice(0, 10),
+      opening,
+      cashIn,
+      cashOut,
+      collected,
+      handedOver,
+      closing: running,
+      closed: d.closed,
+      closedAt: d.closedAt,
+      scope,
+      closedBy: d.closedBy?.name ?? null,
+      auto: d.closed && d.closedAt !== null && d.closedById === null,
+    });
+  }
+
+  const months = new Map<
+    string,
+    { key: string; days: typeof rows; cashIn: number; cashOut: number; handedOver: number; collected: number; monthClosed: boolean }
+  >();
+  for (const r of rows.reverse()) {
+    const key = r.date.slice(0, 7);
+    const m = months.get(key) ?? { key, days: [], cashIn: 0, cashOut: 0, handedOver: 0, collected: 0, monthClosed: false };
+    m.days.push(r);
+    m.cashIn += r.cashIn;
+    m.cashOut += r.cashOut;
+    m.handedOver += r.handedOver;
+    m.collected += r.collected;
+    if (r.scope === "MONTH") m.monthClosed = true;
+    months.set(key, m);
+  }
+  return Array.from(months.values());
 }
