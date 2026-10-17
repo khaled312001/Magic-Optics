@@ -60,6 +60,11 @@ export default async function ReceiptPage({
           <h1 className="text-lg font-bold text-foreground">{shop.name}</h1>
           <p className="text-xs text-muted">{shop.address}</p>
           <p className="text-xs text-muted">{[shop.phone, shop.phone2].filter(Boolean).join(" / ")}</p>
+          {shop.taxNumber && (
+            <p className="mt-0.5 text-xs font-semibold text-foreground">
+              رقم السجل الضريبي: <span dir="ltr">{shop.taxNumber}</span>
+            </p>
+          )}
         </div>
 
         <div className="mb-4 flex items-center justify-between border-y border-dashed border-border py-2 text-sm">

@@ -39,6 +39,11 @@ export function ShopSettingsForm({ settings }: { settings: SerializedShopSetting
         </div>
       </div>
       <div>
+        <Label htmlFor="taxNumber">رقم السجل الضريبي</Label>
+        <Input id="taxNumber" name="taxNumber" dir="ltr" className="w-72 text-right" defaultValue={settings.taxNumber ?? ""} />
+        <p className="mt-1 text-xs text-muted">يظهر فى رأس الفاتورة المطبوعة</p>
+      </div>
+      <div>
         <Label htmlFor="examFee">سعر العدسات</Label>
         <Input
           id="examFee"
