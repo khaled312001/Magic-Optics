@@ -40,7 +40,7 @@ function LoginForm() {
   }
 
   return (
-    <div className="flex min-h-dvh items-center justify-center bg-brand-navy px-4 py-10">
+    <div className="flex min-h-dvh items-center justify-center bg-brand-navy px-4 py-10 dark:bg-background">
       <div className="w-full max-w-sm">
         <div className="mb-8 flex flex-col items-center text-center text-white">
           <Image

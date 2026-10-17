@@ -9,6 +9,7 @@ import { getPrescriptionById } from "@/server/prescriptions";
 import { deletePrescription } from "@/server/customers";
 import { PrintButton } from "@/components/orders/print-button";
 import { DeleteButton } from "@/components/ui/delete-button";
+import { ForceLight } from "@/components/layout/force-light";
 import { formatDate } from "@/lib/utils";
 
 export const dynamic = "force-dynamic";
@@ -33,6 +34,7 @@ export default async function PrescriptionPrintPage({ params }: { params: Promis
 
   return (
     <div className="min-h-dvh bg-background py-8">
+      <ForceLight />
       <div className="no-print mx-auto mb-4 flex max-w-md items-center justify-center gap-3">
         <PrintButton label="طباعة الكشف" />
         <Link

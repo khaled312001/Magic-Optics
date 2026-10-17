@@ -1,19 +1,15 @@
 @import "tailwindcss";
 
 :root {
-  --background: #f3f5f9;
-  --surface: #ffffff;
-  --foreground: #16213e;
-  --muted: #667085;
-  --border: #e5e9f0;
-
-  --brand-navy: #0f2a52;
-  --brand-navy-dark: #081a36;
-  --brand-navy-light: #1f4785;
-  --brand-teal: #0eaea3;
-  --brand-teal-dark: #0a8a81;
-  --brand-teal-light: #5eead4;
+  --background: var(--color-background);
+  --surface: var(--color-surface);
+  --foreground: var(--color-foreground);
+  --muted: var(--color-muted);
+  --border: var(--color-border);
 }
+
+/* يسمح بكتابة dark:... فى الكلاسات عند وجود class="dark" على <html> */
+@custom-variant dark (&:where(.dark, .dark *));
 
 /* ألوان hex داخل @theme عادي (وليس inline) حتى يولّد Tailwind لكل لون شفاف
    (مثل bg-brand-teal/5) قيمة hex احتياطية تعمل على Chrome 109 / Windows 7،
@@ -105,10 +101,14 @@
   --color-blue-950: #172554;
 }
 
-/* الوضع الفاتح (White) ثابت دائماً فى هذا النظام، بغض النظر عن إعداد نظام
-   تشغيل المستخدم، حتى تبقى الشاشات متسقة لكل الموظفين. */
-* {
-  border-color: var(--border);
+/* داخل @layer base حتى لا تتغلب على كلاسات border-* (القاعدة القديمة كانت خارج
+   الطبقات فكانت تلغي كل ألوان الحدود وتجعل حدود الحقول باهتة). */
+@layer base {
+  *,
+  ::before,
+  ::after {
+    border-color: var(--color-border);
+  }
 }
 
 html {
@@ -116,11 +116,83 @@ html {
 }
 
 body {
-  background: var(--background);
-  color: var(--foreground);
+  background: var(--color-background);
+  color: var(--color-foreground);
   font-family: var(--font-sans), "Segoe UI", Tahoma, sans-serif;
 }
 
+/* ============ الوضع الداكن (الافتراضي) ============
+   نعيد تعريف ألوان الثيم ودرجات الخلفيات الفاتحة (50-300) فتتحول كل الصفحات
+   تلقائياً، ونفتّح ألوان النصوص الغامقة (600-800) لتباين واضح على الخلفية الداكنة. */
+html.dark {
+  color-scheme: dark;
+
+  --color-background: #0b1120;
+  --color-surface: #151e2e;
+  --color-foreground: #e8edf5;
+  --color-muted: #9aa8bd;
+  --color-border: #2a3650;
+
+  --color-brand-navy: #2c5cb8;
+  --color-brand-navy-light: #3a6fd6;
+  --color-brand-teal-dark: #0b9389;
+
+  --color-slate-100: #1e293b;
+  --color-slate-300: #3d4b66;
+
+  --color-red-50: #2b1418;
+  --color-red-100: #3a1a1f;
+  --color-red-200: #5b2128;
+  --color-red-300: #7f2a33;
+
+  --color-emerald-50: #0f2a22;
+  --color-emerald-100: #123528;
+  --color-emerald-200: #1a4d3b;
+  --color-emerald-300: #236b52;
+
+  --color-amber-50: #2d220e;
+  --color-amber-100: #3a2c10;
+  --color-amber-200: #5a4416;
+  --color-amber-300: #7a5c1c;
+
+  --color-blue-100: #142a4d;
+  --color-blue-300: #24467f;
+}
+
+html.dark .text-brand-navy {
+  color: #9ab8f5;
+}
+html.dark .text-brand-teal-dark {
+  color: #2dd4bf;
+}
+html.dark .text-red-500,
+html.dark .text-red-600 {
+  color: #f87171;
+}
+html.dark .text-red-700,
+html.dark .text-red-800 {
+  color: #fca5a5;
+}
+html.dark .text-emerald-600 {
+  color: #34d399;
+}
+html.dark .text-emerald-700,
+html.dark .text-emerald-800 {
+  color: #6ee7b7;
+}
+html.dark .text-amber-600 {
+  color: #fbbf24;
+}
+html.dark .text-amber-700,
+html.dark .text-amber-800 {
+  color: #fcd34d;
+}
+html.dark .text-blue-800 {
+  color: #93c5fd;
+}
+html.dark .text-slate-700 {
+  color: #cbd5e1;
+}
 ::-webkit-scrollbar {
   width: 10px;
   height: 10px;
@@ -223,6 +295,7 @@ input[type="number"] {
   }
   body {
     background: #fff !important;
+    color: #16213e !important;
   }
   .print-area {
     box-shadow: none !important;

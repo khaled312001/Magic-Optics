@@ -36,7 +36,7 @@ export function Sidebar({ onNavigate }: { onNavigate?: () => void }) {
   const isAdmin = session?.user?.role === "ADMIN";
 
   return (
-    <div className="flex h-full flex-col bg-brand-navy text-white">
+    <div className="flex h-full flex-col bg-brand-navy text-white dark:border-l dark:border-border dark:bg-[#0f1829]">
       <div className="flex items-center gap-3 px-5 py-5">
         <Image
           src="/logo.jpg"

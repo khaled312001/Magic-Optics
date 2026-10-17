@@ -5,6 +5,7 @@ import { prisma } from "@/lib/prisma";
 import { getShopSettings } from "@/server/settings";
 import { PrintButton } from "@/components/orders/print-button";
 import { AutoPrint } from "@/components/orders/auto-print";
+import { ForceLight } from "@/components/layout/force-light";
 import { formatCurrency, formatDate, formatDateTime } from "@/lib/utils";
 import { orderTypeLabels } from "@/lib/labels";
 
@@ -40,6 +41,7 @@ export default async function ReceiptPage({
 
   return (
     <div className="min-h-dvh bg-background py-8">
+      <ForceLight />
       {auto === "1" && <AutoPrint />}
 
       <div className="no-print mx-auto mb-4 flex max-w-md items-center justify-center gap-3">
