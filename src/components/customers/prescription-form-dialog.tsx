@@ -26,7 +26,6 @@ export function PrescriptionFormDialog({
   const router = useRouter();
   const [open, setOpen] = useState(false);
   const [selectedCustomer, setSelectedCustomer] = useState<CustomerOption | null>(null);
-  const [withOrder, setWithOrder] = useState(false);
   const [totalAmount, setTotalAmount] = useState(0);
   const [paidAmount, setPaidAmount] = useState(0);
   const remaining = Math.max(0, totalAmount - paidAmount);
@@ -39,14 +38,22 @@ export function PrescriptionFormDialog({
       if (result.orderId) router.push(`/orders/${result.orderId}/receipt?auto=1`);
       else if (!customerId) router.push(`/prescriptions/${result.id}`);
     },
-    refresh: !!customerId && !withOrder,
+    refresh: !!customerId && totalAmount <= 0,
   });
 
   const customerItems: ComboboxItem[] = (customers ?? []).map((c) => ({ id: c.id, label: c.name, sublabel: c.phone ?? undefined }));
 
   return (
     <>
-      <Button variant="outline" size="sm" onClick={() => setOpen(true)}>
+      <Button
+        variant="outline"
+        size="sm"
+        onClick={() => {
+          setTotalAmount(0);
+          setPaidAmount(0);
+          setOpen(true);
+        }}
+      >
         <Plus className="size-3.5" />
         كشف جديد
       </Button>
@@ -139,66 +146,59 @@ export function PrescriptionFormDialog({
           </div>
 
           <div className="rounded-xl border border-dashed border-brand-teal/50 bg-brand-teal/5 px-3 py-2.5">
-            <label className="flex items-center gap-2 text-sm font-medium text-foreground">
-              <input
-                type="checkbox"
-                checked={withOrder}
-                onChange={(e) => setWithOrder(e.target.checked)}
-                className="size-4 rounded"
-              />
+            <p className="flex items-center gap-2 text-sm font-semibold text-foreground">
               <Receipt className="size-4 text-brand-teal-dark" />
-              إضافة طلب/فاتورة مرتبطة بهذا الكشف
-            </label>
+              الطلب / الفاتورة
+              <span className="text-xs font-normal text-muted">(اكتب القيمة لعمل فاتورة مع الكشف)</span>
+            </p>
 
-            {withOrder && (
-              <div className="mt-3 grid grid-cols-2 gap-3 sm:grid-cols-4">
-                <div>
-                  <Label htmlFor="orderType">نوع الطلب</Label>
-                  <Select id="orderType" name="orderType" defaultValue="MEDICAL">
-                    {Object.entries(orderTypeLabels).map(([value, label]) => (
-                      <option key={value} value={value}>
-                        {label}
-                      </option>
-                    ))}
-                  </Select>
-                </div>
-                <div>
-                  <Label htmlFor="deliveryDate">ميعاد الاستلام</Label>
-                  <DateField id="deliveryDate" name="deliveryDate" className="w-full" />
-                </div>
-                <div>
-                  <Label htmlFor="totalAmount">القيمة</Label>
-                  <Input
-                    id="totalAmount"
-                    name="totalAmount"
-                    type="number"
-                    min={0}
-                    step="0.01"
-                    value={totalAmount || ""}
-                    onChange={(e) => setTotalAmount(Number(e.target.value) || 0)}
-                  />
-                </div>
-                <div>
-                  <Label htmlFor="paidAmount">الدفعة</Label>
-                  <Input
-                    id="paidAmount"
-                    name="paidAmount"
-                    type="number"
-                    min={0}
-                    max={totalAmount}
-                    step="0.01"
-                    value={paidAmount || ""}
-                    onChange={(e) => setPaidAmount(Number(e.target.value) || 0)}
-                  />
-                </div>
-                <div className="col-span-2 sm:col-span-4">
-                  <Label>الباقي</Label>
-                  <div className="flex h-10 items-center justify-center rounded-lg bg-red-50 text-sm font-bold text-red-600">
-                    {formatCurrency(remaining)}
-                  </div>
+            <div className="mt-2 grid grid-cols-2 gap-3 sm:grid-cols-5">
+              <div>
+                <Label htmlFor="orderType">نوع الطلب</Label>
+                <Select id="orderType" name="orderType" defaultValue="MEDICAL">
+                  {Object.entries(orderTypeLabels).map(([value, label]) => (
+                    <option key={value} value={value}>
+                      {label}
+                    </option>
+                  ))}
+                </Select>
+              </div>
+              <div>
+                <Label htmlFor="deliveryDate">موعد التسليم</Label>
+                <DateField id="deliveryDate" name="deliveryDate" className="w-full" />
+              </div>
+              <div>
+                <Label htmlFor="totalAmount">القيمة</Label>
+                <Input
+                  id="totalAmount"
+                  name="totalAmount"
+                  type="number"
+                  min={0}
+                  step="0.01"
+                  value={totalAmount || ""}
+                  onChange={(e) => setTotalAmount(Number(e.target.value) || 0)}
+                />
+              </div>
+              <div>
+                <Label htmlFor="paidAmount">المدفوع</Label>
+                <Input
+                  id="paidAmount"
+                  name="paidAmount"
+                  type="number"
+                  min={0}
+                  max={totalAmount}
+                  step="0.01"
+                  value={paidAmount || ""}
+                  onChange={(e) => setPaidAmount(Number(e.target.value) || 0)}
+                />
+              </div>
+              <div className="col-span-2 sm:col-span-1">
+                <Label>الباقي</Label>
+                <div className="flex h-10 items-center justify-center rounded-lg bg-red-50 text-sm font-bold text-red-600">
+                  {formatCurrency(remaining)}
                 </div>
               </div>
-            )}
+            </div>
           </div>
 
           <div className="flex justify-end gap-2">
