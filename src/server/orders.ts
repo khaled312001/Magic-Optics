@@ -21,8 +21,19 @@ export async function createOrder(formData: FormData): Promise<ActionResult<{ id
       items,
     });
 
-    const rxRaw = formData.get("prescription");
-    const rx = rxRaw ? rxSchema.parse(JSON.parse(String(rxRaw))) : null;
+    // قسم كشف النظر داخل الفاتورة (حقول rx_*) - يُحفظ ككشف للعميل لو اتكتب فيه أي قياس أو بيان
+    let rx = null;
+    if (data.type === "MEDICAL") {
+      const rxRaw = Object.fromEntries(
+        [...formData.entries()]
+          .filter(([key]) => key.startsWith("rx_"))
+          .map(([key, value]) => [key.slice(3), value])
+      );
+      const filled = Object.entries(rxRaw).some(
+        ([key, value]) => key !== "date" && !key.endsWith("ProductId") && String(value).trim() !== ""
+      );
+      if (filled) rx = rxSchema.parse(rxRaw);
+    }
 
     if (!data.customerId && !data.newCustomerName) {
       return { ok: false, error: "اختر عميلاً أو أدخل اسم عميل جديد" };

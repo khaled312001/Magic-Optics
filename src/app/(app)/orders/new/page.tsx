@@ -19,7 +19,7 @@ export default async function NewOrderPage({
     prisma.customer.findMany({ select: { id: true, name: true, phone: true }, orderBy: { name: "asc" } }),
     prisma.product.findMany({
       where: { active: true },
-      select: { id: true, name: true, code: true, sellPrice: true, category: true },
+      select: { id: true, name: true, code: true, sellPrice: true, category: true, quantity: true },
       orderBy: { name: "asc" },
     }),
     customerId

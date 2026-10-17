@@ -20,10 +20,10 @@ export const RX_FIELDS = [
 export type RxValues = Partial<Record<(typeof RX_FIELDS)[number], string>>;
 
 /** جدول قياسات كشف النظر بنفس تقسيم الورقة: يسار | IPD | يمين، وصفّي D و R */
-export function RxTable({ defaultValues }: { defaultValues?: RxValues }) {
+export function RxTable({ defaultValues, namePrefix = "" }: { defaultValues?: RxValues; namePrefix?: string }) {
   const cell = (name: (typeof RX_FIELDS)[number], step = "0.25") => (
     <td className="px-0.5 py-0.5">
-      <Input name={name} type="number" step={step} defaultValue={defaultValues?.[name]} className="h-9 px-1.5 text-center" />
+      <Input name={namePrefix + name} type="number" step={step} defaultValue={defaultValues?.[name]} className="h-9 px-1.5 text-center" />
     </td>
   );
 
