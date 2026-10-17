@@ -60,9 +60,18 @@ export default async function ReceiptPage({
           <h1 className="text-lg font-bold text-foreground">{shop.name}</h1>
           <p className="text-xs text-muted">{shop.address}</p>
           <p className="text-xs text-muted">{[shop.phone, shop.phone2].filter(Boolean).join(" / ")}</p>
-          {shop.taxNumber && (
-            <p className="mt-0.5 text-xs font-semibold text-foreground">
-              رقم السجل الضريبي: <span dir="ltr">{shop.taxNumber}</span>
+          {(shop.taxNumber || shop.facilityNumber) && (
+            <p className="mt-0.5 flex flex-wrap justify-center gap-x-3 text-xs font-semibold text-foreground">
+              {shop.taxNumber && (
+                <span>
+                  رقم السجل الضريبي: <span dir="ltr">{shop.taxNumber}</span>
+                </span>
+              )}
+              {shop.facilityNumber && (
+                <span>
+                  رقم المنشأة: <span dir="ltr">{shop.facilityNumber}</span>
+                </span>
+              )}
             </p>
           )}
         </div>

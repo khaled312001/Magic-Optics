@@ -38,10 +38,16 @@ export function ShopSettingsForm({ settings }: { settings: SerializedShopSetting
           <Input id="phone2" name="phone2" dir="ltr" className="text-right" defaultValue={settings.phone2 ?? ""} />
         </div>
       </div>
-      <div>
-        <Label htmlFor="taxNumber">رقم السجل الضريبي</Label>
-        <Input id="taxNumber" name="taxNumber" dir="ltr" className="w-72 text-right" defaultValue={settings.taxNumber ?? ""} />
-        <p className="mt-1 text-xs text-muted">يظهر فى رأس الفاتورة المطبوعة</p>
+      <div className="grid grid-cols-2 gap-3">
+        <div>
+          <Label htmlFor="taxNumber">رقم السجل الضريبي</Label>
+          <Input id="taxNumber" name="taxNumber" dir="ltr" className="text-right" defaultValue={settings.taxNumber ?? ""} />
+        </div>
+        <div>
+          <Label htmlFor="facilityNumber">رقم المنشأة</Label>
+          <Input id="facilityNumber" name="facilityNumber" dir="ltr" className="text-right" defaultValue={settings.facilityNumber ?? ""} />
+        </div>
+        <p className="col-span-2 -mt-1 text-xs text-muted">يظهران فى رأس الفاتورة المطبوعة</p>
       </div>
       <div>
         <Label htmlFor="examFee">سعر العدسات</Label>
