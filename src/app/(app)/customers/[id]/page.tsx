@@ -11,6 +11,7 @@ import { Button } from "@/components/ui/button";
 import { EmptyState } from "@/components/ui/empty-state";
 import { CustomerFormDialog } from "@/components/customers/customer-form-dialog";
 import { PrescriptionFormDialog } from "@/components/customers/prescription-form-dialog";
+import { getShopSettings } from "@/server/settings";
 import { PrescriptionView } from "@/components/customers/prescription-view";
 import { DeleteButton } from "@/components/ui/delete-button";
 import { deleteCustomer } from "@/server/customers";
@@ -106,7 +107,7 @@ export default async function CustomerDetailPage({
               <FileText className="size-4" />
               الكشوفات الطبية
             </CardTitle>
-            <PrescriptionFormDialog customerId={customer.id} products={rxProducts} />
+            <PrescriptionFormDialog customerId={customer.id} products={rxProducts} discountPercent={Number((await getShopSettings()).discountPercent)} />
           </CardHeader>
           <CardContent>
             {customer.prescriptions.length === 0 ? (

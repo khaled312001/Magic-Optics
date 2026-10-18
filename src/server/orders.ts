@@ -9,6 +9,7 @@ import { ActionResult, handleActionError, okResult } from "@/server/action-resul
 import { generateReceiptNumber } from "@/lib/utils";
 import { z } from "zod";
 import { createPaymentWithCash } from "@/server/cash-utils";
+import { computeFrameDiscount } from "@/server/discount-utils";
 
 export async function createOrder(formData: FormData): Promise<ActionResult<{ id: number }>> {
   try {
@@ -40,7 +41,11 @@ export async function createOrder(formData: FormData): Promise<ActionResult<{ id
       return { ok: false, error: "اختر عميلاً أو أدخل اسم عميل جديد" };
     }
 
-    const totalAmount = items.reduce((sum, it) => sum + it.quantity * it.unitPrice, 0);
+    const subtotal = items.reduce((sum, it) => sum + it.quantity * it.unitPrice, 0);
+    const discountAmount = data.applyDiscount
+      ? await computeFrameDiscount(items.map((it) => ({ productId: it.productId, amount: it.quantity * it.unitPrice })))
+      : 0;
+    const totalAmount = Math.round((subtotal - discountAmount) * 100) / 100;
     if (data.paidAmount > totalAmount) {
       return { ok: false, error: "المبلغ المدفوع لا يمكن أن يكون أكبر من إجمالي الفاتورة" };
     }
@@ -78,6 +83,7 @@ export async function createOrder(formData: FormData): Promise<ActionResult<{ id
           type: data.type,
           status: data.status,
           totalAmount,
+          discountAmount,
           paidAmount: data.paidAmount,
           deliveryDate: data.deliveryDate ? new Date(data.deliveryDate) : null,
           notes: data.notes || null,

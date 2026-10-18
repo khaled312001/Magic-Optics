@@ -166,6 +166,9 @@ export default async function OrderDetailPage({ params }: { params: Promise<{ id
             <div className="rounded-lg bg-background p-3">
               <p className="text-xs text-muted">الإجمالي</p>
               <p className="mt-1 font-bold text-foreground">{formatCurrency(order.totalAmount)}</p>
+              {Number(order.discountAmount) > 0 && (
+                <p className="text-[11px] text-emerald-600">بعد خصم الشنابر {formatCurrency(order.discountAmount)}</p>
+              )}
             </div>
             <div className="rounded-lg bg-background p-3">
               <p className="text-xs text-muted">المدفوع</p>

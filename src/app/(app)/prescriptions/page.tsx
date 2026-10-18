@@ -10,6 +10,7 @@ import { EmptyState } from "@/components/ui/empty-state";
 import { SearchBox } from "@/components/ui/search-box";
 import { DateRangeFilter } from "@/components/ui/date-range-filter";
 import { PrescriptionFormDialog } from "@/components/customers/prescription-form-dialog";
+import { getShopSettings } from "@/server/settings";
 import { DeleteButton } from "@/components/ui/delete-button";
 import { getPrescriptions } from "@/server/prescriptions";
 import { deletePrescription } from "@/server/customers";
@@ -51,7 +52,7 @@ export default async function PrescriptionsPage({
             ? `عرض ${prescriptions.length} من ${totalCount} كشف - ضيّق البحث لرؤية الباقي`
             : `${totalCount} كشف نظر`
         }
-        action={<PrescriptionFormDialog customers={customers} products={rxProducts} />}
+        action={<PrescriptionFormDialog customers={customers} products={rxProducts} discountPercent={Number((await getShopSettings()).discountPercent)} />}
       />
 
       <Toolbar>

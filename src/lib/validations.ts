@@ -142,6 +142,7 @@ export const orderSchema = z.object({
   status: z.enum(["PENDING", "READY", "DELIVERED", "CANCELLED"]).default("PENDING"),
   items: z.array(orderItemSchema).min(1, "أضف صنفاً واحداً على الأقل"),
   paidAmount: z.coerce.number().min(0).default(0),
+  applyDiscount: z.preprocess((v) => v === "1" || v === "on", z.boolean()).default(false),
   deliveryDate: z.string().optional().or(z.literal("")),
   notes: z.string().trim().max(2000).optional().or(z.literal("")),
 });

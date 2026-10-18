@@ -8,6 +8,7 @@ import { createPaymentWithCash } from "@/server/cash-utils";
 import { ActionResult, handleActionError, okResult } from "@/server/action-result";
 import { generateReceiptNumber } from "@/lib/utils";
 import { isStockTracked, orderTypeLabels } from "@/lib/labels";
+import { computeFrameDiscount } from "@/server/discount-utils";
 
 export async function createCustomer(formData: FormData): Promise<ActionResult<{ id: number }>> {
   try {
@@ -132,7 +133,13 @@ export async function createPrescription(
     if (totalAmount > 0) {
       const orderType = data.orderType ?? "MEDICAL";
       const paidAmount = Math.min(data.paidAmount ?? 0, totalAmount);
-      const lines = await buildPrescriptionOrderLines(data, totalAmount, orderTypeLabels[orderType]);
+      // القيمة المكتوبة صافية بعد خصم الشنابر لو اختير فريم من المخزون، فالأصناف تُبنى على القيمة قبل الخصم
+      let discountAmount = 0;
+      if (data.frameProductId) {
+        const frame = await prisma.product.findUnique({ where: { id: data.frameProductId }, select: { sellPrice: true } });
+        if (frame) discountAmount = await computeFrameDiscount([{ productId: data.frameProductId, amount: Number(frame.sellPrice) }]);
+      }
+      const lines = await buildPrescriptionOrderLines(data, totalAmount + discountAmount, orderTypeLabels[orderType]);
 
       const order = await prisma.$transaction(async (tx) => {
         const created = await tx.order.create({
@@ -143,6 +150,7 @@ export async function createPrescription(
             type: orderType,
             status: "PENDING",
             totalAmount,
+            discountAmount,
             paidAmount,
             deliveryDate: data.deliveryDate ? new Date(data.deliveryDate) : null,
             createdById: Number(user.id),

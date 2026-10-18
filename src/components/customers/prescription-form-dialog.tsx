@@ -22,10 +22,13 @@ export function PrescriptionFormDialog({
   customerId,
   customers,
   products = [],
+  discountPercent = 0,
 }: {
   customerId?: number;
   customers?: CustomerOption[];
   products?: RxProductOption[];
+  /** نسبة خصم الشنابر - تُخصم من سعر الفريم المختار من المخزون فقط */
+  discountPercent?: number;
 }) {
   const router = useRouter();
   const [open, setOpen] = useState(false);
@@ -44,9 +47,12 @@ export function PrescriptionFormDialog({
     const lens = kind === "lens" ? product : lensPick;
     if (kind === "frame") setFramePick(product);
     else setLensPick(product);
-    const sum = (frame?.sellPrice ?? 0) + (lens?.sellPrice ?? 0);
+    const frameNet = frame ? frame.sellPrice - Math.round(frame.sellPrice * discountPercent) / 100 : 0;
+    const sum = frameNet + (lens?.sellPrice ?? 0);
     if (sum > 0) setTotalAmount(sum);
   }
+
+  const frameDiscount = framePick ? Math.round(framePick.sellPrice * discountPercent) / 100 : 0;
 
   const { onSubmit, isPending, fieldErrors, error } = useActionForm(createPrescription, {
     successMessage: "تم حفظ الكشف الطبي",
@@ -211,6 +217,11 @@ export function PrescriptionFormDialog({
                   value={totalAmount || ""}
                   onChange={(e) => setTotalAmount(Number(e.target.value) || 0)}
                 />
+                {frameDiscount > 0 && (
+                  <p className="mt-0.5 truncate text-[11px] text-emerald-600">
+                    بعد خصم الشنابر {discountPercent}% (-{formatCurrency(frameDiscount)})
+                  </p>
+                )}
               </div>
               <div>
                 <Label htmlFor="paidAmount">المدفوع</Label>

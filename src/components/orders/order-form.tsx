@@ -45,12 +45,15 @@ export function OrderForm({
   products,
   preselectedCustomer,
   examFee = 0,
+  discountPercent = 0,
 }: {
   customers: CustomerOption[];
   products: ProductOption[];
   preselectedCustomer?: { id: number; name: string; phone: string | null; prescriptions: PrescriptionOption[] };
   /** سعر كشف نظر العدسات (من بيانات المحل) - يُقترح كصنف اختياري عند اختيار نوع الطلب "نظارة طبية" */
   examFee?: number;
+  /** نسبة خصم الشنابر (من بيانات المحل) - تُطبق على الإطارات فقط */
+  discountPercent?: number;
 }) {
   const router = useRouter();
   const [selectedCustomer, setSelectedCustomer] = useState<CustomerOption | null>(preselectedCustomer ?? null);
@@ -113,7 +116,14 @@ export function OrderForm({
     [products]
   );
 
-  const total = items.reduce((s, it) => s + it.quantity * it.unitPrice, 0);
+  const [applyDiscount, setApplyDiscount] = useState(true);
+  const subtotal = items.reduce((s, it) => s + it.quantity * it.unitPrice, 0);
+  const frameIds = useMemo(() => new Set(frames.map((f) => f.id)), [frames]);
+  const frameSubtotal = items
+    .filter((it) => it.productId && frameIds.has(it.productId))
+    .reduce((s, it) => s + it.quantity * it.unitPrice, 0);
+  const discount = applyDiscount ? Math.round(frameSubtotal * discountPercent) / 100 : 0;
+  const total = subtotal - discount;
 
   function updateItem(key: string, patch: Partial<ItemRow>) {
     setItems((rows) => rows.map((r) => (r.key === key ? { ...r, ...patch } : r)));
@@ -126,6 +136,7 @@ export function OrderForm({
   return (
     <form onSubmit={onSubmit} className="space-y-6">
       <input type="hidden" name="items" value={JSON.stringify(items.filter((i) => i.description.trim()))} />
+      <input type="hidden" name="applyDiscount" value={applyDiscount ? "1" : "0"} />
       {selectedCustomer && <input type="hidden" name="customerId" value={selectedCustomer.id} />}
 
       {error && <div className="rounded-lg bg-red-50 px-4 py-3 text-sm text-red-700">{error}</div>}
@@ -362,9 +373,31 @@ export function OrderForm({
           <CardTitle>الدفع</CardTitle>
         </CardHeader>
         <CardContent>
-          <div className="mb-4 flex items-center justify-between rounded-lg bg-background px-4 py-3">
-            <span className="text-sm font-medium text-foreground">الإجمالي</span>
-            <span className="text-lg font-bold text-brand-navy">{formatCurrency(total)}</span>
+          <div className="mb-4 space-y-2 rounded-lg bg-background px-4 py-3">
+            {discountPercent > 0 && frameSubtotal > 0 && (
+              <>
+                <div className="flex items-center justify-between text-sm">
+                  <span className="text-muted">المجموع</span>
+                  <span className="text-foreground">{formatCurrency(subtotal)}</span>
+                </div>
+                <div className="flex items-center justify-between text-sm">
+                  <label className="flex cursor-pointer items-center gap-2 text-foreground">
+                    <input
+                      type="checkbox"
+                      checked={applyDiscount}
+                      onChange={(e) => setApplyDiscount(e.target.checked)}
+                      className="size-4 accent-brand-teal"
+                    />
+                    خصم الشنابر {discountPercent}% (على الإطارات فقط - لا يشمل العدسات)
+                  </label>
+                  <span className="font-semibold text-emerald-600">{discount > 0 ? `-${formatCurrency(discount)}` : "-"}</span>
+                </div>
+              </>
+            )}
+            <div className="flex items-center justify-between border-border pt-1 [&:not(:first-child)]:border-t">
+              <span className="text-sm font-medium text-foreground">الإجمالي</span>
+              <span className="text-lg font-bold text-brand-navy">{formatCurrency(total)}</span>
+            </div>
           </div>
           <div className="max-w-xs">
             <Label htmlFor="paidAmount">المبلغ المدفوع الآن</Label>

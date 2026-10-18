@@ -34,10 +34,9 @@ export default async function ReceiptPage({
   const remaining = Number(order.totalAmount) - Number(order.paidAmount);
 
   const discountPercent = Number(shop.discountPercent);
-  const frameSubtotal = order.items
-    .filter((i) => i.product?.category === "FRAME_MEDICAL" || i.product?.category === "FRAME_SUNGLASSES")
-    .reduce((s, i) => s + Number(i.subtotal), 0);
-  const discountAmount = (frameSubtotal * discountPercent) / 100;
+  const discountAmount = Number(order.discountAmount);
+  const itemsSubtotal = order.items.reduce((s, i) => s + Number(i.subtotal), 0);
+  const hasFrames = order.items.some((i) => i.product?.category === "FRAME_MEDICAL" || i.product?.category === "FRAME_SUNGLASSES");
 
   return (
     <div className="min-h-dvh bg-background py-8">
@@ -134,6 +133,18 @@ export default async function ReceiptPage({
         </table>
 
         <div className="space-y-1.5 rounded-lg border-t-2 border-brand-navy bg-background px-3 py-3 text-sm">
+          {discountAmount > 0 && (
+            <>
+              <div className="flex justify-between">
+                <span className="text-muted">المجموع</span>
+                <span className="text-foreground">{formatCurrency(itemsSubtotal)}</span>
+              </div>
+              <div className="flex justify-between">
+                <span className="text-muted">خصم الشنابر{discountPercent > 0 ? ` ${discountPercent}%` : ""}</span>
+                <span className="text-foreground">-{formatCurrency(discountAmount)}</span>
+              </div>
+            </>
+          )}
           <div className="flex justify-between">
             <span className="text-muted">الإجمالي</span>
             <span className="font-semibold text-foreground">{formatCurrency(order.totalAmount)}</span>
@@ -148,28 +159,8 @@ export default async function ReceiptPage({
           </div>
         </div>
 
-        {discountPercent > 0 && frameSubtotal > 0 ? (
-          <div className="mt-4 space-y-1.5 rounded-lg border border-dashed border-amber-300 bg-amber-50 px-3 py-2 text-xs text-amber-800">
-            <p className="text-center font-semibold">خصم الشنابر {discountPercent}% - لا يشمل العدسات</p>
-            <div className="flex justify-between">
-              <span>قبل الخصم</span>
-              <span>{formatCurrency(frameSubtotal)}</span>
-            </div>
-            <div className="flex justify-between">
-              <span>قيمة الخصم</span>
-              <span>-{formatCurrency(discountAmount)}</span>
-            </div>
-            <div className="flex justify-between border-t border-dashed border-amber-300 pt-1 font-bold">
-              <span>بعد الخصم</span>
-              <span>{formatCurrency(frameSubtotal - discountAmount)}</span>
-            </div>
-          </div>
-        ) : (
-          discountPercent > 0 && (
-            <div className="mt-4 rounded-lg border border-dashed border-amber-300 bg-amber-50 px-3 py-2 text-center text-xs font-medium text-amber-800">
-              خصم {discountPercent}% على الشنابر فقط - لا يشمل العدسات
-            </div>
-          )
+        {discountAmount > 0 && hasFrames && (
+          <p className="mt-3 text-center text-[11px] text-muted">الخصم على الشنابر فقط - لا يشمل العدسات</p>
         )}
 
         <p className="mt-4 text-center text-xs text-muted">شكراً لتعاملكم مع Magic Optics</p>
