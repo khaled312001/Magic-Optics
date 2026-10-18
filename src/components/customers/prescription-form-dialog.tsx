@@ -158,6 +158,7 @@ export function PrescriptionFormDialog({
                 name="frame"
                 productIdName="frameProductId"
                 products={frames}
+                searchBy="code"
                 onPick={(p) => onPick("frame", p)}
               />
             </div>

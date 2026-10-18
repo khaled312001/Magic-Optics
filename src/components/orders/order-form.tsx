@@ -258,6 +258,7 @@ export function OrderForm({
                     name="rx_frame"
                     productIdName="rx_frameProductId"
                     products={frames}
+                    searchBy="code"
                     onPick={(p) => onRxPick("frame", p)}
                   />
                 </div>

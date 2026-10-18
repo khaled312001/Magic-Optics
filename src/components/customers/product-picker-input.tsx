@@ -18,12 +18,15 @@ export function ProductPickerInput({
   productIdName,
   products,
   onPick,
+  searchBy = "name",
 }: {
   id: string;
   name: string;
   productIdName: string;
   products: PickerProduct[];
   onPick: (product: PickerProduct | null) => void;
+  /** "code": البحث بكود الصنف فقط (الإطارات)، "name": بالاسم أو الكود */
+  searchBy?: "code" | "name";
 }) {
   const [text, setText] = useState("");
   const [picked, setPicked] = useState<PickerProduct | null>(null);
@@ -33,14 +36,21 @@ export function ProductPickerInput({
   const matches = useMemo(() => {
     const q = text.trim().toLowerCase();
     if (!q || picked) return [];
+    if (searchBy === "code") {
+      // الكود المطابق تماماً أولاً، ثم الأكواد التى تبدأ بما كُتب
+      return products
+        .filter((p) => p.code?.toLowerCase().startsWith(q))
+        .sort((a, b) => Number(b.code!.toLowerCase() === q) - Number(a.code!.toLowerCase() === q) || a.code!.localeCompare(b.code!))
+        .slice(0, 8);
+    }
     return products
       .filter((p) => p.name.toLowerCase().includes(q) || p.code?.toLowerCase().includes(q))
       .slice(0, 8);
-  }, [text, products, picked]);
+  }, [text, products, picked, searchBy]);
 
   function choose(p: PickerProduct) {
     setPicked(p);
-    setText(p.name);
+    setText(searchBy === "code" && p.code ? `${p.code} - ${p.name}` : p.name);
     setOpen(false);
     onPick(p);
   }
@@ -75,7 +85,7 @@ export function ProductPickerInput({
           }
         }}
         onBlur={() => setTimeout(() => setOpen(false), 150)}
-        placeholder="اكتب أو ابحث فى المخزون"
+        placeholder={searchBy === "code" ? "اكتب كود الفريم" : "اكتب أو ابحث فى المخزون"}
         className={cn(picked && "border-brand-teal pl-8")}
       />
       {picked && <Check className="absolute left-2.5 top-1/2 size-4 -translate-y-1/2 text-brand-teal" />}
@@ -105,8 +115,19 @@ export function ProductPickerInput({
             >
               <span className="flex min-w-0 items-center gap-1.5">
                 <Package className="size-3.5 shrink-0 text-muted" />
-                <span className="truncate text-foreground">{p.name}</span>
-                {p.code && <span className="text-xs text-muted">{p.code}</span>}
+                {searchBy === "code" ? (
+                  <>
+                    <span className="shrink-0 font-bold text-brand-navy" dir="ltr">
+                      {p.code}
+                    </span>
+                    <span className="truncate text-xs text-muted">{p.name}</span>
+                  </>
+                ) : (
+                  <>
+                    <span className="truncate text-foreground">{p.name}</span>
+                    {p.code && <span className="text-xs text-muted">{p.code}</span>}
+                  </>
+                )}
               </span>
               <span className="shrink-0 text-xs">
                 <span className="font-bold text-brand-navy">{formatCurrency(p.sellPrice)}</span>
