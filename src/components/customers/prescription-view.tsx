@@ -4,10 +4,12 @@ import { formatDate } from "@/lib/utils";
 import { DeleteButton } from "@/components/ui/delete-button";
 import { deletePrescription } from "@/server/customers";
 import type { Prescription } from "@prisma/client";
+import { PrescriptionEditDialog } from "@/components/customers/prescription-edit-dialog";
+import { rxValuesOf } from "@/components/customers/rx-table";
+import { cairoDateStr } from "@/lib/cairo-time";
 
-function v(n: number | null | undefined) {
-  if (n === null || n === undefined) return "-";
-  return n > 0 ? `+${n}` : String(n);
+function v(value: string | null | undefined) {
+  return value?.trim() || "-";
 }
 
 type PrescriptionWithCreator = Prescription & { createdBy: { name: string } | null };
@@ -23,6 +25,17 @@ export function PrescriptionView({ prescription, canDelete }: { prescription: Pr
           {prescription.doctorName && <span>· د. {prescription.doctorName}</span>}
         </div>
         <div className="flex items-center gap-1">
+          <PrescriptionEditDialog
+            prescription={{
+              ...rxValuesOf(prescription),
+              id: prescription.id,
+              date: cairoDateStr(prescription.date),
+              doctorName: prescription.doctorName,
+              frame: prescription.frame,
+              lensType: prescription.lensType,
+              notes: prescription.notes,
+            }}
+          />
           <Link
             href={`/prescriptions/${prescription.id}`}
             className="inline-flex h-7 items-center gap-1 rounded-md px-2 text-xs font-medium text-brand-navy hover:bg-background"

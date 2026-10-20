@@ -14,9 +14,8 @@ import { formatCurrency, formatDate } from "@/lib/utils";
 
 export const dynamic = "force-dynamic";
 
-function v(n: number | null | undefined) {
-  if (n === null || n === undefined) return "-";
-  return n > 0 ? `+${n}` : String(n);
+function v(value: string | null | undefined) {
+  return value?.trim() || "-";
 }
 
 export default async function PrescriptionPrintPage({ params }: { params: Promise<{ id: string }> }) {

@@ -3,7 +3,7 @@
 import { revalidatePath } from "next/cache";
 import { prisma } from "@/lib/prisma";
 import { requireUser, requireAdmin } from "@/lib/auth-helpers";
-import { customerSchema, prescriptionSchema } from "@/lib/validations";
+import { customerSchema, prescriptionSchema, rxSchema } from "@/lib/validations";
 import { createPaymentWithCash } from "@/server/cash-utils";
 import { ActionResult, handleActionError, okResult } from "@/server/action-result";
 import { generateReceiptNumber } from "@/lib/utils";
@@ -240,6 +240,24 @@ async function buildPrescriptionOrderLines(
     }
   }
   return lines;
+}
+
+/** تعديل كشف محفوظ: القياسات والتاريخ وبيانات الورقة (الفاتورة المرتبطة لا تتغير) */
+export async function updatePrescription(id: number, formData: FormData): Promise<ActionResult> {
+  try {
+    await requireUser();
+    const { date, notes, ...rest } = rxSchema.parse(Object.fromEntries(formData));
+    const updated = await prisma.prescription.update({
+      where: { id },
+      data: { ...rest, notes: notes || null, ...(date ? { date: new Date(date) } : {}) },
+    });
+    revalidatePath(`/customers/${updated.customerId}`);
+    revalidatePath("/prescriptions");
+    revalidatePath(`/prescriptions/${id}`);
+    return okResult(undefined);
+  } catch (err) {
+    return handleActionError(err);
+  }
 }
 
 export async function deletePrescription(id: number, customerId: number): Promise<ActionResult> {

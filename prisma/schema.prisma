@@ -85,24 +85,25 @@ model Prescription {
   customer   Customer @relation(fields: [customerId], references: [id], onDelete: Cascade)
   date       DateTime @default(now())
 
+  // القياسات تُحفظ نصاً كما كُتبت بالضبط (الموجب والسالب يكتبهما المستخدم)
   // بعيد (Distance)
-  rightSphFar  Float?
-  rightCylFar  Float?
-  rightAxisFar Int?
-  leftSphFar   Float?
-  leftCylFar   Float?
-  leftAxisFar  Int?
+  rightSphFar  String? @db.VarChar(20)
+  rightCylFar  String? @db.VarChar(20)
+  rightAxisFar String? @db.VarChar(20)
+  leftSphFar   String? @db.VarChar(20)
+  leftCylFar   String? @db.VarChar(20)
+  leftAxisFar  String? @db.VarChar(20)
 
   // قريب (Reading)
-  rightSphNear  Float?
-  rightCylNear  Float?
-  rightAxisNear Int?
-  leftSphNear   Float?
-  leftCylNear   Float?
-  leftAxisNear  Int?
+  rightSphNear  String? @db.VarChar(20)
+  rightCylNear  String? @db.VarChar(20)
+  rightAxisNear String? @db.VarChar(20)
+  leftSphNear   String? @db.VarChar(20)
+  leftCylNear   String? @db.VarChar(20)
+  leftAxisNear  String? @db.VarChar(20)
 
-  ipdFar  Float? // المسافة بين الحدقتين - بعيد
-  ipdNear Float? // المسافة بين الحدقتين - قريب
+  ipdFar  String? @db.VarChar(20) // المسافة بين الحدقتين - بعيد
+  ipdNear String? @db.VarChar(20) // المسافة بين الحدقتين - قريب
   notes   String? @db.Text
 
   // بيانات ورقة الكشف المطبوعة

@@ -10,6 +10,9 @@ import { EmptyState } from "@/components/ui/empty-state";
 import { SearchBox } from "@/components/ui/search-box";
 import { DateRangeFilter } from "@/components/ui/date-range-filter";
 import { PrescriptionFormDialog } from "@/components/customers/prescription-form-dialog";
+import { PrescriptionEditDialog } from "@/components/customers/prescription-edit-dialog";
+import { rxValuesOf } from "@/components/customers/rx-table";
+import { cairoDateStr } from "@/lib/cairo-time";
 import { getShopSettings } from "@/server/settings";
 import { DeleteButton } from "@/components/ui/delete-button";
 import { getPrescriptions } from "@/server/prescriptions";
@@ -18,9 +21,8 @@ import { formatDate } from "@/lib/utils";
 
 export const dynamic = "force-dynamic";
 
-function v(n: number | null | undefined) {
-  if (n === null || n === undefined) return "-";
-  return n > 0 ? `+${n}` : String(n);
+function v(value: string | null | undefined) {
+  return value?.trim() || "-";
 }
 
 export default async function PrescriptionsPage({
@@ -100,6 +102,18 @@ export default async function PrescriptionsPage({
                           <Eye className="size-3.5" />
                           عرض
                         </Link>
+                        <PrescriptionEditDialog
+                          size="md"
+                          prescription={{
+                            ...rxValuesOf(p),
+                            id: p.id,
+                            date: cairoDateStr(p.date),
+                            doctorName: p.doctorName,
+                            frame: p.frame,
+                            lensType: p.lensType,
+                            notes: p.notes,
+                          }}
+                        />
                         {isAdmin && (
                           <DeleteButton
                             action={deletePrescription.bind(null, p.id, p.customerId)}
