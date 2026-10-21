@@ -9,7 +9,7 @@ import { Input, Label, Select, FieldError } from "@/components/ui/input";
 import { Combobox, type ComboboxItem } from "@/components/ui/combobox";
 import { useActionForm } from "@/components/ui/use-action-form";
 import { createPrescription } from "@/server/customers";
-import { orderTypeLabels } from "@/lib/labels";
+import { orderStatusLabels, orderTypeLabels } from "@/lib/labels";
 import { formatCurrency } from "@/lib/utils";
 import { DateField, todayIso } from "@/components/ui/date-field";
 import { RxTable } from "@/components/customers/rx-table";
@@ -191,11 +191,21 @@ export function PrescriptionFormDialog({
               <span className="text-xs font-normal text-muted">(اكتب القيمة لعمل فاتورة مع الكشف)</span>
             </p>
 
-            <div className="mt-2 grid grid-cols-2 gap-3 sm:grid-cols-5">
+            <div className="mt-2 grid grid-cols-2 gap-3 sm:grid-cols-6">
               <div>
                 <Label htmlFor="orderType">نوع الطلب</Label>
                 <Select id="orderType" name="orderType" defaultValue="MEDICAL">
                   {Object.entries(orderTypeLabels).map(([value, label]) => (
+                    <option key={value} value={value}>
+                      {label}
+                    </option>
+                  ))}
+                </Select>
+              </div>
+              <div>
+                <Label htmlFor="orderStatus">الحالة</Label>
+                <Select id="orderStatus" name="orderStatus" defaultValue="PENDING">
+                  {Object.entries(orderStatusLabels).map(([value, label]) => (
                     <option key={value} value={value}>
                       {label}
                     </option>

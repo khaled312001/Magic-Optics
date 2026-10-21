@@ -148,7 +148,7 @@ export async function createPrescription(
             customerId,
             prescriptionId: prescription.id,
             type: orderType,
-            status: "PENDING",
+            status: data.orderStatus,
             totalAmount,
             discountAmount,
             paidAmount,

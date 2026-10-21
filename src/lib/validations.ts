@@ -57,6 +57,7 @@ export const prescriptionSchema = z
     lensProductId: optId,
     // تفاصيل الطلب المرتبط (اختياري) - تطابق سلّة الكشف الورقية التي تجمع بيانات الفحص والطلب فى إيصال واحد
     orderType: z.enum(["MEDICAL", "SUNGLASSES", "LENS_CHANGE", "OTHER"]).optional(),
+    orderStatus: z.enum(["PENDING", "READY", "DELIVERED", "CANCELLED"]).default("PENDING"),
     orderDescription: z.string().trim().max(200).optional().or(z.literal("")),
     totalAmount: numOrEmpty,
     paidAmount: numOrEmpty,
