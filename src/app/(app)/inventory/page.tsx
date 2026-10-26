@@ -59,12 +59,14 @@ export default async function InventoryPage({
         description={`${products.length} صنف`}
         action={
           <div className="flex items-center gap-2">
-            <Link href="/stock-count">
-              <Button variant="outline">
-                <ClipboardCheck className="size-4" />
-                جرد البضاعة
-              </Button>
-            </Link>
+            {isAdmin && (
+              <Link href="/stock-count">
+                <Button variant="outline">
+                  <ClipboardCheck className="size-4" />
+                  جرد البضاعة
+                </Button>
+              </Link>
+            )}
             <ExportButton href={`/api/export/inventory?${exportParams.toString()}`} />
             {canEditInventory && <ProductFormDialog defaultCategory={category} isAdmin={isAdmin} />}
           </div>

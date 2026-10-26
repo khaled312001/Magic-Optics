@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { getServerSession } from "next-auth";
+import { redirect } from "next/navigation";
 import { ClipboardCheck, ChevronRight } from "lucide-react";
 import { authOptions } from "@/lib/auth";
 import { PageHeader } from "@/components/ui/page-header";
@@ -14,6 +15,7 @@ export const dynamic = "force-dynamic";
 export default async function StockCountDetailPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
   const [count, session] = await Promise.all([getStockCount(Number(id)), getServerSession(authOptions)]);
+  if (session?.user?.role !== "ADMIN") redirect("/dashboard");
   if (!count) notFound();
 
   const isAdmin = session?.user?.role === "ADMIN";

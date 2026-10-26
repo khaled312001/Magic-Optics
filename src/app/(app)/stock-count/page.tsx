@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { getServerSession } from "next-auth";
+import { redirect } from "next/navigation";
 import { ClipboardCheck, ChevronLeft, Boxes } from "lucide-react";
 import { authOptions } from "@/lib/auth";
 import { PageHeader } from "@/components/ui/page-header";
@@ -18,8 +19,10 @@ export const dynamic = "force-dynamic";
 
 export default async function StockCountPage() {
   const session = await getServerSession(authOptions);
-  const isAdmin = session?.user?.role === "ADMIN";
-  const canEditInventory = isAdmin || session?.user?.canEditInventory === true;
+  // الجرد وقيمة البضاعة للمدير فقط
+  if (session?.user?.role !== "ADMIN") redirect("/dashboard");
+  const isAdmin = true;
+  const canEditInventory = true;
 
   const [valuation, counts] = await Promise.all([getStockValuation(), listStockCounts()]);
   const openCount = counts.find((c) => c.status === "OPEN");

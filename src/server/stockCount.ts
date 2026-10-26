@@ -3,7 +3,7 @@
 import { revalidatePath } from "next/cache";
 import { z } from "zod";
 import { prisma } from "@/lib/prisma";
-import { requireAdmin, requireInventoryEdit } from "@/lib/auth-helpers";
+import { requireAdmin } from "@/lib/auth-helpers";
 import { ActionResult, handleActionError, okResult } from "@/server/action-result";
 import { cairoDateStr } from "@/lib/cairo-time";
 import { NON_STOCK_CATEGORIES } from "@/lib/labels";
@@ -13,7 +13,7 @@ const MONTHS = ["يناير", "فبراير", "مارس", "أبريل", "ماي�
 /** بدء جرد جديد: لقطة من كل الأصناف النشطة بكمياتها الحالية */
 export async function startStockCount(): Promise<ActionResult<{ id: number }>> {
   try {
-    const user = await requireInventoryEdit();
+    const user = await requireAdmin();
     const open = await prisma.stockCount.findFirst({ where: { status: "OPEN" } });
     if (open) return { ok: false, error: `يوجد جرد مفتوح بالفعل (${open.title}) - أكمله أو احذفه أولاً` };
 
@@ -52,7 +52,7 @@ const entriesSchema = z.array(
 /** حفظ الكميات الفعلية المكتوبة (يمكن الحفظ أكثر من مرة أثناء العد) */
 export async function saveStockCount(id: number, entries: { id: number; countedQty: number | null }[]): Promise<ActionResult> {
   try {
-    await requireInventoryEdit();
+    await requireAdmin();
     const data = entriesSchema.parse(entries);
     const count = await prisma.stockCount.findUniqueOrThrow({ where: { id } });
     if (count.status !== "OPEN") return { ok: false, error: "هذا الجرد معتمد ولا يمكن تعديله" };
