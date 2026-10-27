@@ -1,5 +1,4 @@
 import { notFound } from "next/navigation";
-import Image from "next/image";
 import Link from "next/link";
 import { ChevronRight } from "lucide-react";
 import { getServerSession } from "next-auth";
@@ -11,6 +10,7 @@ import { PrintButton } from "@/components/orders/print-button";
 import { DeleteButton } from "@/components/ui/delete-button";
 import { ForceLight } from "@/components/layout/force-light";
 import { formatCurrency, formatDate } from "@/lib/utils";
+import { SlipAmount, SlipBar, SlipFooter, SlipHeader, SlipInfo, SlipPaper } from "@/components/print/slip";
 
 export const dynamic = "force-dynamic";
 
@@ -32,18 +32,26 @@ export default async function PrescriptionPrintPage({ params }: { params: Promis
   const isAdmin = session?.user?.role === "ADMIN";
   // أحدث فاتورة مرتبطة بالكشف - منها القيمة والمدفوع والباقي وموعد التسليم كما فى الورقة
   const order = prescription.linkedOrders[0];
-  const slipRows: [string, string | null][] = [
-    ["اسم الطبيب", prescription.doctorName],
-    ["الفريم", prescription.frame],
-    ["نوع العدسات", prescription.lensType],
-    ["القيمة", order ? formatCurrency(order.totalAmount) : null],
-    ["المدفوع", order ? formatCurrency(order.paidAmount) : null],
-    ["الباقي", order ? formatCurrency(Number(order.totalAmount) - Number(order.paidAmount)) : null],
-    ["موعد التسليم", order?.deliveryDate ? formatDate(order.deliveryDate) : null],
+  const remaining = order ? Number(order.totalAmount) - Number(order.paidAmount) : 0;
+
+  const infoRows: [string, string][] = [
+    ["التاريخ", formatDate(prescription.date)],
+    ["الاسم", prescription.customer.name],
+    ...(prescription.customer.phone ? [["الهاتف", prescription.customer.phone] as [string, string]] : []),
+    ...(prescription.createdBy ? [["الموظف", prescription.createdBy.name] as [string, string]] : []),
   ];
+  const slipRows = (
+    [
+      ["اسم الطبيب", prescription.doctorName],
+      ["الفريم", prescription.frame],
+      ["نوع العدسات", prescription.lensType],
+      ["موعد التسليم", order?.deliveryDate ? formatDate(order.deliveryDate) : null],
+      ["ملاحظات", prescription.notes],
+    ] as [string, string | null][]
+  ).filter((row): row is [string, string] => !!row[1]);
 
   return (
-    <div className="min-h-dvh bg-background py-8">
+    <div className="min-h-dvh bg-background py-8 print:min-h-0 print:bg-white print:py-0">
       <ForceLight />
       <div className="no-print mx-auto mb-4 flex max-w-md items-center justify-center gap-3">
         <PrintButton label="طباعة الكشف" />
@@ -63,82 +71,45 @@ export default async function PrescriptionPrintPage({ params }: { params: Promis
         )}
       </div>
 
-      <div className="print-area print-thermal mx-auto max-w-md rounded-xl border border-border bg-surface p-6 shadow-sm">
-        <div className="mb-5 flex flex-col items-center border-b-2 border-brand-navy pb-4 text-center">
-          <Image src="/logo.jpg" alt={shop.name} width={64} height={64} className="mb-2 rounded-lg" />
-          <h1 className="text-lg font-bold text-foreground">{shop.name}</h1>
-          <p className="text-xs text-muted">{shop.address}</p>
-          <p className="text-xs text-muted">{[shop.phone, shop.phone2].filter(Boolean).join(" / ")}</p>
-        </div>
+      <SlipPaper>
+        <SlipHeader shop={shop} />
+        <SlipBar title="كشف نظر" number={`#${prescription.id}`} />
+        <SlipInfo rows={infoRows} />
 
-        <div className="mb-4 flex items-center justify-between border-y border-dashed border-border py-2 text-sm">
-          <span className="text-muted">كشف نظر</span>
-          <span className="font-semibold text-foreground">#{prescription.id}</span>
-        </div>
-
-        <div className="mb-4 space-y-1 text-sm">
-          <div className="flex justify-between">
-            <span className="text-muted">الكود</span>
-            <span className="text-foreground">#{prescription.id}</span>
-          </div>
-          <div className="flex justify-between">
-            <span className="text-muted">التاريخ</span>
-            <span className="text-foreground">{formatDate(prescription.date)}</span>
-          </div>
-          <div className="flex justify-between">
-            <span className="text-muted">الاسم</span>
-            <span className="text-foreground">{prescription.customer.name}</span>
-          </div>
-          {prescription.customer.phone && (
-            <div className="flex justify-between">
-              <span className="text-muted">الهاتف</span>
-              <span className="text-foreground" dir="ltr">{prescription.customer.phone}</span>
-            </div>
-          )}
-          {prescription.createdBy && (
-            <div className="flex justify-between">
-              <span className="text-muted">اسم الموظف</span>
-              <span className="text-foreground">{prescription.createdBy.name}</span>
-            </div>
-          )}
-        </div>
-
-        <table className="mb-3 w-full border-collapse text-center text-xs">
+        <table className="slip-table slip-rx">
           <thead>
-            <tr className="text-muted">
-              <th className="w-14 text-right font-normal"></th>
-              <th colSpan={3} className="pb-1.5 font-semibold text-brand-teal-dark">العين اليسرى</th>
-              <th className="pb-1.5 font-semibold text-foreground">IPD</th>
-              <th colSpan={3} className="pb-1.5 font-semibold text-brand-navy">العين اليمنى</th>
+            <tr>
+              <th rowSpan={2}></th>
+              <th colSpan={3}>العين اليسرى L</th>
+              <th rowSpan={2}>IPD</th>
+              <th colSpan={3}>العين اليمنى R</th>
             </tr>
-            <tr className="text-muted">
-              <th></th>
-              <th className="font-normal">AXIS</th>
-              <th className="font-normal">CYL</th>
-              <th className="font-normal">SPH</th>
-              <th></th>
-              <th className="font-normal">AXIS</th>
-              <th className="font-normal">CYL</th>
-              <th className="font-normal">SPH</th>
+            <tr>
+              <th>AXIS</th>
+              <th>CYL</th>
+              <th>SPH</th>
+              <th>AXIS</th>
+              <th>CYL</th>
+              <th>SPH</th>
             </tr>
           </thead>
           <tbody>
-            <tr className="border-t border-border">
-              <td className="py-2 text-right font-medium text-foreground">D</td>
+            <tr>
+              <th>D</th>
               <td dir="ltr">{v(prescription.leftAxisFar)}</td>
               <td dir="ltr">{v(prescription.leftCylFar)}</td>
               <td dir="ltr">{v(prescription.leftSphFar)}</td>
-              <td className="font-medium text-foreground">{prescription.ipdFar ?? "-"}</td>
+              <td dir="ltr">{v(prescription.ipdFar)}</td>
               <td dir="ltr">{v(prescription.rightAxisFar)}</td>
               <td dir="ltr">{v(prescription.rightCylFar)}</td>
               <td dir="ltr">{v(prescription.rightSphFar)}</td>
             </tr>
-            <tr className="border-t border-border">
-              <td className="py-2 text-right font-medium text-foreground">R</td>
+            <tr>
+              <th>R</th>
               <td dir="ltr">{v(prescription.leftAxisNear)}</td>
               <td dir="ltr">{v(prescription.leftCylNear)}</td>
               <td dir="ltr">{v(prescription.leftSphNear)}</td>
-              <td className="font-medium text-foreground">{prescription.ipdNear ?? "-"}</td>
+              <td dir="ltr">{v(prescription.ipdNear)}</td>
               <td dir="ltr">{v(prescription.rightAxisNear)}</td>
               <td dir="ltr">{v(prescription.rightCylNear)}</td>
               <td dir="ltr">{v(prescription.rightSphNear)}</td>
@@ -146,23 +117,13 @@ export default async function PrescriptionPrintPage({ params }: { params: Promis
           </tbody>
         </table>
 
-        {slipRows.some(([, value]) => value) && (
-          <div className="mb-2 space-y-1 border-t border-dashed border-border pt-2 text-sm">
-            {slipRows
-              .filter(([, value]) => value)
-              .map(([label, value]) => (
-                <div key={label} className="flex justify-between gap-3">
-                  <span className="text-muted">{label}</span>
-                  <span className={label === "الباقي" ? "font-bold text-foreground" : "text-foreground"}>{value}</span>
-                </div>
-              ))}
-          </div>
-        )}
+        {slipRows.length > 0 && <SlipInfo rows={slipRows} />}
 
-        {prescription.notes && (
-          <div className="mb-2 border-t border-dashed border-border pt-2 text-sm">
-            <p className="text-muted">ملاحظات</p>
-            <p className="text-foreground">{prescription.notes}</p>
+        {order && (
+          <div className="mt-1">
+            <SlipAmount label="القيمة" value={formatCurrency(order.totalAmount)} strong />
+            <SlipAmount label="المدفوع" value={formatCurrency(order.paidAmount)} />
+            <SlipAmount label="الباقي" value={formatCurrency(remaining)} />
           </div>
         )}
 
@@ -183,8 +144,8 @@ export default async function PrescriptionPrintPage({ params }: { params: Promis
           </div>
         )}
 
-        <p className="mt-6 text-center text-xs text-muted">Magic Optics - مركز ماجيك للبصريات</p>
-      </div>
+        <SlipFooter>شكراً لتعاملكم مع Magic Optics</SlipFooter>
+      </SlipPaper>
     </div>
   );
 }
