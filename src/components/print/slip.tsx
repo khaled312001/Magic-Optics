@@ -26,8 +26,8 @@ export function SlipPaper({ children }: { children: ReactNode }) {
 export function SlipHeader({ shop }: { shop: Shop }) {
   return (
     <div className="slip-head">
-      <Image src="/logo.jpg" alt={shop.name} width={60} height={60} className="slip-logo" />
-      <h1 className="slip-shop">{shop.name}</h1>
+      {/* نسخة أبيض وأسود صريح من اللوجو (الألوان بتطلع باهتة ومنقّطة على الحراري) - فيها اسم المحل */}
+      <Image src="/logo-print.png" alt={shop.name} width={190} height={143} className="slip-logo" priority />
       {shop.address && <p>{shop.address}</p>}
       <p dir="ltr">{[shop.phone, shop.phone2].filter(Boolean).join("  /  ")}</p>
       {(shop.commercialRegister || shop.taxNumber) && (
