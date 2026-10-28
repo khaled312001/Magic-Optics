@@ -18,7 +18,7 @@ export default async function ShopSettingsPage() {
     <div>
       <PageHeader icon={Store} title="بيانات المحل" description="تظهر هذه البيانات في رأس إيصالات الطباعة" />
       <ShopSettingsForm
-        settings={{ ...settings, examFee: Number(settings.examFee), discountPercent: Number(settings.discountPercent) }}
+        settings={{ ...settings, examFee: Number(settings.examFee), discountPercent: Number(settings.discountPercent), taxPercent: Number(settings.taxPercent) }}
       />
     </div>
   );

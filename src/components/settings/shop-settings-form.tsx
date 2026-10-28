@@ -6,9 +6,10 @@ import { useActionForm } from "@/components/ui/use-action-form";
 import { updateShopSettings } from "@/server/settings";
 import type { ShopSettings } from "@prisma/client";
 
-type SerializedShopSettings = Omit<ShopSettings, "examFee" | "discountPercent"> & {
+type SerializedShopSettings = Omit<ShopSettings, "examFee" | "discountPercent" | "taxPercent"> & {
   examFee: number;
   discountPercent: number;
+  taxPercent: number;
 };
 
 export function ShopSettingsForm({ settings }: { settings: SerializedShopSettings }) {
@@ -81,6 +82,20 @@ export function ShopSettingsForm({ settings }: { settings: SerializedShopSetting
           defaultValue={settings.discountPercent.toString()}
         />
         <p className="mt-1 text-xs text-muted">تُطبع أسفل كل فاتورة - خصم على الشنابر فقط، لا يشمل العدسات</p>
+      </div>
+      <div>
+        <Label htmlFor="taxPercent">ضريبة القيمة المضافة %</Label>
+        <Input
+          id="taxPercent"
+          name="taxPercent"
+          type="number"
+          min={0}
+          max={100}
+          step="1"
+          className="w-48"
+          defaultValue={settings.taxPercent.toString()}
+        />
+        <p className="mt-1 text-xs text-muted">تُضاف على مبلغ الفاتورة وتظهر فى الفاتورة المطبوعة - اكتب 0 لإلغاء الضريبة</p>
       </div>
       <div>
         <Label htmlFor="autoClose">الإقفال التلقائي للخزنة</Label>

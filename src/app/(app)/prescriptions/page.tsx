@@ -54,7 +54,9 @@ export default async function PrescriptionsPage({
             ? `عرض ${prescriptions.length} من ${totalCount} كشف - ضيّق البحث لرؤية الباقي`
             : `${totalCount} كشف نظر`
         }
-        action={<PrescriptionFormDialog customers={customers} products={rxProducts} discountPercent={Number((await getShopSettings()).discountPercent)} />}
+        action={<PrescriptionFormDialog customers={customers} products={rxProducts} discountPercent={Number((await getShopSettings()).discountPercent)}
+              taxPercent={Number((await getShopSettings()).taxPercent)}
+            />}
       />
 
       <Toolbar>

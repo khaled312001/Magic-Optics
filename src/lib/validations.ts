@@ -23,6 +23,9 @@ const optId = z.preprocess(
   z.coerce.number().int().positive().nullable()
 );
 
+const paymentMethod = z.enum(["CASH", "INSTAPAY", "VISA", "VODAFONE_CASH"]).default("CASH");
+const checkbox = z.preprocess((v) => v === "1" || v === "on", z.boolean());
+
 const numOrEmpty = z.preprocess(
   (v) => (v === "" || v === undefined || v === null ? null : v),
   z.coerce.number().nullable()
@@ -58,6 +61,8 @@ export const prescriptionSchema = z
     // تفاصيل الطلب المرتبط (اختياري) - تطابق سلّة الكشف الورقية التي تجمع بيانات الفحص والطلب فى إيصال واحد
     orderType: z.enum(["MEDICAL", "SUNGLASSES", "LENS_CHANGE", "OTHER"]).optional(),
     orderStatus: z.enum(["PENDING", "READY", "DELIVERED", "CANCELLED"]).default("PENDING"),
+    paymentMethod,
+    applyTax: checkbox,
     orderDescription: z.string().trim().max(200).optional().or(z.literal("")),
     totalAmount: numOrEmpty,
     paidAmount: numOrEmpty,
@@ -143,7 +148,9 @@ export const orderSchema = z.object({
   status: z.enum(["PENDING", "READY", "DELIVERED", "CANCELLED"]).default("PENDING"),
   items: z.array(orderItemSchema).min(1, "أضف صنفاً واحداً على الأقل"),
   paidAmount: z.coerce.number().min(0).default(0),
-  applyDiscount: z.preprocess((v) => v === "1" || v === "on", z.boolean()).default(false),
+  applyDiscount: checkbox,
+  applyTax: checkbox,
+  paymentMethod,
   deliveryDate: z.string().optional().or(z.literal("")),
   notes: z.string().trim().max(2000).optional().or(z.literal("")),
 });
@@ -152,6 +159,7 @@ export type OrderInput = z.infer<typeof orderSchema>;
 export const paymentSchema = z.object({
   orderId: z.coerce.number().int().positive(),
   amount: z.coerce.number().positive("المبلغ يجب أن يكون أكبر من صفر"),
+  paymentMethod,
   note: z.string().trim().max(300).optional().or(z.literal("")),
 });
 export type PaymentInput = z.infer<typeof paymentSchema>;
@@ -209,6 +217,7 @@ export const shopSettingsSchema = z.object({
   commercialRegister: z.string().trim().max(50).optional().or(z.literal("")),
   examFee: z.coerce.number().min(0).default(0),
   discountPercent: z.coerce.number().min(0).max(100).default(20),
+  taxPercent: z.coerce.number().min(0).max(100).default(14),
   autoClose: z.enum(["NONE", "DAILY", "MONTHLY"]).default("NONE"),
 });
 export type ShopSettingsInput = z.infer<typeof shopSettingsSchema>;

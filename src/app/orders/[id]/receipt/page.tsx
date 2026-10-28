@@ -6,7 +6,7 @@ import { PrintButton } from "@/components/orders/print-button";
 import { AutoPrint } from "@/components/orders/auto-print";
 import { ForceLight } from "@/components/layout/force-light";
 import { formatCurrency, formatDate, formatDateTime } from "@/lib/utils";
-import { orderTypeLabels } from "@/lib/labels";
+import { orderTypeLabels, paymentMethodLabels } from "@/lib/labels";
 import { SlipAmount, SlipBar, SlipFooter, SlipHeader, SlipInfo, SlipPaper } from "@/components/print/slip";
 
 export const dynamic = "force-dynamic";
@@ -36,6 +36,10 @@ export default async function ReceiptPage({
   const discountPercent = Number(shop.discountPercent);
   const discountAmount = Number(order.discountAmount);
   const itemsSubtotal = order.items.reduce((s, i) => s + Number(i.subtotal), 0);
+  const taxAmount = Number(order.taxAmount);
+  const beforeTax = Number(order.totalAmount) - taxAmount;
+  const taxPercent = beforeTax > 0 ? Math.round((taxAmount / beforeTax) * 100) : 0;
+  const methods = [...new Set(order.payments.map((p) => paymentMethodLabels[p.method]))].join(" + ");
   const hasFrames = order.items.some((i) => i.product?.category === "FRAME_MEDICAL" || i.product?.category === "FRAME_SUNGLASSES");
 
   return (
@@ -98,8 +102,14 @@ export default async function ReceiptPage({
               />
             </>
           )}
-          <SlipAmount label="الإجمالي" value={formatCurrency(order.totalAmount)} strong />
-          <SlipAmount label="المدفوع" value={formatCurrency(order.paidAmount)} />
+          {taxAmount > 0 && (
+            <>
+              <SlipAmount label="المبلغ قبل الضريبة" value={formatCurrency(beforeTax)} />
+              <SlipAmount label={`ضريبة القيمة المضافة ${taxPercent}%`} value={formatCurrency(taxAmount)} />
+            </>
+          )}
+          <SlipAmount label={taxAmount > 0 ? "الإجمالي شامل الضريبة" : "الإجمالي"} value={formatCurrency(order.totalAmount)} strong />
+          <SlipAmount label={methods ? `المدفوع (${methods})` : "المدفوع"} value={formatCurrency(order.paidAmount)} />
           <SlipAmount label="المتبقي" value={formatCurrency(remaining)} />
         </div>
 

@@ -7,6 +7,7 @@ import { Button } from "@/components/ui/button";
 import { Input, Label, Select, Textarea, FieldError } from "@/components/ui/input";
 import { Combobox, type ComboboxItem } from "@/components/ui/combobox";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { PaymentMethodSelect } from "@/components/orders/payment-method-select";
 import { useActionForm } from "@/components/ui/use-action-form";
 import { createOrder } from "@/server/orders";
 import { formatCurrency } from "@/lib/utils";
@@ -46,6 +47,7 @@ export function OrderForm({
   preselectedCustomer,
   examFee = 0,
   discountPercent = 0,
+  taxPercent = 0,
 }: {
   customers: CustomerOption[];
   products: ProductOption[];
@@ -54,6 +56,8 @@ export function OrderForm({
   examFee?: number;
   /** نسبة خصم الشنابر (من بيانات المحل) - تُطبق على الإطارات فقط */
   discountPercent?: number;
+  /** ضريبة القيمة المضافة % - تُضاف على الصافي */
+  taxPercent?: number;
 }) {
   const router = useRouter();
   const [selectedCustomer, setSelectedCustomer] = useState<CustomerOption | null>(preselectedCustomer ?? null);
@@ -123,7 +127,10 @@ export function OrderForm({
     .filter((it) => it.productId && frameIds.has(it.productId))
     .reduce((s, it) => s + it.quantity * it.unitPrice, 0);
   const discount = applyDiscount ? Math.round(frameSubtotal * discountPercent) / 100 : 0;
-  const total = subtotal - discount;
+  const [applyTax, setApplyTax] = useState(true);
+  const net = subtotal - discount;
+  const tax = applyTax ? Math.round(net * taxPercent) / 100 : 0;
+  const total = net + tax;
 
   function updateItem(key: string, patch: Partial<ItemRow>) {
     setItems((rows) => rows.map((r) => (r.key === key ? { ...r, ...patch } : r)));
@@ -137,6 +144,7 @@ export function OrderForm({
     <form onSubmit={onSubmit} className="space-y-6">
       <input type="hidden" name="items" value={JSON.stringify(items.filter((i) => i.description.trim()))} />
       <input type="hidden" name="applyDiscount" value={applyDiscount ? "1" : "0"} />
+      <input type="hidden" name="applyTax" value={applyTax ? "1" : "0"} />
       {selectedCustomer && <input type="hidden" name="customerId" value={selectedCustomer.id} />}
 
       {error && <div className="rounded-lg bg-red-50 px-4 py-3 text-sm text-red-700">{error}</div>}
@@ -394,14 +402,34 @@ export function OrderForm({
                 </div>
               </>
             )}
+            {taxPercent > 0 && (
+              <div className="flex items-center justify-between text-sm">
+                <label className="flex cursor-pointer items-center gap-2 text-foreground">
+                  <input
+                    type="checkbox"
+                    checked={applyTax}
+                    onChange={(e) => setApplyTax(e.target.checked)}
+                    className="size-4 accent-brand-teal"
+                  />
+                  ضريبة القيمة المضافة {taxPercent}%
+                </label>
+                <span className="font-semibold text-foreground">{tax > 0 ? `+${formatCurrency(tax)}` : "-"}</span>
+              </div>
+            )}
             <div className="flex items-center justify-between border-border pt-1 [&:not(:first-child)]:border-t">
-              <span className="text-sm font-medium text-foreground">الإجمالي</span>
+              <span className="text-sm font-medium text-foreground">{tax > 0 ? "الإجمالي شامل الضريبة" : "الإجمالي"}</span>
               <span className="text-lg font-bold text-brand-navy">{formatCurrency(total)}</span>
             </div>
           </div>
-          <div className="max-w-xs">
-            <Label htmlFor="paidAmount">المبلغ المدفوع الآن</Label>
-            <Input id="paidAmount" name="paidAmount" type="number" min={0} step="0.01" defaultValue={0} max={total} />
+          <div className="grid max-w-md grid-cols-2 gap-3">
+            <div>
+              <Label htmlFor="paidAmount">المبلغ المدفوع الآن</Label>
+              <Input id="paidAmount" name="paidAmount" type="number" min={0} step="0.01" defaultValue={0} max={total} />
+            </div>
+            <div>
+              <Label htmlFor="paymentMethod">طريقة الدفع</Label>
+              <PaymentMethodSelect />
+            </div>
           </div>
           <div className="mt-4">
             <Label htmlFor="notes">ملاحظات</Label>

@@ -18,7 +18,7 @@ import { getCashDayView, getOutstanding, nextAutoCloseAt, CLOSING_CATEGORIES } f
 import { getShopSettings } from "@/server/settings";
 import { CloseCountdown } from "@/components/dashboard/welcome-banner";
 import { formatCurrency, formatDateTime } from "@/lib/utils";
-import { cashCategoryLabels } from "@/lib/labels";
+import { cashCategoryLabels, paymentMethodLabels } from "@/lib/labels";
 import { cairoDateStr, cairoMonthRange } from "@/lib/cairo-time";
 
 export const dynamic = "force-dynamic";
@@ -82,9 +82,9 @@ export default async function CashRegisterPage({
           <p className="mt-1 text-xl font-extrabold text-brand-navy">{formatCurrency(day.openingBalance)}</p>
         </div>
         <div className="rounded-xl border-2 border-emerald-200 bg-emerald-50 p-4 shadow-sm">
-          <p className="text-xs font-medium text-emerald-700">إجمالي الوارد</p>
+          <p className="text-xs font-medium text-emerald-700">الوارد النقدي (للدرج)</p>
           <p className="mt-1 text-xl font-extrabold text-emerald-700">{formatCurrency(day.cashIn)}</p>
-          {day.collected > 0 && <p className="mt-1 text-xs text-emerald-700">منها تحصيل فواتير {formatCurrency(day.collected)}</p>}
+          {day.collected > 0 && <p className="mt-1 text-xs text-emerald-700">تحصيل الفواتير اليوم {formatCurrency(day.collected)}</p>}
         </div>
         <div className="rounded-xl border-2 border-red-200 bg-red-50 p-4 shadow-sm">
           <p className="text-xs font-medium text-red-700">إجمالي المنصرف</p>
@@ -96,6 +96,23 @@ export default async function CashRegisterPage({
           <p className="mt-1 text-xl font-extrabold">{formatCurrency(day.closingBalance)}</p>
         </div>
       </div>
+
+      {day.byMethod.length > 0 && (
+        <div className="mb-4 flex flex-wrap items-center gap-2 rounded-xl border border-border bg-surface px-4 py-3 text-sm shadow-sm">
+          <span className="font-semibold text-foreground">التحصيل حسب طريقة الدفع:</span>
+          {day.byMethod.map((m) => (
+            <span
+              key={m.method}
+              className={`rounded-lg px-2.5 py-1 font-semibold ${m.method === "CASH" ? "bg-emerald-50 text-emerald-700" : "bg-blue-50 text-blue-700"}`}
+            >
+              {paymentMethodLabels[m.method]} {formatCurrency(m.amount)}
+            </span>
+          ))}
+          {day.electronicIn > 0 && (
+            <span className="text-xs text-muted">· الإلكتروني ({formatCurrency(day.electronicIn)}) لا يدخل رصيد الدرج</span>
+          )}
+        </div>
+      )}
 
       <Link
         href="/reports"
@@ -139,6 +156,11 @@ export default async function CashRegisterPage({
                     <tr key={e.id} className={isClosing ? "bg-background" : undefined}>
                       <td className="px-5 py-3">
                         <Badge color={isClosing ? "navy" : e.type === "IN" ? "green" : "red"}>{cashCategoryLabels[e.category]}</Badge>
+                        {e.method !== "CASH" && (
+                          <Badge color="blue" className="mr-1">
+                            {paymentMethodLabels[e.method]}
+                          </Badge>
+                        )}
                       </td>
                       <td className={`px-5 py-3 font-medium ${e.type === "IN" ? "text-emerald-600" : "text-red-600"}`}>
                         {e.type === "IN" ? "+" : "-"}

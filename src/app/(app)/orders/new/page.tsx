@@ -44,6 +44,7 @@ export default async function NewOrderPage({
         products={products.map((p) => ({ ...p, sellPrice: Number(p.sellPrice) }))}
         examFee={Number(shopSettings.examFee)}
         discountPercent={Number(shopSettings.discountPercent)}
+        taxPercent={Number(shopSettings.taxPercent)}
         preselectedCustomer={
           preselected
             ? {

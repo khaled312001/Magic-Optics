@@ -8,6 +8,7 @@ import { Input, Label, Textarea } from "@/components/ui/input";
 import { useActionForm } from "@/components/ui/use-action-form";
 import { addPayment } from "@/server/orders";
 import { formatCurrency } from "@/lib/utils";
+import { PaymentMethodSelect } from "@/components/orders/payment-method-select";
 
 export function AddPaymentDialog({ orderId, remaining }: { orderId: number; remaining: number }) {
   const [open, setOpen] = useState(false);
@@ -33,6 +34,10 @@ export function AddPaymentDialog({ orderId, remaining }: { orderId: number; rema
           <div>
             <Label htmlFor="amount">المبلغ *</Label>
             <Input id="amount" name="amount" type="number" min={0.01} step="0.01" max={remaining} required autoFocus />
+          </div>
+          <div>
+            <Label htmlFor="paymentMethod">طريقة الدفع</Label>
+            <PaymentMethodSelect />
           </div>
           <div>
             <Label htmlFor="note">ملاحظة</Label>

@@ -13,6 +13,7 @@ import { orderStatusLabels, orderTypeLabels } from "@/lib/labels";
 import { formatCurrency } from "@/lib/utils";
 import { DateField, todayIso } from "@/components/ui/date-field";
 import { RxTable } from "@/components/customers/rx-table";
+import { PaymentMethodSelect } from "@/components/orders/payment-method-select";
 import { ProductPickerInput, type PickerProduct } from "@/components/customers/product-picker-input";
 
 type CustomerOption = { id: number; name: string; phone: string | null };
@@ -23,19 +24,25 @@ export function PrescriptionFormDialog({
   customers,
   products = [],
   discountPercent = 0,
+  taxPercent = 0,
 }: {
   customerId?: number;
   customers?: CustomerOption[];
   products?: RxProductOption[];
   /** نسبة خصم الشنابر - تُخصم من سعر الفريم المختار من المخزون فقط */
   discountPercent?: number;
+  /** ضريبة القيمة المضافة % - تُضاف على القيمة */
+  taxPercent?: number;
 }) {
   const router = useRouter();
   const [open, setOpen] = useState(false);
   const [selectedCustomer, setSelectedCustomer] = useState<CustomerOption | null>(null);
   const [totalAmount, setTotalAmount] = useState(0);
   const [paidAmount, setPaidAmount] = useState(0);
-  const remaining = Math.max(0, totalAmount - paidAmount);
+  const [applyTax, setApplyTax] = useState(true);
+  const tax = applyTax ? Math.round(totalAmount * taxPercent) / 100 : 0;
+  const grandTotal = totalAmount + tax;
+  const remaining = Math.max(0, grandTotal - paidAmount);
   const [framePick, setFramePick] = useState<PickerProduct | null>(null);
   const [lensPick, setLensPick] = useState<PickerProduct | null>(null);
   const frames = products.filter((p) => p.category === "FRAME_MEDICAL" || p.category === "FRAME_SUNGLASSES");
@@ -75,6 +82,7 @@ export function PrescriptionFormDialog({
         onClick={() => {
           setTotalAmount(0);
           setPaidAmount(0);
+          setApplyTax(true);
           setFramePick(null);
           setLensPick(null);
           setOpen(true);
@@ -217,7 +225,7 @@ export function PrescriptionFormDialog({
                 <DateField id="deliveryDate" name="deliveryDate" className="w-full" />
               </div>
               <div>
-                <Label htmlFor="totalAmount">القيمة</Label>
+                <Label htmlFor="totalAmount">القيمة{taxPercent > 0 && applyTax ? " (قبل الضريبة)" : ""}</Label>
                 <Input
                   id="totalAmount"
                   name="totalAmount"
@@ -240,7 +248,7 @@ export function PrescriptionFormDialog({
                   name="paidAmount"
                   type="number"
                   min={0}
-                  max={totalAmount}
+                  max={grandTotal}
                   step="0.01"
                   value={paidAmount || ""}
                   onChange={(e) => setPaidAmount(Number(e.target.value) || 0)}
@@ -252,6 +260,33 @@ export function PrescriptionFormDialog({
                   {formatCurrency(remaining)}
                 </div>
               </div>
+            </div>
+
+            <div className="mt-2 flex flex-wrap items-center gap-x-5 gap-y-2 text-sm">
+              <input type="hidden" name="applyTax" value={applyTax ? "1" : "0"} />
+              <div className="flex items-center gap-2">
+                <Label htmlFor="p-paymentMethod" className="mb-0 whitespace-nowrap">
+                  طريقة الدفع
+                </Label>
+                <PaymentMethodSelect id="p-paymentMethod" className="h-9 w-36" />
+              </div>
+              {taxPercent > 0 && (
+                <label className="flex cursor-pointer items-center gap-2 text-foreground">
+                  <input
+                    type="checkbox"
+                    checked={applyTax}
+                    onChange={(e) => setApplyTax(e.target.checked)}
+                    className="size-4 accent-brand-teal"
+                  />
+                  إضافة ضريبة {taxPercent}%
+                </label>
+              )}
+              {tax > 0 && (
+                <span className="text-muted">
+                  الضريبة <b className="text-foreground">{formatCurrency(tax)}</b> · الإجمالي شامل الضريبة{" "}
+                  <b className="text-brand-navy">{formatCurrency(grandTotal)}</b>
+                </span>
+              )}
             </div>
           </div>
 

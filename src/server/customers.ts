@@ -8,7 +8,7 @@ import { createPaymentWithCash } from "@/server/cash-utils";
 import { ActionResult, handleActionError, okResult } from "@/server/action-result";
 import { generateReceiptNumber } from "@/lib/utils";
 import { isStockTracked, orderTypeLabels } from "@/lib/labels";
-import { computeFrameDiscount } from "@/server/discount-utils";
+import { computeFrameDiscount, computeTax } from "@/server/discount-utils";
 
 export async function createCustomer(formData: FormData): Promise<ActionResult<{ id: number }>> {
   try {
@@ -132,7 +132,10 @@ export async function createPrescription(
     const totalAmount = data.totalAmount ?? 0;
     if (totalAmount > 0) {
       const orderType = data.orderType ?? "MEDICAL";
-      const paidAmount = Math.min(data.paidAmount ?? 0, totalAmount);
+      // القيمة المكتوبة = المبلغ قبل الضريبة، والضريبة تُضاف عليه
+      const taxAmount = data.applyTax ? await computeTax(totalAmount) : 0;
+      const grandTotal = Math.round((totalAmount + taxAmount) * 100) / 100;
+      const paidAmount = Math.min(data.paidAmount ?? 0, grandTotal);
       // القيمة المكتوبة صافية بعد خصم الشنابر لو اختير فريم من المخزون، فالأصناف تُبنى على القيمة قبل الخصم
       let discountAmount = 0;
       if (data.frameProductId) {
@@ -149,8 +152,9 @@ export async function createPrescription(
             prescriptionId: prescription.id,
             type: orderType,
             status: data.orderStatus,
-            totalAmount,
+            totalAmount: grandTotal,
             discountAmount,
+            taxAmount,
             paidAmount,
             deliveryDate: data.deliveryDate ? new Date(data.deliveryDate) : null,
             createdById: Number(user.id),
@@ -184,7 +188,7 @@ export async function createPrescription(
         }
 
         if (paidAmount > 0) {
-          await createPaymentWithCash(tx, { orderId: created.id, amount: paidAmount, userId: Number(user.id) });
+          await createPaymentWithCash(tx, { orderId: created.id, amount: paidAmount, method: data.paymentMethod, userId: Number(user.id) });
         }
         return created;
       });

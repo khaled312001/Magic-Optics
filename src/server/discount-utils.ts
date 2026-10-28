@@ -4,6 +4,12 @@ import { getShopSettings } from "@/server/settings";
 
 export const FRAME_CATEGORIES = ["FRAME_MEDICAL", "FRAME_SUNGLASSES"] as const;
 
+/** ضريبة القيمة المضافة (نسبة بيانات المحل) على المبلغ الصافي بعد الخصم */
+export async function computeTax(netAmount: number) {
+  const shop = await getShopSettings();
+  return Math.round(netAmount * Number(shop.taxPercent)) / 100;
+}
+
 /** خصم الشنابر: نسبة بيانات المحل على أصناف الإطارات فقط (لا يشمل العدسات ولا الإضافات) */
 export async function computeFrameDiscount(lines: { productId: number | null | undefined; amount: number }[]) {
   const ids = [...new Set(lines.map((l) => l.productId).filter((id): id is number => !!id))];

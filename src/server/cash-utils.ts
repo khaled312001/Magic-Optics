@@ -1,5 +1,6 @@
 import "server-only";
-import type { CashCategory, OrderType, Prisma } from "@prisma/client";
+import type { CashCategory, OrderType, PaymentMethod, Prisma } from "@prisma/client";
+import { paymentMethodLabels } from "@/lib/labels";
 import { prisma } from "@/lib/prisma";
 import { addDays, cairoDateStr, cairoDayStart, cairoMonthRange, dbDate } from "@/lib/cairo-time";
 
@@ -25,11 +26,12 @@ export async function ensureCashDay(tx: Tx, dateStr: string) {
  */
 export async function createPaymentWithCash(
   tx: Tx,
-  input: { orderId: number; amount: number; note?: string | null; userId: number }
+  input: { orderId: number; amount: number; method?: PaymentMethod; note?: string | null; userId: number }
 ) {
+  const method = input.method ?? "CASH";
   const order = await tx.order.findUniqueOrThrow({ where: { id: input.orderId }, select: { type: true, receiptNumber: true } });
   const payment = await tx.payment.create({
-    data: { orderId: input.orderId, amount: input.amount, note: input.note || null, createdById: input.userId },
+    data: { orderId: input.orderId, amount: input.amount, method, note: input.note || null, createdById: input.userId },
   });
   const day = await ensureCashDay(tx, cairoDateStr(payment.createdAt));
   await tx.cashEntry.create({
@@ -38,7 +40,8 @@ export async function createPaymentWithCash(
       category: ORDER_TYPE_CASH_CATEGORY[order.type],
       type: "IN",
       amount: input.amount,
-      note: `تحصيل فاتورة #${order.receiptNumber}${input.note ? ` - ${input.note}` : ""}`,
+      method,
+      note: `تحصيل فاتورة #${order.receiptNumber}${method !== "CASH" ? ` (${paymentMethodLabels[method]})` : ""}${input.note ? ` - ${input.note}` : ""}`,
       createdById: input.userId,
       paymentId: payment.id,
       createdAt: payment.createdAt,
@@ -47,11 +50,11 @@ export async function createPaymentWithCash(
   return payment;
 }
 
-/** رصيد الخزنة قبل يوم معين = كل الوارد - كل المنصرف فى الأيام السابقة (محسوب دائماً، فلا يتجمّد) */
+/** رصيد درج الخزنة قبل يوم معين = كل الوارد النقدي - كل المنصرف فى الأيام السابقة (محسوب دائماً، فلا يتجمّد) */
 async function balanceBefore(dateStr: string) {
   const sums = await prisma.cashEntry.groupBy({
     by: ["type"],
-    where: { day: { date: { lt: dbDate(dateStr) } } },
+    where: { day: { date: { lt: dbDate(dateStr) } }, method: "CASH" },
     _sum: { amount: true },
   });
   const get = (type: "IN" | "OUT") => Number(sums.find((s) => s.type === type)?._sum.amount ?? 0);
@@ -76,10 +79,15 @@ export async function getCashDayView(dateStr: string) {
   const sum = (filter: (e: (typeof day.entries)[number]) => boolean) =>
     day.entries.filter(filter).reduce((s, e) => s + Number(e.amount), 0);
 
-  const cashIn = sum((e) => e.type === "IN");
-  const cashOut = sum((e) => e.type === "OUT" && !CLOSING_CATEGORIES.includes(e.category));
+  // الدرج = النقدي فقط، والتحصيل الإلكتروني (إنستاباي/فيزا/فودافون كاش) يُعرض منفصلاً
+  const cashIn = sum((e) => e.type === "IN" && e.method === "CASH");
+  const cashOut = sum((e) => e.type === "OUT" && e.method === "CASH" && !CLOSING_CATEGORIES.includes(e.category));
   const handedOver = sum((e) => e.type === "OUT" && CLOSING_CATEGORIES.includes(e.category));
   const collected = sum((e) => e.type === "IN" && e.paymentId !== null);
+  const electronicIn = sum((e) => e.type === "IN" && e.method !== "CASH");
+  const byMethod = (Object.keys(paymentMethodLabels) as PaymentMethod[])
+    .map((method) => ({ method, amount: sum((e) => e.type === "IN" && e.method === method) }))
+    .filter((m) => m.amount > 0);
 
   return {
     ...day,
@@ -88,6 +96,8 @@ export async function getCashDayView(dateStr: string) {
     cashOut,
     handedOver,
     collected,
+    electronicIn,
+    byMethod,
     /** الرصيد قبل التسليم/التصفير */
     balanceBeforeClosing: openingBalance + cashIn - cashOut,
     closingBalance: openingBalance + cashIn - cashOut - handedOver,
@@ -152,7 +162,7 @@ export async function getCashClosingLog() {
   const days = await prisma.cashRegisterDay.findMany({
     orderBy: { date: "asc" },
     include: {
-      entries: { select: { type: true, category: true, amount: true, paymentId: true, createdById: true } },
+      entries: { select: { type: true, category: true, amount: true, method: true, paymentId: true, createdById: true } },
       closedBy: { select: { name: true } },
     },
   });
@@ -165,11 +175,13 @@ export async function getCashClosingLog() {
     let cashOut = 0;
     let handedOver = 0;
     let collected = 0;
+    let electronicIn = 0;
     let closingCategory: CashCategory | null = null;
     for (const e of d.entries) {
       const amount = Number(e.amount);
       if (e.type === "IN") {
-        cashIn += amount;
+        if (e.method === "CASH") cashIn += amount;
+        else electronicIn += amount;
         if (e.paymentId !== null) collected += amount;
       } else if (CLOSING_CATEGORIES.includes(e.category)) {
         handedOver += amount;
@@ -188,6 +200,7 @@ export async function getCashClosingLog() {
       cashIn,
       cashOut,
       collected,
+      electronicIn,
       handedOver,
       closing: running,
       closed: d.closed,

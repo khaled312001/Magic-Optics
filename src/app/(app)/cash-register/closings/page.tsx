@@ -74,8 +74,8 @@ export default async function CashClosingsPage() {
                           <td className="px-4 py-3 text-muted">{formatCurrency(d.opening)}</td>
                           <td className="px-4 py-3 text-emerald-600">
                             {formatCurrency(d.cashIn)}
-                            {d.collected > 0 && d.collected !== d.cashIn && (
-                              <span className="block text-[11px] text-muted">تحصيل {formatCurrency(d.collected)}</span>
+                            {d.electronicIn > 0 && (
+                              <span className="block text-[11px] text-blue-600">+ إلكتروني {formatCurrency(d.electronicIn)}</span>
                             )}
                           </td>
                           <td className="px-4 py-3 text-red-600">{formatCurrency(d.cashOut)}</td>

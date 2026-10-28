@@ -107,7 +107,9 @@ export default async function CustomerDetailPage({
               <FileText className="size-4" />
               الكشوفات الطبية
             </CardTitle>
-            <PrescriptionFormDialog customerId={customer.id} products={rxProducts} discountPercent={Number((await getShopSettings()).discountPercent)} />
+            <PrescriptionFormDialog customerId={customer.id} products={rxProducts} discountPercent={Number((await getShopSettings()).discountPercent)}
+              taxPercent={Number((await getShopSettings()).taxPercent)}
+            />
           </CardHeader>
           <CardContent>
             {customer.prescriptions.length === 0 ? (

@@ -30,6 +30,7 @@ export async function updateShopSettings(formData: FormData): Promise<ActionResu
         commercialRegister: data.commercialRegister || null,
         examFee: data.examFee,
         discountPercent: data.discountPercent,
+        taxPercent: data.taxPercent,
         autoClose: data.autoClose,
       },
       update: {
@@ -41,6 +42,7 @@ export async function updateShopSettings(formData: FormData): Promise<ActionResu
         commercialRegister: data.commercialRegister || null,
         examFee: data.examFee,
         discountPercent: data.discountPercent,
+        taxPercent: data.taxPercent,
         autoClose: data.autoClose,
       },
     });

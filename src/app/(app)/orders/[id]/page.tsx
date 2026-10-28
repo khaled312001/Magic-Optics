@@ -13,7 +13,7 @@ import { AddPaymentDialog } from "@/components/orders/add-payment-dialog";
 import { StatusSelect } from "@/components/orders/status-select";
 import { deleteOrder } from "@/server/orders";
 import { formatCurrency, formatDateTime, formatDate } from "@/lib/utils";
-import { orderStatusColors, orderStatusLabels, orderTypeLabels } from "@/lib/labels";
+import { orderStatusColors, orderStatusLabels, orderTypeLabels, paymentMethodLabels } from "@/lib/labels";
 
 export const dynamic = "force-dynamic";
 
@@ -166,6 +166,9 @@ export default async function OrderDetailPage({ params }: { params: Promise<{ id
             <div className="rounded-lg bg-background p-3">
               <p className="text-xs text-muted">الإجمالي</p>
               <p className="mt-1 font-bold text-foreground">{formatCurrency(order.totalAmount)}</p>
+              {Number(order.taxAmount) > 0 && (
+                <p className="text-[11px] text-muted">شامل ضريبة {formatCurrency(order.taxAmount)}</p>
+              )}
               {Number(order.discountAmount) > 0 && (
                 <p className="text-[11px] text-emerald-600">بعد خصم الشنابر {formatCurrency(order.discountAmount)}</p>
               )}
@@ -187,7 +190,9 @@ export default async function OrderDetailPage({ params }: { params: Promise<{ id
               {order.payments.map((p) => (
                 <div key={p.id} className="flex items-center justify-between py-2.5 text-sm">
                   <div>
-                    <p className="text-foreground">{formatCurrency(p.amount)}</p>
+                    <p className="text-foreground">
+                      {formatCurrency(p.amount)} <span className="text-xs text-muted">· {paymentMethodLabels[p.method]}</span>
+                    </p>
                     {p.note && <p className="text-xs text-muted">{p.note}</p>}
                   </div>
                   <p className="text-xs text-muted">{formatDateTime(p.createdAt)}</p>

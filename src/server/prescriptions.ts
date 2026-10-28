@@ -36,7 +36,16 @@ export async function getPrescriptionById(id: number) {
     prisma.prescription.findUnique({ where: { id }, include: { customer: true, createdBy: true } }),
     prisma.order.findMany({
       where: { prescriptionId: id },
-      select: { id: true, receiptNumber: true, createdAt: true, totalAmount: true, paidAmount: true, deliveryDate: true },
+      select: {
+        id: true,
+        receiptNumber: true,
+        createdAt: true,
+        totalAmount: true,
+        taxAmount: true,
+        paidAmount: true,
+        deliveryDate: true,
+        payments: { select: { method: true } },
+      },
       orderBy: { createdAt: "desc" },
     }),
   ]);

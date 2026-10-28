@@ -9,7 +9,7 @@ import { ActionResult, handleActionError, okResult } from "@/server/action-resul
 import { generateReceiptNumber } from "@/lib/utils";
 import { z } from "zod";
 import { createPaymentWithCash } from "@/server/cash-utils";
-import { computeFrameDiscount } from "@/server/discount-utils";
+import { computeFrameDiscount, computeTax } from "@/server/discount-utils";
 
 export async function createOrder(formData: FormData): Promise<ActionResult<{ id: number }>> {
   try {
@@ -45,7 +45,9 @@ export async function createOrder(formData: FormData): Promise<ActionResult<{ id
     const discountAmount = data.applyDiscount
       ? await computeFrameDiscount(items.map((it) => ({ productId: it.productId, amount: it.quantity * it.unitPrice })))
       : 0;
-    const totalAmount = Math.round((subtotal - discountAmount) * 100) / 100;
+    const netAmount = Math.round((subtotal - discountAmount) * 100) / 100;
+    const taxAmount = data.applyTax ? await computeTax(netAmount) : 0;
+    const totalAmount = Math.round((netAmount + taxAmount) * 100) / 100;
     if (data.paidAmount > totalAmount) {
       return { ok: false, error: "المبلغ المدفوع لا يمكن أن يكون أكبر من إجمالي الفاتورة" };
     }
@@ -84,6 +86,7 @@ export async function createOrder(formData: FormData): Promise<ActionResult<{ id
           status: data.status,
           totalAmount,
           discountAmount,
+          taxAmount,
           paidAmount: data.paidAmount,
           deliveryDate: data.deliveryDate ? new Date(data.deliveryDate) : null,
           notes: data.notes || null,
@@ -101,7 +104,12 @@ export async function createOrder(formData: FormData): Promise<ActionResult<{ id
       });
 
       if (data.paidAmount > 0) {
-        await createPaymentWithCash(tx, { orderId: created.id, amount: data.paidAmount, userId: Number(user.id) });
+        await createPaymentWithCash(tx, {
+          orderId: created.id,
+          amount: data.paidAmount,
+          method: data.paymentMethod,
+          userId: Number(user.id),
+        });
       }
 
       for (const it of items) {
@@ -161,7 +169,13 @@ export async function addPayment(formData: FormData): Promise<ActionResult> {
     }
 
     await prisma.$transaction(async (tx) => {
-      await createPaymentWithCash(tx, { orderId: data.orderId, amount: data.amount, note: data.note, userId: Number(user.id) });
+      await createPaymentWithCash(tx, {
+        orderId: data.orderId,
+        amount: data.amount,
+        method: data.paymentMethod,
+        note: data.note,
+        userId: Number(user.id),
+      });
       await tx.order.update({
         where: { id: data.orderId },
         data: { paidAmount: { increment: data.amount } },

@@ -26,6 +26,13 @@ export const productCategoryShortLabels = {
   ACCESSORY: "إكسسوار",
 } as const;
 
+export const paymentMethodLabels = {
+  CASH: "نقدي",
+  INSTAPAY: "إنستاباي",
+  VISA: "فيزا",
+  VODAFONE_CASH: "فودافون كاش",
+} as const;
+
 export const orderTypeLabels = {
   MEDICAL: "نظارة طبية",
   SUNGLASSES: "نظارة شمسية",
