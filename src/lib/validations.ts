@@ -58,6 +58,9 @@ export const prescriptionSchema = z
     // الفريم والعدسة المختاران من المخزون (يُخصمان من المخزون عند عمل الفاتورة)
     frameProductId: optId,
     lensProductId: optId,
+    // سعر الفريم والعدسات كما يكتبه البائع (يتعبى من سعر المخزون ويمكن تعديله) - هو اللى يظهر فى الفاتورة
+    framePrice: numOrEmpty,
+    lensPrice: numOrEmpty,
     // تفاصيل الطلب المرتبط (اختياري) - تطابق سلّة الكشف الورقية التي تجمع بيانات الفحص والطلب فى إيصال واحد
     orderType: z.enum(["MEDICAL", "SUNGLASSES", "LENS_CHANGE", "OTHER"]).optional(),
     orderStatus: z.enum(["PENDING", "READY", "DELIVERED", "CANCELLED"]).default("PENDING"),

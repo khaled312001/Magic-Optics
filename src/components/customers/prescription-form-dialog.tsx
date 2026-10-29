@@ -43,23 +43,26 @@ export function PrescriptionFormDialog({
   const tax = applyTax ? Math.round(totalAmount * taxPercent) / 100 : 0;
   const grandTotal = totalAmount + tax;
   const remaining = Math.max(0, grandTotal - paidAmount);
-  const [framePick, setFramePick] = useState<PickerProduct | null>(null);
-  const [lensPick, setLensPick] = useState<PickerProduct | null>(null);
   const frames = products.filter((p) => p.category === "FRAME_MEDICAL" || p.category === "FRAME_SUNGLASSES");
   const lenses = products.filter((p) => p.category === "LENS" || p.category === "LENS_CONTRACT");
 
-  // اختيار فريم/عدسة من المخزون يملأ القيمة تلقائياً بمجموع أسعارهما (ويمكن تعديلها)
-  function onPick(kind: "frame" | "lens", product: PickerProduct | null) {
-    const frame = kind === "frame" ? product : framePick;
-    const lens = kind === "lens" ? product : lensPick;
-    if (kind === "frame") setFramePick(product);
-    else setLensPick(product);
-    const frameNet = frame ? frame.sellPrice - Math.round(frame.sellPrice * discountPercent) / 100 : 0;
-    const sum = frameNet + (lens?.sellPrice ?? 0);
-    if (sum > 0) setTotalAmount(sum);
+  // سعر الفريم والعدسات: يتعبى من المخزون عند الاختيار ويمكن تعديله، والقيمة = الفريم بعد الخصم + العدسات
+  const [framePrice, setFramePrice] = useState(0);
+  const [lensPrice, setLensPrice] = useState(0);
+  const frameDiscount = Math.round(framePrice * discountPercent) / 100;
+
+  function updatePrices(nextFrame: number, nextLens: number) {
+    setFramePrice(nextFrame);
+    setLensPrice(nextLens);
+    const sum = nextFrame - Math.round(nextFrame * discountPercent) / 100 + nextLens;
+    if (sum > 0 || nextFrame > 0 || nextLens > 0) setTotalAmount(Math.round(sum * 100) / 100);
   }
 
-  const frameDiscount = framePick ? Math.round(framePick.sellPrice * discountPercent) / 100 : 0;
+  function onPick(kind: "frame" | "lens", product: PickerProduct | null) {
+    if (!product) return;
+    if (kind === "frame") updatePrices(product.sellPrice, lensPrice);
+    else updatePrices(framePrice, product.sellPrice);
+  }
 
   const { onSubmit, isPending, fieldErrors, error } = useActionForm(createPrescription, {
     successMessage: "تم حفظ الكشف الطبي",
@@ -82,9 +85,9 @@ export function PrescriptionFormDialog({
         onClick={() => {
           setTotalAmount(0);
           setPaidAmount(0);
+          setFramePrice(0);
+          setLensPrice(0);
           setApplyTax(true);
-          setFramePick(null);
-          setLensPick(null);
           setOpen(true);
         }}
       >
@@ -175,6 +178,7 @@ export function PrescriptionFormDialog({
                 searchBy="code"
                 onPick={(p) => onPick("frame", p)}
               />
+              <PriceInput name="framePrice" label="سعر الفريم" value={framePrice} onChange={(v) => updatePrices(v, lensPrice)} />
             </div>
             <div>
               <Label htmlFor="p-lens">نوع العدسات</Label>
@@ -185,6 +189,7 @@ export function PrescriptionFormDialog({
                 products={lenses}
                 onPick={(p) => onPick("lens", p)}
               />
+              <PriceInput name="lensPrice" label="سعر العدسات" value={lensPrice} onChange={(v) => updatePrices(framePrice, v)} />
             </div>
             <div>
               <Label htmlFor="p-notes">ملاحظات</Label>
@@ -301,5 +306,26 @@ export function PrescriptionFormDialog({
         </form>
       </Dialog>
     </>
+  );
+}
+
+/** خانة سعر صغيرة تحت الفريم/العدسات - السعر ده هو اللى بيتطبع فى الفاتورة */
+function PriceInput({ name, label, value, onChange }: { name: string; label: string; value: number; onChange: (v: number) => void }) {
+  return (
+    <div className="mt-1.5 flex items-center gap-2">
+      <Label htmlFor={`p-${name}`} className="mb-0 shrink-0 text-xs text-muted">
+        {label}
+      </Label>
+      <Input
+        id={`p-${name}`}
+        name={name}
+        type="number"
+        min={0}
+        step="0.01"
+        value={value || ""}
+        onChange={(e) => onChange(Number(e.target.value) || 0)}
+        className="h-8"
+      />
+    </div>
   );
 }

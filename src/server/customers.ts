@@ -8,7 +8,8 @@ import { createPaymentWithCash } from "@/server/cash-utils";
 import { ActionResult, handleActionError, okResult } from "@/server/action-result";
 import { generateReceiptNumber } from "@/lib/utils";
 import { isStockTracked, orderTypeLabels } from "@/lib/labels";
-import { computeFrameDiscount, computeTax } from "@/server/discount-utils";
+import { computeTax } from "@/server/discount-utils";
+import { getShopSettings } from "@/server/settings";
 
 export async function createCustomer(formData: FormData): Promise<ActionResult<{ id: number }>> {
   try {
@@ -136,13 +137,14 @@ export async function createPrescription(
       const taxAmount = data.applyTax ? await computeTax(totalAmount) : 0;
       const grandTotal = Math.round((totalAmount + taxAmount) * 100) / 100;
       const paidAmount = Math.min(data.paidAmount ?? 0, grandTotal);
-      // القيمة المكتوبة صافية بعد خصم الشنابر لو اختير فريم من المخزون، فالأصناف تُبنى على القيمة قبل الخصم
-      let discountAmount = 0;
-      if (data.frameProductId) {
-        const frame = await prisma.product.findUnique({ where: { id: data.frameProductId }, select: { sellPrice: true } });
-        if (frame) discountAmount = await computeFrameDiscount([{ productId: data.frameProductId, amount: Number(frame.sellPrice) }]);
-      }
-      const lines = await buildPrescriptionOrderLines(data, totalAmount + discountAmount, orderTypeLabels[orderType]);
+      // القيمة المكتوبة صافية بعد خصم الشنابر، فالأصناف تُبنى بأسعارها المكتوبة والخصم يُسجل على الفريم
+      const shop = await getShopSettings();
+      const { lines, discountAmount } = await buildPrescriptionOrderLines(
+        data,
+        totalAmount,
+        Number(shop.discountPercent),
+        orderTypeLabels[orderType]
+      );
 
       const order = await prisma.$transaction(async (tx) => {
         const created = await tx.order.create({
@@ -211,30 +213,62 @@ export async function createPrescription(
  * أصناف فاتورة الكشف: الفريم والعدسة المختاران من المخزون بأسعارهما، وما كُتب يدوياً بدون اختيار
  * يُضاف كبند بفرق القيمة. لو القيمة المكتوبة أقل من أسعار الأصناف، يُخصم الفرق من الفريم أولاً.
  */
+/**
+ * أصناف فاتورة الكشف: الفريم والعدسات بالسعر المكتوب فى الكشف (أو سعر المخزون لو ما اتكتبش).
+ * خصم الشنابر يُحسب على سعر الفريم فقط. لو القيمة المكتوبة أكبر يُضاف الفرق كإضافات، ولو أقل يُخصم من الفريم أولاً.
+ */
 async function buildPrescriptionOrderLines(
-  data: { frame: string | null; lensType: string | null; frameProductId: number | null; lensProductId: number | null; orderDescription?: string },
-  totalAmount: number,
+  data: {
+    frame: string | null;
+    lensType: string | null;
+    frameProductId: number | null;
+    lensProductId: number | null;
+    framePrice: number | null;
+    lensPrice: number | null;
+    orderDescription?: string;
+  },
+  netAmount: number,
+  discountPercent: number,
   fallbackLabel: string
 ) {
   const ids = [data.frameProductId, data.lensProductId].filter((id): id is number => !!id);
   const products = ids.length ? await prisma.product.findMany({ where: { id: { in: ids } } }) : [];
-  const lines: { productId: number | null; description: string; price: number }[] = ids
-    .map((id) => products.find((p) => p.id === id))
-    .filter((p) => p !== undefined)
-    .map((p) => ({ productId: p.id, description: p.name, price: Number(p.sellPrice) }));
+  const parts = [
+    { kind: "frame", product: products.find((p) => p.id === data.frameProductId), text: data.frame, price: data.framePrice },
+    { kind: "lens", product: products.find((p) => p.id === data.lensProductId), text: data.lensType, price: data.lensPrice },
+  ];
 
-  const freeText = [
-    data.frameProductId ? null : data.frame,
-    data.lensProductId ? null : data.lensType,
-  ].filter(Boolean).join(" + ");
-
-  if (lines.length === 0) {
-    return [{ productId: null, description: data.orderDescription?.trim() || freeText || fallbackLabel, price: totalAmount }];
+  const lines: { productId: number | null; description: string; price: number; isFrame: boolean }[] = [];
+  const freeText: string[] = [];
+  for (const part of parts) {
+    if (part.product) {
+      lines.push({
+        productId: part.product.id,
+        description: part.product.name,
+        price: part.price ?? Number(part.product.sellPrice),
+        isFrame: part.kind === "frame",
+      });
+    } else if (part.text && part.price !== null && part.price > 0) {
+      lines.push({ productId: null, description: part.text, price: part.price, isFrame: part.kind === "frame" });
+    } else if (part.text) {
+      freeText.push(part.text);
+    }
   }
 
-  const diff = Math.round((totalAmount - lines.reduce((s, l) => s + l.price, 0)) * 100) / 100;
+  if (lines.length === 0) {
+    return {
+      lines: [{ productId: null, description: data.orderDescription?.trim() || freeText.join(" + ") || fallbackLabel, price: netAmount }],
+      discountAmount: 0,
+    };
+  }
+
+  const frameLine = lines.find((l) => l.isFrame);
+  const discountAmount = frameLine ? Math.round(frameLine.price * discountPercent) / 100 : 0;
+  const gross = netAmount + discountAmount;
+
+  const diff = Math.round((gross - lines.reduce((s, l) => s + l.price, 0)) * 100) / 100;
   if (diff > 0) {
-    lines.push({ productId: null, description: freeText || "إضافات", price: diff });
+    lines.push({ productId: null, description: freeText.join(" + ") || "إضافات", price: diff, isFrame: false });
   } else if (diff < 0) {
     let rest = -diff;
     for (const l of lines) {
@@ -243,7 +277,7 @@ async function buildPrescriptionOrderLines(
       rest -= cut;
     }
   }
-  return lines;
+  return { lines: lines.map(({ productId, description, price }) => ({ productId, description, price })), discountAmount };
 }
 
 /** تعديل كشف محفوظ: القياسات والتاريخ وبيانات الورقة (الفاتورة المرتبطة لا تتغير) */
