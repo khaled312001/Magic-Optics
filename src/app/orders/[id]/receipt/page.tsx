@@ -6,8 +6,8 @@ import { PrintButton } from "@/components/orders/print-button";
 import { AutoPrint } from "@/components/orders/auto-print";
 import { ForceLight } from "@/components/layout/force-light";
 import { formatCurrency, formatDate, formatDateTime } from "@/lib/utils";
-import { orderTypeLabels, paymentMethodLabels } from "@/lib/labels";
-import { SlipAmount, SlipBar, SlipFooter, SlipHeader, SlipInfo, SlipPaper } from "@/components/print/slip";
+import { frameCodeOf, isFrameCategory, orderTypeLabels, paymentMethodLabels } from "@/lib/labels";
+import { SlipAmount, SlipBar, SlipFooter, SlipHeader, SlipInfo, SlipPaper, SlipRxTable } from "@/components/print/slip";
 
 export const dynamic = "force-dynamic";
 
@@ -24,7 +24,7 @@ export default async function ReceiptPage({
   const [order, shop] = await Promise.all([
     prisma.order.findUnique({
       where: { id: Number(id) },
-      include: { customer: true, items: { include: { product: true } }, payments: true, createdBy: true },
+      include: { customer: true, prescription: true, items: { include: { product: true } }, payments: true, createdBy: true },
     }),
     getShopSettings(),
   ]);
@@ -39,7 +39,22 @@ export default async function ReceiptPage({
   const beforeTax = Number(order.totalAmount) - taxAmount;
   const taxPercent = beforeTax > 0 ? Math.round((taxAmount / beforeTax) * 100) : 0;
   const methods = [...new Set(order.payments.map((p) => paymentMethodLabels[p.method]))].join(" + ");
-  const hasFrames = order.items.some((i) => i.product?.category === "FRAME_MEDICAL" || i.product?.category === "FRAME_SUNGLASSES");
+  const hasFrames = order.items.some((i) => isFrameCategory(i.product?.category));
+
+  // بيانات الكشف المرتبط - تاريخه يظهر فقط لو مختلف عن يوم الفاتورة (كشف قديم مسجل بتاريخه)
+  const rx = order.prescription;
+  const rxDate = rx ? formatDate(rx.date) : null;
+  const rxRows = rx
+    ? (
+        [
+          ["تاريخ الكشف", rxDate !== formatDate(order.createdAt) ? rxDate : null],
+          ["اسم الطبيب", rx.doctorName],
+          ["الفريم", rx.frame],
+          ["نوع العدسات", rx.lensType],
+          ["ملاحظات", rx.notes],
+        ] as [string, string | null][]
+      ).filter((row): row is [string, string] => !!row[1])
+    : [];
 
   return (
     <div className="min-h-dvh bg-background py-8 print:min-h-0 print:bg-white print:py-0">
@@ -70,6 +85,14 @@ export default async function ReceiptPage({
           ]}
         />
 
+        {rx && (
+          <>
+            <SlipBar title="كشف نظر" number={`#${rx.id}`} />
+            <SlipRxTable rx={rx} />
+            {rxRows.length > 0 && <SlipInfo rows={rxRows} />}
+          </>
+        )}
+
         <table className="slip-table">
           <thead>
             <tr>
@@ -80,14 +103,20 @@ export default async function ReceiptPage({
             </tr>
           </thead>
           <tbody>
-            {order.items.map((item) => (
-              <tr key={item.id}>
-                <td className="font-bold">{item.description}</td>
-                <td className="text-center">{item.quantity}</td>
-                <td className="text-center">{formatCurrency(item.unitPrice).replace(" ج.م", "")}</td>
-                <td className="text-center">{formatCurrency(item.subtotal).replace(" ج.م", "")}</td>
-              </tr>
-            ))}
+            {order.items.map((item) => {
+              const frameCode = frameCodeOf(item.product);
+              return (
+                <tr key={item.id}>
+                  <td className="font-bold">
+                    {item.description}
+                    {frameCode && <div>كود: {frameCode}</div>}
+                  </td>
+                  <td className="text-center">{item.quantity}</td>
+                  <td className="text-center">{formatCurrency(item.unitPrice).replace(" ج.م", "")}</td>
+                  <td className="text-center">{formatCurrency(item.subtotal).replace(" ج.م", "")}</td>
+                </tr>
+              );
+            })}
           </tbody>
         </table>
 

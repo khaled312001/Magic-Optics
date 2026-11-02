@@ -13,7 +13,7 @@ import { AddPaymentDialog } from "@/components/orders/add-payment-dialog";
 import { StatusSelect } from "@/components/orders/status-select";
 import { deleteOrder } from "@/server/orders";
 import { formatCurrency, formatDateTime, formatDate } from "@/lib/utils";
-import { orderStatusColors, orderStatusLabels, orderTypeLabels, paymentMethodLabels } from "@/lib/labels";
+import { frameCodeOf, orderStatusColors, orderStatusLabels, orderTypeLabels, paymentMethodLabels } from "@/lib/labels";
 
 export const dynamic = "force-dynamic";
 
@@ -28,7 +28,7 @@ export default async function OrderDetailPage({ params }: { params: Promise<{ id
     include: {
       customer: true,
       prescription: true,
-      items: true,
+      items: { include: { product: true } },
       payments: { orderBy: { createdAt: "desc" }, include: { createdBy: true } },
       createdBy: true,
     },
@@ -143,14 +143,20 @@ export default async function OrderDetailPage({ params }: { params: Promise<{ id
               </tr>
             </thead>
             <tbody className="divide-y divide-border">
-              {order.items.map((item) => (
-                <tr key={item.id}>
-                  <td className="px-5 py-3 text-foreground">{item.description}</td>
-                  <td className="px-5 py-3 text-muted">{item.quantity}</td>
-                  <td className="px-5 py-3 text-muted">{formatCurrency(item.unitPrice)}</td>
-                  <td className="px-5 py-3 font-medium text-foreground">{formatCurrency(item.subtotal)}</td>
-                </tr>
-              ))}
+              {order.items.map((item) => {
+                const frameCode = frameCodeOf(item.product);
+                return (
+                  <tr key={item.id}>
+                    <td className="px-5 py-3 text-foreground">
+                      {item.description}
+                      {frameCode && <p className="mt-0.5 text-xs font-semibold text-brand-teal">كود الشنبر: {frameCode}</p>}
+                    </td>
+                    <td className="px-5 py-3 text-muted">{item.quantity}</td>
+                    <td className="px-5 py-3 text-muted">{formatCurrency(item.unitPrice)}</td>
+                    <td className="px-5 py-3 font-medium text-foreground">{formatCurrency(item.subtotal)}</td>
+                  </tr>
+                );
+              })}
             </tbody>
           </table>
         </CardContent>

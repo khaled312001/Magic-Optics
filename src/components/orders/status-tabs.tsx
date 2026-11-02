@@ -18,6 +18,8 @@ export function StatusTabs() {
   const pathname = usePathname();
   const active = searchParams.get("status") ?? "";
   const q = searchParams.get("q");
+  const from = searchParams.get("from");
+  const to = searchParams.get("to");
 
   return (
     <div className="flex flex-wrap gap-1.5">
@@ -25,6 +27,8 @@ export function StatusTabs() {
         const params = new URLSearchParams();
         if (s.value) params.set("status", s.value);
         if (q) params.set("q", q);
+        if (from) params.set("from", from);
+        if (to) params.set("to", to);
         const href = `${pathname}${params.toString() ? `?${params.toString()}` : ""}`;
         const isActive = active === s.value;
         return (

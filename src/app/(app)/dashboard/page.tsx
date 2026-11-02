@@ -14,10 +14,12 @@ import { TrendingUp } from "lucide-react";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import { WelcomeBanner, type BannerAlert } from "@/components/dashboard/welcome-banner";
+import { cairoDateStr } from "@/lib/cairo-time";
 
 export default async function DashboardPage() {
   const [data, session] = await Promise.all([getDashboardData(), getServerSession(authOptions)]);
 
+  const today = cairoDateStr();
   const alerts: BannerAlert[] = [];
   if (data.overdueCount > 0) alerts.push({ tone: "red", text: `${data.overdueCount} فاتورة متأخرة عن موعد التسليم`, href: "/orders" });
   if (data.dueTodayCount > 0) alerts.push({ tone: "amber", text: `${data.dueTodayCount} فاتورة موعد تسليمها النهارده`, href: "/orders" });
@@ -67,7 +69,9 @@ export default async function DashboardPage() {
           tone="amber"
           hint={`من فواتير هذا الشهر ${formatCurrency(data.monthOutstanding)}`}
         />
-        <StatCard label="فواتير اليوم" value={String(data.todayOrdersCount)} icon={ShoppingBag} tone="navy" />
+        <Link href={`/orders?from=${today}&to=${today}`} className="block">
+          <StatCard label="فواتير اليوم" value={String(data.todayOrdersCount)} icon={ShoppingBag} tone="navy" />
+        </Link>
         <Link href="/orders?status=PENDING" className="block">
           <StatCard label="قيد التجهيز" value={String(data.pendingCount)} icon={Clock} tone="amber" />
         </Link>

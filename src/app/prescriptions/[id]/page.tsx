@@ -11,13 +11,9 @@ import { DeleteButton } from "@/components/ui/delete-button";
 import { ForceLight } from "@/components/layout/force-light";
 import { formatCurrency, formatDate } from "@/lib/utils";
 import { paymentMethodLabels } from "@/lib/labels";
-import { SlipAmount, SlipBar, SlipFooter, SlipHeader, SlipInfo, SlipPaper } from "@/components/print/slip";
+import { SlipAmount, SlipBar, SlipFooter, SlipHeader, SlipInfo, SlipPaper, SlipRxTable } from "@/components/print/slip";
 
 export const dynamic = "force-dynamic";
-
-function v(value: string | null | undefined) {
-  return value?.trim() || "-";
-}
 
 export default async function PrescriptionPrintPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
@@ -81,46 +77,7 @@ export default async function PrescriptionPrintPage({ params }: { params: Promis
         <SlipBar title="كشف نظر" number={`#${prescription.id}`} />
         <SlipInfo rows={infoRows} />
 
-        <table className="slip-table slip-rx">
-          <thead>
-            <tr>
-              <th rowSpan={2}></th>
-              <th colSpan={3}>العين اليسرى L</th>
-              <th rowSpan={2}>IPD</th>
-              <th colSpan={3}>العين اليمنى R</th>
-            </tr>
-            <tr>
-              <th>AXIS</th>
-              <th>CYL</th>
-              <th>SPH</th>
-              <th>AXIS</th>
-              <th>CYL</th>
-              <th>SPH</th>
-            </tr>
-          </thead>
-          <tbody>
-            <tr>
-              <th>D</th>
-              <td dir="ltr">{v(prescription.leftAxisFar)}</td>
-              <td dir="ltr">{v(prescription.leftCylFar)}</td>
-              <td dir="ltr">{v(prescription.leftSphFar)}</td>
-              <td dir="ltr">{v(prescription.ipdFar)}</td>
-              <td dir="ltr">{v(prescription.rightAxisFar)}</td>
-              <td dir="ltr">{v(prescription.rightCylFar)}</td>
-              <td dir="ltr">{v(prescription.rightSphFar)}</td>
-            </tr>
-            <tr>
-              <th>R</th>
-              <td dir="ltr">{v(prescription.leftAxisNear)}</td>
-              <td dir="ltr">{v(prescription.leftCylNear)}</td>
-              <td dir="ltr">{v(prescription.leftSphNear)}</td>
-              <td dir="ltr">{v(prescription.ipdNear)}</td>
-              <td dir="ltr">{v(prescription.rightAxisNear)}</td>
-              <td dir="ltr">{v(prescription.rightCylNear)}</td>
-              <td dir="ltr">{v(prescription.rightSphNear)}</td>
-            </tr>
-          </tbody>
-        </table>
+        <SlipRxTable rx={prescription} />
 
         {slipRows.length > 0 && <SlipInfo rows={slipRows} />}
 

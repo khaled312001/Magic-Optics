@@ -74,6 +74,62 @@ export function SlipInfo({ rows }: { rows: [string, ReactNode][] }) {
   );
 }
 
+type RxValues = Record<
+  | "leftAxisFar" | "leftCylFar" | "leftSphFar" | "ipdFar" | "rightAxisFar" | "rightCylFar" | "rightSphFar"
+  | "leftAxisNear" | "leftCylNear" | "leftSphNear" | "ipdNear" | "rightAxisNear" | "rightCylNear" | "rightSphNear",
+  string | null
+>;
+
+function v(value: string | null) {
+  return value?.trim() || "-";
+}
+
+/** جدول قياسات كشف النظر */
+export function SlipRxTable({ rx }: { rx: RxValues }) {
+  return (
+    <table className="slip-table slip-rx">
+      <thead>
+        <tr>
+          <th rowSpan={2}></th>
+          <th colSpan={3}>العين اليسرى L</th>
+          <th rowSpan={2}>IPD</th>
+          <th colSpan={3}>العين اليمنى R</th>
+        </tr>
+        <tr>
+          <th>AXIS</th>
+          <th>CYL</th>
+          <th>SPH</th>
+          <th>AXIS</th>
+          <th>CYL</th>
+          <th>SPH</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <th>D</th>
+          <td dir="ltr">{v(rx.leftAxisFar)}</td>
+          <td dir="ltr">{v(rx.leftCylFar)}</td>
+          <td dir="ltr">{v(rx.leftSphFar)}</td>
+          <td dir="ltr">{v(rx.ipdFar)}</td>
+          <td dir="ltr">{v(rx.rightAxisFar)}</td>
+          <td dir="ltr">{v(rx.rightCylFar)}</td>
+          <td dir="ltr">{v(rx.rightSphFar)}</td>
+        </tr>
+        <tr>
+          <th>R</th>
+          <td dir="ltr">{v(rx.leftAxisNear)}</td>
+          <td dir="ltr">{v(rx.leftCylNear)}</td>
+          <td dir="ltr">{v(rx.leftSphNear)}</td>
+          <td dir="ltr">{v(rx.ipdNear)}</td>
+          <td dir="ltr">{v(rx.rightAxisNear)}</td>
+          <td dir="ltr">{v(rx.rightCylNear)}</td>
+          <td dir="ltr">{v(rx.rightSphNear)}</td>
+        </tr>
+      </tbody>
+    </table>
+  );
+}
+
 /** صف مبلغ: عادي أو مميز (شريط أسود) */
 export function SlipAmount({ label, value, strong }: { label: string; value: string; strong?: boolean }) {
   return (

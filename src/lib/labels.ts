@@ -18,6 +18,15 @@ export function isStockTracked(category: string | null | undefined) {
   return !(NON_STOCK_CATEGORIES as readonly string[]).includes(category ?? "");
 }
 
+export function isFrameCategory(category: string | null | undefined) {
+  return category === "FRAME_MEDICAL" || category === "FRAME_SUNGLASSES";
+}
+
+/** كود الشنبر لصنف فى فاتورة - باقى الأصناف بدون كود */
+export function frameCodeOf(product: { code: string | null; category: string } | null | undefined) {
+  return product && isFrameCategory(product.category) ? product.code : null;
+}
+
 export const productCategoryShortLabels = {
   FRAME_MEDICAL: "إطار طبي",
   FRAME_SUNGLASSES: "إطار شمسي",
