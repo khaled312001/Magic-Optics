@@ -66,6 +66,7 @@ export const prescriptionSchema = z
     orderStatus: z.enum(["PENDING", "READY", "DELIVERED", "CANCELLED"]).default("PENDING"),
     paymentMethod,
     applyTax: checkbox,
+    applyDiscount: checkbox,
     orderDescription: z.string().trim().max(200).optional().or(z.literal("")),
     totalAmount: numOrEmpty,
     paidAmount: numOrEmpty,

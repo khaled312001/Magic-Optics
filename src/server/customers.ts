@@ -142,7 +142,7 @@ export async function createPrescription(
       const { lines, discountAmount } = await buildPrescriptionOrderLines(
         data,
         totalAmount,
-        Number(shop.discountPercent),
+        data.applyDiscount ? Number(shop.discountPercent) : 0,
         orderTypeLabels[orderType]
       );
 
