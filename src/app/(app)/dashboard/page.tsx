@@ -68,8 +68,12 @@ export default async function DashboardPage() {
           hint={`من فواتير هذا الشهر ${formatCurrency(data.monthOutstanding)}`}
         />
         <StatCard label="فواتير اليوم" value={String(data.todayOrdersCount)} icon={ShoppingBag} tone="navy" />
-        <StatCard label="قيد التجهيز" value={String(data.pendingCount)} icon={Clock} tone="amber" />
-        <StatCard label="جاهزة للاستلام" value={String(data.readyCount)} icon={PackageCheck} tone="green" />
+        <Link href="/orders?status=PENDING" className="block">
+          <StatCard label="قيد التجهيز" value={String(data.pendingCount)} icon={Clock} tone="amber" />
+        </Link>
+        <Link href="/orders?status=READY" className="block">
+          <StatCard label="جاهزة للاستلام" value={String(data.readyCount)} icon={PackageCheck} tone="green" />
+        </Link>
         <StatCard label="إجمالي العملاء" value={String(data.customersCount)} icon={Users} tone="teal" />
       </div>
 

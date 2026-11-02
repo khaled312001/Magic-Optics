@@ -6,17 +6,17 @@ import { prisma } from "@/lib/prisma";
 import { PageHeader } from "@/components/ui/page-header";
 import { Toolbar } from "@/components/ui/toolbar";
 import { Card } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { EmptyState } from "@/components/ui/empty-state";
 import { SearchBox } from "@/components/ui/search-box";
 import { ExportButton } from "@/components/ui/export-button";
 import { DateRangeFilter } from "@/components/ui/date-range-filter";
 import { StatusTabs } from "@/components/orders/status-tabs";
+import { StatusSelect } from "@/components/orders/status-select";
 import { DeleteButton } from "@/components/ui/delete-button";
 import { deleteOrder } from "@/server/orders";
-import { formatCurrency, formatDateTime, dateRangeFilter } from "@/lib/utils";
-import { orderStatusLabels, orderStatusColors, orderTypeLabels } from "@/lib/labels";
+import { formatCurrency, formatDate, formatDateTime, dateRangeFilter } from "@/lib/utils";
+import { orderTypeLabels } from "@/lib/labels";
 import type { Prisma, OrderStatus } from "@prisma/client";
 
 export const dynamic = "force-dynamic";
@@ -109,13 +109,14 @@ export default async function OrdersPage({
                     <p className="mt-0.5 text-xs text-muted">
                       #{o.receiptNumber} · {orderTypeLabels[o.type]} · {formatDateTime(o.createdAt)}
                     </p>
+                    {o.deliveryDate && <p className="mt-0.5 text-xs font-medium text-foreground">موعد التسليم: {formatDate(o.deliveryDate)}</p>}
                   </Link>
                   <div className="flex items-center gap-4">
                     <Link href={`/orders/${o.id}`} className="text-left">
                       <p className="text-sm font-semibold text-foreground">{formatCurrency(o.totalAmount)}</p>
                       {remaining > 0.01 && <p className="text-xs text-red-600">متبقي {formatCurrency(remaining)}</p>}
                     </Link>
-                    <Badge color={orderStatusColors[o.status]}>{orderStatusLabels[o.status]}</Badge>
+                    <StatusSelect orderId={o.id} status={o.status} />
                     {isAdmin && (
                       <DeleteButton
                         action={deleteOrder.bind(null, o.id)}
