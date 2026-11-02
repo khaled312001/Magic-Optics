@@ -14,6 +14,8 @@ import { formatCurrency } from "@/lib/utils";
 import { DateField, todayIso } from "@/components/ui/date-field";
 import { RxTable } from "@/components/customers/rx-table";
 import { PaymentMethodSelect } from "@/components/orders/payment-method-select";
+import { DiscountControl } from "@/components/orders/discount-control";
+import { discountOf, initialDiscount } from "@/lib/discount";
 import { ProductPickerInput, type PickerProduct } from "@/components/customers/product-picker-input";
 
 type CustomerOption = { id: number; name: string; phone: string | null };
@@ -49,14 +51,14 @@ export function PrescriptionFormDialog({
   // سعر الفريم والعدسات: يتعبى من المخزون عند الاختيار ويمكن تعديله، والقيمة = الفريم بعد الخصم + العدسات
   const [framePrice, setFramePrice] = useState(0);
   const [lensPrice, setLensPrice] = useState(0);
-  const [applyDiscount, setApplyDiscount] = useState(true);
-  const frameDiscount = applyDiscount ? Math.round(framePrice * discountPercent) / 100 : 0;
+  const [discount, setDiscount] = useState(() => initialDiscount(discountPercent));
+  const frameDiscount = discountOf(framePrice, discount);
 
-  function updatePrices(nextFrame: number, nextLens: number, nextApplyDiscount = applyDiscount) {
+  function updatePrices(nextFrame: number, nextLens: number, nextDiscount = discount) {
     setFramePrice(nextFrame);
     setLensPrice(nextLens);
-    const discount = nextApplyDiscount ? Math.round(nextFrame * discountPercent) / 100 : 0;
-    const sum = nextFrame - discount + nextLens;
+    setDiscount(nextDiscount);
+    const sum = nextFrame - discountOf(nextFrame, nextDiscount) + nextLens;
     if (nextFrame > 0 || nextLens > 0) setTotalAmount(Math.round(sum * 100) / 100);
   }
 
@@ -90,7 +92,7 @@ export function PrescriptionFormDialog({
           setFramePrice(0);
           setLensPrice(0);
           setApplyTax(true);
-          setApplyDiscount(true);
+          setDiscount(initialDiscount(discountPercent));
           setOpen(true);
         }}
       >
@@ -245,7 +247,7 @@ export function PrescriptionFormDialog({
                 />
                 {frameDiscount > 0 && (
                   <p className="mt-0.5 truncate text-[11px] text-emerald-600">
-                    بعد خصم الشنابر {discountPercent}% (-{formatCurrency(frameDiscount)})
+                    بعد خصم الشنابر (-{formatCurrency(frameDiscount)})
                   </p>
                 )}
               </div>
@@ -272,27 +274,17 @@ export function PrescriptionFormDialog({
 
             <div className="mt-2 flex flex-wrap items-center gap-x-5 gap-y-2 text-sm">
               <input type="hidden" name="applyTax" value={applyTax ? "1" : "0"} />
-              <input type="hidden" name="applyDiscount" value={applyDiscount ? "1" : "0"} />
               <div className="flex items-center gap-2">
                 <Label htmlFor="p-paymentMethod" className="mb-0 whitespace-nowrap">
                   طريقة الدفع
                 </Label>
                 <PaymentMethodSelect id="p-paymentMethod" className="h-9 w-36" />
               </div>
-              {discountPercent > 0 && (
-                <label className="flex cursor-pointer items-center gap-2 text-foreground">
-                  <input
-                    type="checkbox"
-                    checked={applyDiscount}
-                    onChange={(e) => {
-                      setApplyDiscount(e.target.checked);
-                      updatePrices(framePrice, lensPrice, e.target.checked);
-                    }}
-                    className="size-4 accent-brand-teal"
-                  />
-                  خصم الشنابر {discountPercent}%
-                </label>
-              )}
+              <DiscountControl
+                state={discount}
+                shopPercent={discountPercent}
+                onChange={(next) => updatePrices(framePrice, lensPrice, next)}
+              />
               {taxPercent > 0 && (
                 <label className="flex cursor-pointer items-center gap-2 text-foreground">
                   <input

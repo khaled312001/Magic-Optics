@@ -8,8 +8,8 @@ import { createPaymentWithCash } from "@/server/cash-utils";
 import { ActionResult, handleActionError, okResult } from "@/server/action-result";
 import { generateReceiptNumber } from "@/lib/utils";
 import { isStockTracked, orderTypeLabels } from "@/lib/labels";
-import { computeTax } from "@/server/discount-utils";
-import { getShopSettings } from "@/server/settings";
+import { computeTax, resolveDiscount, storedDiscountPercent } from "@/server/discount-utils";
+import { calcDiscount, type DiscountType } from "@/lib/discount";
 
 export async function createCustomer(formData: FormData): Promise<ActionResult<{ id: number }>> {
   try {
@@ -138,11 +138,11 @@ export async function createPrescription(
       const grandTotal = Math.round((totalAmount + taxAmount) * 100) / 100;
       const paidAmount = Math.min(data.paidAmount ?? 0, grandTotal);
       // القيمة المكتوبة صافية بعد خصم الشنابر، فالأصناف تُبنى بأسعارها المكتوبة والخصم يُسجل على الفريم
-      const shop = await getShopSettings();
+      const discount = await resolveDiscount(data);
       const { lines, discountAmount } = await buildPrescriptionOrderLines(
         data,
         totalAmount,
-        data.applyDiscount ? Number(shop.discountPercent) : 0,
+        discount,
         orderTypeLabels[orderType]
       );
 
@@ -156,6 +156,7 @@ export async function createPrescription(
             status: data.orderStatus,
             totalAmount: grandTotal,
             discountAmount,
+            discountPercent: storedDiscountPercent(discount, discountAmount),
             taxAmount,
             paidAmount,
             deliveryDate: data.deliveryDate ? new Date(data.deliveryDate) : null,
@@ -228,7 +229,7 @@ async function buildPrescriptionOrderLines(
     orderDescription?: string;
   },
   netAmount: number,
-  discountPercent: number,
+  discount: { type: DiscountType; value: number },
   fallbackLabel: string
 ) {
   const ids = [data.frameProductId, data.lensProductId].filter((id): id is number => !!id);
@@ -263,7 +264,7 @@ async function buildPrescriptionOrderLines(
   }
 
   const frameLine = lines.find((l) => l.isFrame);
-  const discountAmount = frameLine ? Math.round(frameLine.price * discountPercent) / 100 : 0;
+  const discountAmount = frameLine ? calcDiscount(frameLine.price, discount.type, discount.value) : 0;
   const gross = netAmount + discountAmount;
 
   const diff = Math.round((gross - lines.reduce((s, l) => s + l.price, 0)) * 100) / 100;

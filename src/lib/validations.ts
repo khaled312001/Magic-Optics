@@ -24,6 +24,7 @@ const optId = z.preprocess(
 );
 
 const paymentMethod = z.enum(["CASH", "INSTAPAY", "VISA", "VODAFONE_CASH"]).default("CASH");
+const discountType = z.enum(["PERCENT", "AMOUNT"]).default("PERCENT");
 const checkbox = z.preprocess((v) => v === "1" || v === "on", z.boolean());
 
 const numOrEmpty = z.preprocess(
@@ -67,6 +68,8 @@ export const prescriptionSchema = z
     paymentMethod,
     applyTax: checkbox,
     applyDiscount: checkbox,
+    discountType,
+    discountValue: numOrEmpty,
     orderDescription: z.string().trim().max(200).optional().or(z.literal("")),
     totalAmount: numOrEmpty,
     paidAmount: numOrEmpty,
@@ -153,6 +156,8 @@ export const orderSchema = z.object({
   items: z.array(orderItemSchema).min(1, "أضف صنفاً واحداً على الأقل"),
   paidAmount: z.coerce.number().min(0).default(0),
   applyDiscount: checkbox,
+  discountType,
+  discountValue: numOrEmpty,
   applyTax: checkbox,
   paymentMethod,
   deliveryDate: z.string().optional().or(z.literal("")),

@@ -8,6 +8,8 @@ import { Input, Label, Select, Textarea, FieldError } from "@/components/ui/inpu
 import { Combobox, type ComboboxItem } from "@/components/ui/combobox";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { PaymentMethodSelect } from "@/components/orders/payment-method-select";
+import { DiscountControl } from "@/components/orders/discount-control";
+import { discountOf, initialDiscount } from "@/lib/discount";
 import { useActionForm } from "@/components/ui/use-action-form";
 import { createOrder } from "@/server/orders";
 import { formatCurrency } from "@/lib/utils";
@@ -120,13 +122,13 @@ export function OrderForm({
     [products]
   );
 
-  const [applyDiscount, setApplyDiscount] = useState(true);
+  const [discountState, setDiscountState] = useState(() => initialDiscount(discountPercent));
   const subtotal = items.reduce((s, it) => s + it.quantity * it.unitPrice, 0);
   const frameIds = useMemo(() => new Set(frames.map((f) => f.id)), [frames]);
   const frameSubtotal = items
     .filter((it) => it.productId && frameIds.has(it.productId))
     .reduce((s, it) => s + it.quantity * it.unitPrice, 0);
-  const discount = applyDiscount ? Math.round(frameSubtotal * discountPercent) / 100 : 0;
+  const discount = discountOf(frameSubtotal, discountState);
   const [applyTax, setApplyTax] = useState(true);
   const net = subtotal - discount;
   const tax = applyTax ? Math.round(net * taxPercent) / 100 : 0;
@@ -143,7 +145,8 @@ export function OrderForm({
   return (
     <form onSubmit={onSubmit} className="space-y-6">
       <input type="hidden" name="items" value={JSON.stringify(items.filter((i) => i.description.trim()))} />
-      <input type="hidden" name="applyDiscount" value={applyDiscount ? "1" : "0"} />
+      {/* بدون إطارات فى الفاتورة لا يوجد خصم، فخانات الخصم لا تظهر ويُرسل صفر */}
+      {frameSubtotal <= 0 && <input type="hidden" name="applyDiscount" value="0" />}
       <input type="hidden" name="applyTax" value={applyTax ? "1" : "0"} />
       {selectedCustomer && <input type="hidden" name="customerId" value={selectedCustomer.id} />}
 
@@ -382,24 +385,17 @@ export function OrderForm({
         </CardHeader>
         <CardContent>
           <div className="mb-4 space-y-2 rounded-lg bg-background px-4 py-3">
-            {discountPercent > 0 && frameSubtotal > 0 && (
+            {frameSubtotal > 0 && (
               <>
                 <div className="flex items-center justify-between text-sm">
                   <span className="text-muted">المجموع</span>
                   <span className="text-foreground">{formatCurrency(subtotal)}</span>
                 </div>
-                <div className="flex items-center justify-between text-sm">
-                  <label className="flex cursor-pointer items-center gap-2 text-foreground">
-                    <input
-                      type="checkbox"
-                      checked={applyDiscount}
-                      onChange={(e) => setApplyDiscount(e.target.checked)}
-                      className="size-4 accent-brand-teal"
-                    />
-                    خصم الشنابر {discountPercent}% (على الإطارات فقط - لا يشمل العدسات)
-                  </label>
+                <div className="flex flex-wrap items-center justify-between gap-2 text-sm">
+                  <DiscountControl state={discountState} shopPercent={discountPercent} onChange={setDiscountState} />
                   <span className="font-semibold text-emerald-600">{discount > 0 ? `-${formatCurrency(discount)}` : "-"}</span>
                 </div>
+                <p className="text-xs text-muted">على الإطارات فقط - لا يشمل العدسات</p>
               </>
             )}
             {taxPercent > 0 && (

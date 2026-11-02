@@ -9,7 +9,7 @@ import { ActionResult, handleActionError, okResult } from "@/server/action-resul
 import { generateReceiptNumber } from "@/lib/utils";
 import { z } from "zod";
 import { createPaymentWithCash } from "@/server/cash-utils";
-import { computeFrameDiscount, computeTax } from "@/server/discount-utils";
+import { computeFrameDiscount, computeTax, resolveDiscount, storedDiscountPercent } from "@/server/discount-utils";
 
 export async function createOrder(formData: FormData): Promise<ActionResult<{ id: number }>> {
   try {
@@ -42,9 +42,11 @@ export async function createOrder(formData: FormData): Promise<ActionResult<{ id
     }
 
     const subtotal = items.reduce((sum, it) => sum + it.quantity * it.unitPrice, 0);
-    const discountAmount = data.applyDiscount
-      ? await computeFrameDiscount(items.map((it) => ({ productId: it.productId, amount: it.quantity * it.unitPrice })))
-      : 0;
+    const discount = await resolveDiscount(data);
+    const discountAmount = await computeFrameDiscount(
+      items.map((it) => ({ productId: it.productId, amount: it.quantity * it.unitPrice })),
+      discount
+    );
     const netAmount = Math.round((subtotal - discountAmount) * 100) / 100;
     const taxAmount = data.applyTax ? await computeTax(netAmount) : 0;
     const totalAmount = Math.round((netAmount + taxAmount) * 100) / 100;
@@ -86,6 +88,7 @@ export async function createOrder(formData: FormData): Promise<ActionResult<{ id
           status: data.status,
           totalAmount,
           discountAmount,
+          discountPercent: storedDiscountPercent(discount, discountAmount),
           taxAmount,
           paidAmount: data.paidAmount,
           deliveryDate: data.deliveryDate ? new Date(data.deliveryDate) : null,

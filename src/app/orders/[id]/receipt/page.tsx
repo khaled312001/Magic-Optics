@@ -33,7 +33,6 @@ export default async function ReceiptPage({
 
   const remaining = Number(order.totalAmount) - Number(order.paidAmount);
 
-  const discountPercent = Number(shop.discountPercent);
   const discountAmount = Number(order.discountAmount);
   const itemsSubtotal = order.items.reduce((s, i) => s + Number(i.subtotal), 0);
   const taxAmount = Number(order.taxAmount);
@@ -97,7 +96,7 @@ export default async function ReceiptPage({
             <>
               <SlipAmount label="المجموع" value={formatCurrency(itemsSubtotal)} />
               <SlipAmount
-                label={`خصم الشنابر${discountPercent > 0 ? ` ${discountPercent}%` : ""}`}
+                label={`خصم الشنابر${order.discountPercent ? ` ${Number(order.discountPercent)}%` : ""}`}
                 value={`-${formatCurrency(discountAmount)}`}
               />
             </>
