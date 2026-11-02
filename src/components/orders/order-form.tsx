@@ -145,8 +145,6 @@ export function OrderForm({
   return (
     <form onSubmit={onSubmit} className="space-y-6">
       <input type="hidden" name="items" value={JSON.stringify(items.filter((i) => i.description.trim()))} />
-      {/* بدون إطارات فى الفاتورة لا يوجد خصم، فخانات الخصم لا تظهر ويُرسل صفر */}
-      {frameSubtotal <= 0 && <input type="hidden" name="applyDiscount" value="0" />}
       <input type="hidden" name="applyTax" value={applyTax ? "1" : "0"} />
       {selectedCustomer && <input type="hidden" name="customerId" value={selectedCustomer.id} />}
 
@@ -385,19 +383,19 @@ export function OrderForm({
         </CardHeader>
         <CardContent>
           <div className="mb-4 space-y-2 rounded-lg bg-background px-4 py-3">
-            {frameSubtotal > 0 && (
-              <>
-                <div className="flex items-center justify-between text-sm">
-                  <span className="text-muted">المجموع</span>
-                  <span className="text-foreground">{formatCurrency(subtotal)}</span>
-                </div>
-                <div className="flex flex-wrap items-center justify-between gap-2 text-sm">
-                  <DiscountControl state={discountState} shopPercent={discountPercent} onChange={setDiscountState} />
-                  <span className="font-semibold text-emerald-600">{discount > 0 ? `-${formatCurrency(discount)}` : "-"}</span>
-                </div>
-                <p className="text-xs text-muted">على الإطارات فقط - لا يشمل العدسات</p>
-              </>
+            {subtotal > 0 && (
+              <div className="flex items-center justify-between text-sm">
+                <span className="text-muted">المجموع</span>
+                <span className="text-foreground">{formatCurrency(subtotal)}</span>
+              </div>
             )}
+            <div className="flex flex-wrap items-center justify-between gap-2 text-sm">
+              <DiscountControl state={discountState} shopPercent={discountPercent} onChange={setDiscountState} />
+              <span className="font-semibold text-emerald-600">{discount > 0 ? `-${formatCurrency(discount)}` : "-"}</span>
+            </div>
+            <p className="text-xs text-muted">
+              {frameSubtotal > 0 ? "على الإطارات فقط - لا يشمل العدسات" : "يتحسب لما تضيف فريم من المخزون - لا يشمل العدسات"}
+            </p>
             {taxPercent > 0 && (
               <div className="flex items-center justify-between text-sm">
                 <label className="flex cursor-pointer items-center gap-2 text-foreground">
