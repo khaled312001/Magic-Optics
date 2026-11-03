@@ -2,11 +2,12 @@ import { notFound } from "next/navigation";
 import Link from "next/link";
 import { prisma } from "@/lib/prisma";
 import { getShopSettings } from "@/server/settings";
+import { frameWithoutCode } from "@/server/prescriptions";
 import { PrintButton } from "@/components/orders/print-button";
 import { AutoPrint } from "@/components/orders/auto-print";
 import { ForceLight } from "@/components/layout/force-light";
 import { formatCurrency, formatDate, formatDateTime } from "@/lib/utils";
-import { frameCodeOf, isFrameCategory, orderTypeLabels, paymentMethodLabels } from "@/lib/labels";
+import { isFrameCategory, orderTypeLabels, paymentMethodLabels } from "@/lib/labels";
 import { SlipAmount, SlipBar, SlipFooter, SlipHeader, SlipInfo, SlipPaper, SlipRxTable } from "@/components/print/slip";
 
 export const dynamic = "force-dynamic";
@@ -44,12 +45,13 @@ export default async function ReceiptPage({
   // بيانات الكشف المرتبط - تاريخه يظهر فقط لو مختلف عن يوم الفاتورة (كشف قديم مسجل بتاريخه)
   const rx = order.prescription;
   const rxDate = rx ? formatDate(rx.date) : null;
+  const rxFrame = await frameWithoutCode(rx?.frame);
   const rxRows = rx
     ? (
         [
           ["تاريخ الكشف", rxDate !== formatDate(order.createdAt) ? rxDate : null],
           ["اسم الطبيب", rx.doctorName],
-          ["الفريم", rx.frame],
+          ["الفريم", rxFrame],
           ["نوع العدسات", rx.lensType],
           ["ملاحظات", rx.notes],
         ] as [string, string | null][]
@@ -103,20 +105,14 @@ export default async function ReceiptPage({
             </tr>
           </thead>
           <tbody>
-            {order.items.map((item) => {
-              const frameCode = frameCodeOf(item.product);
-              return (
-                <tr key={item.id}>
-                  <td className="font-bold">
-                    {item.description}
-                    {frameCode && <div>كود: {frameCode}</div>}
-                  </td>
-                  <td className="text-center">{item.quantity}</td>
-                  <td className="text-center">{formatCurrency(item.unitPrice).replace(" ج.م", "")}</td>
-                  <td className="text-center">{formatCurrency(item.subtotal).replace(" ج.م", "")}</td>
-                </tr>
-              );
-            })}
+            {order.items.map((item) => (
+              <tr key={item.id}>
+                <td className="font-bold">{item.description}</td>
+                <td className="text-center">{item.quantity}</td>
+                <td className="text-center">{formatCurrency(item.unitPrice).replace(" ج.م", "")}</td>
+                <td className="text-center">{formatCurrency(item.subtotal).replace(" ج.م", "")}</td>
+              </tr>
+            ))}
           </tbody>
         </table>
 

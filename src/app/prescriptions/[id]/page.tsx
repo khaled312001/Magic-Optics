@@ -4,7 +4,7 @@ import { ChevronRight } from "lucide-react";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import { getShopSettings } from "@/server/settings";
-import { getPrescriptionById } from "@/server/prescriptions";
+import { frameWithoutCode, getPrescriptionById } from "@/server/prescriptions";
 import { deletePrescription } from "@/server/customers";
 import { PrintButton } from "@/components/orders/print-button";
 import { DeleteButton } from "@/components/ui/delete-button";
@@ -35,6 +35,8 @@ export default async function PrescriptionPrintPage({ params }: { params: Promis
   const taxPercent = beforeTax > 0 ? Math.round((taxAmount / beforeTax) * 100) : 0;
   const methods = order ? [...new Set(order.payments.map((p) => paymentMethodLabels[p.method]))].join(" + ") : "";
 
+  const frame = await frameWithoutCode(prescription.frame);
+
   const infoRows: [string, string][] = [
     ["التاريخ", formatDate(prescription.date)],
     ["الاسم", prescription.customer.name],
@@ -44,7 +46,7 @@ export default async function PrescriptionPrintPage({ params }: { params: Promis
   const slipRows = (
     [
       ["اسم الطبيب", prescription.doctorName],
-      ["الفريم", prescription.frame],
+      ["الفريم", frame],
       ["نوع العدسات", prescription.lensType],
       ["موعد التسليم", order?.deliveryDate ? formatDate(order.deliveryDate) : null],
       ["ملاحظات", prescription.notes],

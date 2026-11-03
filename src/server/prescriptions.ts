@@ -31,6 +31,18 @@ export async function getPrescriptions(query?: string, from?: string, to?: strin
   return { prescriptions, totalCount };
 }
 
+/** الفريم المختار من المخزون محفوظ "الكود - الاسم": الكود للمحل فقط فلا يُطبع للعميل */
+export async function frameWithoutCode(frame: string | null | undefined) {
+  if (!frame) return null;
+  const sep = frame.indexOf(" - ");
+  if (sep <= 0) return frame;
+  const product = await prisma.product.findFirst({
+    where: { code: frame.slice(0, sep), category: { in: ["FRAME_MEDICAL", "FRAME_SUNGLASSES"] } },
+    select: { id: true },
+  });
+  return product ? frame.slice(sep + 3) : frame;
+}
+
 export async function getPrescriptionById(id: number) {
   const [prescription, linkedOrders] = await Promise.all([
     prisma.prescription.findUnique({ where: { id }, include: { customer: true, createdBy: true } }),
