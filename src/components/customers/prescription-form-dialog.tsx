@@ -17,6 +17,7 @@ import { PaymentMethodSelect } from "@/components/orders/payment-method-select";
 import { DiscountControl } from "@/components/orders/discount-control";
 import { discountOf, initialDiscount } from "@/lib/discount";
 import { ProductPickerInput, type PickerProduct } from "@/components/customers/product-picker-input";
+import { CustomerHistoryPanel } from "@/components/customers/customer-history-panel";
 
 type CustomerOption = { id: number; name: string; phone: string | null };
 export type RxProductOption = PickerProduct & { category: string };
@@ -163,6 +164,8 @@ export function PrescriptionFormDialog({
               </div>
             )}
           </div>
+
+          {!customerId && selectedCustomer && <CustomerHistoryPanel customerId={selectedCustomer.id} />}
 
           <div className="rounded-xl border border-border bg-background p-2">
             <RxTable />

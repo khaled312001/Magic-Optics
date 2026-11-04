@@ -43,6 +43,32 @@ export async function frameWithoutCode(frame: string | null | undefined) {
   return product ? frame.slice(sep + 3) : frame;
 }
 
+/** كل كشوفات وفواتير العميل، جاهزة للإرسال لمكونات الواجهة */
+export async function getCustomerHistory(customerId: number) {
+  const [prescriptions, orders] = await Promise.all([
+    prisma.prescription.findMany({ where: { customerId }, orderBy: [{ date: "desc" }, { id: "desc" }] }),
+    prisma.order.findMany({
+      where: { customerId },
+      orderBy: { createdAt: "desc" },
+      select: {
+        id: true,
+        receiptNumber: true,
+        createdAt: true,
+        status: true,
+        totalAmount: true,
+        paidAmount: true,
+        items: { select: { description: true } },
+      },
+    }),
+  ]);
+  return {
+    prescriptions,
+    orders: orders.map((o) => ({ ...o, totalAmount: Number(o.totalAmount), paidAmount: Number(o.paidAmount) })),
+  };
+}
+
+export type CustomerHistory = Awaited<ReturnType<typeof getCustomerHistory>>;
+
 export async function getPrescriptionById(id: number) {
   const [prescription, linkedOrders] = await Promise.all([
     prisma.prescription.findUnique({ where: { id }, include: { customer: true, createdBy: true } }),

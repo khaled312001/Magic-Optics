@@ -6,6 +6,7 @@ import { Plus, Trash2, User, Eye } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input, Label, Select, Textarea, FieldError } from "@/components/ui/input";
 import { Combobox, type ComboboxItem } from "@/components/ui/combobox";
+import { CustomerHistoryPanel } from "@/components/customers/customer-history-panel";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { PaymentMethodSelect } from "@/components/orders/payment-method-select";
 import { DiscountControl } from "@/components/orders/discount-control";
@@ -204,6 +205,12 @@ export function OrderForm({
             </div>
           )}
           <FieldError>{fieldErrors.customerId}</FieldError>
+
+          {selectedCustomer && !preselectedCustomer && (
+            <div className="mt-4">
+              <CustomerHistoryPanel customerId={selectedCustomer.id} />
+            </div>
+          )}
 
           {preselectedCustomer && preselectedCustomer.prescriptions.length > 0 && (
             <div className="mt-4">

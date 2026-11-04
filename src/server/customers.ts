@@ -10,6 +10,7 @@ import { generateReceiptNumber } from "@/lib/utils";
 import { isStockTracked, orderTypeLabels } from "@/lib/labels";
 import { computeTax, resolveDiscount, storedDiscountPercent } from "@/server/discount-utils";
 import { calcDiscount, type DiscountType } from "@/lib/discount";
+import { getCustomerHistory } from "@/server/prescriptions";
 
 export async function createCustomer(formData: FormData): Promise<ActionResult<{ id: number }>> {
   try {
@@ -84,6 +85,11 @@ export async function searchCustomers(query: string) {
     orderBy: { createdAt: "desc" },
     take: 20,
   });
+}
+
+export async function loadCustomerHistory(customerId: number) {
+  await requireUser();
+  return getCustomerHistory(customerId);
 }
 
 export async function createPrescription(
