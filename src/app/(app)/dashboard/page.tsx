@@ -52,7 +52,19 @@ export default async function DashboardPage() {
       />
 
       <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
-        <StatCard label="مبيعات اليوم (قيمة الفواتير)" value={formatCurrency(data.todaySalesTotal)} icon={Banknote} tone="teal" highlight />
+        {/* فواتير النهارده + المتبقي المتحصل النهارده من فواتير قديمة (زي اللي استلم نظارته ودفع الباقي) */}
+        <StatCard
+          label="مبيعات اليوم"
+          value={formatCurrency(data.todaySalesTotal + data.oldBalanceCollected)}
+          icon={Banknote}
+          tone="teal"
+          highlight
+          hint={
+            data.oldBalanceCollected > 0
+              ? `فواتير اليوم ${formatCurrency(data.todaySalesTotal)} + متبقي متحصل من فواتير قديمة ${formatCurrency(data.oldBalanceCollected)}`
+              : undefined
+          }
+        />
         <StatCard label="المحصّل اليوم" value={formatCurrency(data.todayCollected)} icon={Wallet} tone="green" />
         <StatCard
           label="رصيد الخزنة اليوم"

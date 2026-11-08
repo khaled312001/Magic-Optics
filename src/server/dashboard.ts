@@ -28,6 +28,7 @@ export async function getDashboardData() {
     dueTodayCount,
     overdueCount,
     monthCountsCount,
+    oldBalanceAgg,
   ] = await Promise.all([
     prisma.order.findMany({
       where: { createdAt: { gte: startOfToday, lt: endOfToday }, status: { not: "CANCELLED" } },
@@ -60,6 +61,11 @@ export async function getDashboardData() {
     }),
     prisma.order.count({ where: { status: { in: ["PENDING", "READY"] }, deliveryDate: { lt: dbDate(today) } } }),
     prisma.stockCount.count({ where: { createdAt: { gte: cairoMonthRange(year, month).start } } }),
+    // دفعات النهارده على فواتير أيام سابقة (تحصيل المتبقي عند الاستلام)
+    prisma.payment.aggregate({
+      where: { createdAt: { gte: startOfToday, lt: endOfToday }, order: { createdAt: { lt: startOfToday } } },
+      _sum: { amount: true },
+    }),
   ]);
 
   const daysLeftInMonth = Math.ceil((cairoMonthRange(year, month).end.getTime() - Date.now()) / 86_400_000);
@@ -80,9 +86,11 @@ export async function getDashboardData() {
   const totalOutstanding = debtors.reduce((s, o) => s + o.remaining, 0);
 
   const todayCollected = Number(todayCollectedAgg._sum.amount ?? 0);
+  const oldBalanceCollected = Number(oldBalanceAgg._sum.amount ?? 0);
 
   return {
     todaySalesTotal,
+    oldBalanceCollected,
     todayOrdersCount,
     pendingCount,
     readyCount,
