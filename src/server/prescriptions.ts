@@ -34,13 +34,19 @@ export async function getPrescriptions(query?: string, from?: string, to?: strin
 /** الفريم المختار من المخزون محفوظ "الكود - الاسم": الكود للمحل فقط فلا يُطبع للعميل */
 export async function frameWithoutCode(frame: string | null | undefined) {
   if (!frame) return null;
-  const sep = frame.indexOf(" - ");
-  if (sep <= 0) return frame;
-  const product = await prisma.product.findFirst({
-    where: { code: frame.slice(0, sep), category: { in: ["FRAME_MEDICAL", "FRAME_SUNGLASSES"] } },
-    select: { id: true },
-  });
-  return product ? frame.slice(sep + 3) : frame;
+  // أكتر من شنبر محفوظين "الأول + التانى"
+  const parts = await Promise.all(
+    frame.split(" + ").map(async (part) => {
+      const sep = part.indexOf(" - ");
+      if (sep <= 0) return part;
+      const product = await prisma.product.findFirst({
+        where: { code: part.slice(0, sep), category: { in: ["FRAME_MEDICAL", "FRAME_SUNGLASSES"] } },
+        select: { id: true },
+      });
+      return product ? part.slice(sep + 3) : part;
+    })
+  );
+  return parts.join(" + ");
 }
 
 /** كل كشوفات وفواتير العميل، جاهزة للإرسال لمكونات الواجهة */

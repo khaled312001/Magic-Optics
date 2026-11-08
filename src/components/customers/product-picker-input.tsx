@@ -18,6 +18,7 @@ export function ProductPickerInput({
   productIdName,
   products,
   onPick,
+  onTextChange,
   searchBy = "name",
 }: {
   id: string;
@@ -25,6 +26,8 @@ export function ProductPickerInput({
   productIdName: string;
   products: PickerProduct[];
   onPick: (product: PickerProduct | null) => void;
+  /** النص الظاهر فى الخانة (مكتوب أو بعد الاختيار) */
+  onTextChange?: (text: string) => void;
   /** "code": البحث بكود الصنف فقط (الإطارات)، "name": بالاسم أو الكود */
   searchBy?: "code" | "name";
 }) {
@@ -50,7 +53,9 @@ export function ProductPickerInput({
 
   function choose(p: PickerProduct) {
     setPicked(p);
-    setText(searchBy === "code" && p.code ? `${p.code} - ${p.name}` : p.name);
+    const label = searchBy === "code" && p.code ? `${p.code} - ${p.name}` : p.name;
+    setText(label);
+    onTextChange?.(label);
     setOpen(false);
     onPick(p);
   }
@@ -64,6 +69,7 @@ export function ProductPickerInput({
         autoComplete="off"
         onChange={(e) => {
           setText(e.target.value);
+          onTextChange?.(e.target.value);
           setActive(0);
           setOpen(true);
           if (picked) {

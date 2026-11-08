@@ -3,7 +3,8 @@
 import { revalidatePath } from "next/cache";
 import { prisma } from "@/lib/prisma";
 import { requireUser, requireAdmin } from "@/lib/auth-helpers";
-import { customerSchema, prescriptionSchema, rxSchema } from "@/lib/validations";
+import { customerSchema, extraFrameSchema, prescriptionSchema, rxSchema } from "@/lib/validations";
+import { z } from "zod";
 import { createPaymentWithCash } from "@/server/cash-utils";
 import { ActionResult, handleActionError, okResult } from "@/server/action-result";
 import { generateReceiptNumber } from "@/lib/utils";
@@ -99,6 +100,13 @@ export async function createPrescription(
     const user = await requireUser();
     const raw = Object.fromEntries(formData);
     const data = prescriptionSchema.parse(raw);
+    const extraFrames = z
+      .array(extraFrameSchema)
+      .max(10)
+      .parse(JSON.parse(String(formData.get("extraFrames") || "[]")))
+      .filter((f) => f.text || f.productId);
+    // كل الشنابر فى خانة الفريم بالورقة: "الأول + التانى"
+    const frameText = [data.frame, ...extraFrames.map((f) => f.text)].filter(Boolean).join(" + ").slice(0, 200) || null;
 
     let customerId = data.customerId;
     if (!customerId) {
@@ -128,7 +136,7 @@ export async function createPrescription(
         ipdNear: data.ipdNear,
         notes: data.notes || null,
         doctorName: data.doctorName,
-        frame: data.frame,
+        frame: frameText,
         lensType: data.lensType,
         createdById: Number(user.id),
       },
@@ -146,7 +154,7 @@ export async function createPrescription(
       // القيمة المكتوبة صافية بعد خصم الشنابر، فالأصناف تُبنى بأسعارها المكتوبة والخصم يُسجل على الفريم
       const discount = await resolveDiscount(data);
       const { lines, discountAmount } = await buildPrescriptionOrderLines(
-        data,
+        { ...data, extraFrames },
         totalAmount,
         discount,
         orderTypeLabels[orderType]
@@ -232,16 +240,20 @@ async function buildPrescriptionOrderLines(
     lensProductId: number | null;
     framePrice: number | null;
     lensPrice: number | null;
+    extraFrames: { text: string; productId: number | null; price: number | null }[];
     orderDescription?: string;
   },
   netAmount: number,
   discount: { type: DiscountType; value: number },
   fallbackLabel: string
 ) {
-  const ids = [data.frameProductId, data.lensProductId].filter((id): id is number => !!id);
+  const ids = [data.frameProductId, data.lensProductId, ...data.extraFrames.map((f) => f.productId)].filter(
+    (id): id is number => !!id
+  );
   const products = ids.length ? await prisma.product.findMany({ where: { id: { in: ids } } }) : [];
   const parts = [
     { kind: "frame", product: products.find((p) => p.id === data.frameProductId), text: data.frame, price: data.framePrice },
+    ...data.extraFrames.map((f) => ({ kind: "frame", product: products.find((p) => p.id === f.productId), text: f.text || null, price: f.price })),
     { kind: "lens", product: products.find((p) => p.id === data.lensProductId), text: data.lensType, price: data.lensPrice },
   ];
 
@@ -269,8 +281,9 @@ async function buildPrescriptionOrderLines(
     };
   }
 
-  const frameLine = lines.find((l) => l.isFrame);
-  const discountAmount = frameLine ? calcDiscount(frameLine.price, discount.type, discount.value) : 0;
+  // خصم الشنابر على مجموع أسعار كل الشنابر
+  const framesSubtotal = lines.filter((l) => l.isFrame).reduce((s, l) => s + l.price, 0);
+  const discountAmount = calcDiscount(framesSubtotal, discount.type, discount.value);
   const gross = netAmount + discountAmount;
 
   const diff = Math.round((gross - lines.reduce((s, l) => s + l.price, 0)) * 100) / 100;

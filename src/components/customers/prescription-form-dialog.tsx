@@ -1,8 +1,8 @@
 "use client";
 
-import { useState } from "react";
+import { useRef, useState } from "react";
 import { useRouter } from "next/navigation";
-import { Plus, User, Receipt } from "lucide-react";
+import { Plus, User, Receipt, X } from "lucide-react";
 import { Dialog } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Input, Label, Select, FieldError } from "@/components/ui/input";
@@ -20,6 +20,7 @@ import { ProductPickerInput, type PickerProduct } from "@/components/customers/p
 import { CustomerHistoryPanel } from "@/components/customers/customer-history-panel";
 
 type CustomerOption = { id: number; name: string; phone: string | null };
+type ExtraFrame = { key: number; text: string; productId: number | null; price: number };
 export type RxProductOption = PickerProduct & { category: string };
 
 export function PrescriptionFormDialog({
@@ -53,20 +54,37 @@ export function PrescriptionFormDialog({
   const [framePrice, setFramePrice] = useState(0);
   const [lensPrice, setLensPrice] = useState(0);
   const [discount, setDiscount] = useState(() => initialDiscount(discountPercent));
-  const frameDiscount = discountOf(framePrice, discount);
+  // شنابر إضافية بعد الأول - الخصم على مجموع أسعار كل الشنابر
+  const [extraFrames, setExtraFrames] = useState<ExtraFrame[]>([]);
+  // نسخة فورية: اختيار شنبر بيغير النص والسعر فى نفس اللحظة، فالتعديل التانى لازم يبنى على الأول
+  const extrasRef = useRef<ExtraFrame[]>([]);
+  function setExtras(next: ExtraFrame[]) {
+    extrasRef.current = next;
+    setExtraFrames(next);
+  }
+  const framesTotal = framePrice + extraFrames.reduce((s, f) => s + f.price, 0);
+  const frameDiscount = discountOf(framesTotal, discount);
 
-  function updatePrices(nextFrame: number, nextLens: number, nextDiscount = discount) {
+  function updatePrices(nextFrame: number, nextLens: number, nextDiscount = discount, nextExtras = extrasRef.current) {
     setFramePrice(nextFrame);
     setLensPrice(nextLens);
     setDiscount(nextDiscount);
-    const sum = nextFrame - discountOf(nextFrame, nextDiscount) + nextLens;
-    if (nextFrame > 0 || nextLens > 0) setTotalAmount(Math.round(sum * 100) / 100);
+    setExtras(nextExtras);
+    const frames = nextFrame + nextExtras.reduce((s, f) => s + f.price, 0);
+    const sum = frames - discountOf(frames, nextDiscount) + nextLens;
+    if (frames > 0 || nextLens > 0) setTotalAmount(Math.round(sum * 100) / 100);
   }
 
   function onPick(kind: "frame" | "lens", product: PickerProduct | null) {
     if (!product) return;
     if (kind === "frame") updatePrices(product.sellPrice, lensPrice);
     else updatePrices(framePrice, product.sellPrice);
+  }
+
+  function updateExtra(key: number, change: Partial<ExtraFrame>) {
+    const next = extrasRef.current.map((f) => (f.key === key ? { ...f, ...change } : f));
+    if (change.price !== undefined) updatePrices(framePrice, lensPrice, discount, next);
+    else setExtras(next);
   }
 
   const { onSubmit, isPending, fieldErrors, error } = useActionForm(createPrescription, {
@@ -94,6 +112,7 @@ export function PrescriptionFormDialog({
           setLensPrice(0);
           setApplyTax(true);
           setDiscount(initialDiscount(discountPercent));
+          setExtras([]);
           setOpen(true);
         }}
       >
@@ -187,6 +206,50 @@ export function PrescriptionFormDialog({
                 onPick={(p) => onPick("frame", p)}
               />
               <PriceInput name="framePrice" label="سعر الفريم" value={framePrice} onChange={(v) => updatePrices(v, lensPrice)} />
+
+              <input
+                type="hidden"
+                name="extraFrames"
+                value={JSON.stringify(extraFrames.map((f) => ({ text: f.text, productId: f.productId, price: f.price || null })))}
+              />
+              {extraFrames.map((f, index) => (
+                <div key={f.key} className="mt-2 border-t border-dashed border-border pt-2">
+                  <div className="mb-1 flex items-center justify-between text-xs">
+                    <span className="font-semibold text-foreground">شنبر {index + 2}</span>
+                    <button
+                      type="button"
+                      onClick={() => updatePrices(framePrice, lensPrice, discount, extrasRef.current.filter((x) => x.key !== f.key))}
+                      className="inline-flex items-center gap-0.5 text-red-600 hover:underline"
+                    >
+                      <X className="size-3.5" />
+                      حذف
+                    </button>
+                  </div>
+                  <ProductPickerInput
+                    id={`p-frame-${f.key}`}
+                    name={`extraFrame${f.key}`}
+                    productIdName={`extraFrameProductId${f.key}`}
+                    products={frames}
+                    searchBy="code"
+                    onTextChange={(text) => updateExtra(f.key, { text })}
+                    onPick={(p) => updateExtra(f.key, p ? { productId: p.id, price: p.sellPrice } : { productId: null })}
+                  />
+                  <PriceInput
+                    name={`extraFramePrice${f.key}`}
+                    label="سعر الفريم"
+                    value={f.price}
+                    onChange={(v) => updateExtra(f.key, { price: v })}
+                  />
+                </div>
+              ))}
+              <button
+                type="button"
+                onClick={() => setExtras([...extrasRef.current, { key: Date.now(), text: "", productId: null, price: 0 }])}
+                className="mt-1.5 inline-flex items-center gap-1 text-xs font-semibold text-brand-navy hover:underline"
+              >
+                <Plus className="size-3.5" />
+                شنبر تاني
+              </button>
             </div>
             <div>
               <Label htmlFor="p-lens">نوع العدسات</Label>
