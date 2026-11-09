@@ -85,6 +85,8 @@ export async function getPrescriptionById(id: number) {
         receiptNumber: true,
         createdAt: true,
         totalAmount: true,
+        discountAmount: true,
+        discountPercent: true,
         taxAmount: true,
         paidAmount: true,
         deliveryDate: true,

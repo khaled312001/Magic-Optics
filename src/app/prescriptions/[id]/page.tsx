@@ -33,6 +33,7 @@ export default async function PrescriptionPrintPage({ params }: { params: Promis
   const taxAmount = order ? Number(order.taxAmount) : 0;
   const beforeTax = order ? Number(order.totalAmount) - taxAmount : 0;
   const taxPercent = beforeTax > 0 ? Math.round((taxAmount / beforeTax) * 100) : 0;
+  const discountAmount = order ? Number(order.discountAmount) : 0;
   const methods = order ? [...new Set(order.payments.map((p) => paymentMethodLabels[p.method]))].join(" + ") : "";
 
   const frame = await frameWithoutCode(prescription.frame);
@@ -85,6 +86,15 @@ export default async function PrescriptionPrintPage({ params }: { params: Promis
 
         {order && (
           <div className="mt-1">
+            {discountAmount > 0 && (
+              <>
+                <SlipAmount label="المجموع" value={formatCurrency(beforeTax + discountAmount)} />
+                <SlipAmount
+                  label={`خصم الشنابر${order.discountPercent ? ` ${Number(order.discountPercent)}%` : ""}`}
+                  value={`-${formatCurrency(discountAmount)}`}
+                />
+              </>
+            )}
             {taxAmount > 0 && (
               <>
                 <SlipAmount label="القيمة قبل الضريبة" value={formatCurrency(beforeTax)} />

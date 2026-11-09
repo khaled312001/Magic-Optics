@@ -267,8 +267,10 @@ async function buildPrescriptionOrderLines(
         price: part.price ?? Number(part.product.sellPrice),
         isFrame: part.kind === "frame",
       });
-    } else if (part.text && part.price !== null && part.price > 0) {
-      lines.push({ productId: null, description: part.text, price: part.price, isFrame: part.kind === "frame" });
+    } else if (part.price !== null && part.price > 0) {
+      // سعر مكتوب بدون اسم: يتسجل كبند "فريم"/"عدسات" حتى يتحسب عليه خصم الشنابر
+      const label = part.text || (part.kind === "frame" ? "فريم" : "عدسات");
+      lines.push({ productId: null, description: label, price: part.price, isFrame: part.kind === "frame" });
     } else if (part.text) {
       freeText.push(part.text);
     }
