@@ -293,28 +293,30 @@ input[type="number"] {
 .slip {
   background: #fff;
   color: #000;
-  font-size: 13px;
-  font-weight: 600;
-  line-height: 1.45;
+  font-size: 12px;
+  font-weight: 800;
+  line-height: 1.3;
 }
+/* حد رفيع حوالين الحروف بيتقّلها: الحروف الرفيعة بتطلع رمادي ومقطعة على الحراري */
 .slip * {
   color: #000;
   border-color: #000;
+  -webkit-text-stroke: 0.3px #000;
 }
 .slip-head {
   display: flex;
   flex-direction: column;
   align-items: center;
   text-align: center;
-  padding-bottom: 6px;
-  margin-bottom: 6px;
+  padding-bottom: 4px;
+  margin-bottom: 4px;
   border-bottom: 2px solid #000;
-  font-size: 12px;
+  font-size: 11px;
 }
 .slip-logo {
-  width: 190px;
+  width: 150px;
   height: auto;
-  margin-bottom: 6px;
+  margin-bottom: 3px;
   image-rendering: crisp-edges;
 }
 .slip-legal {
@@ -329,64 +331,66 @@ input[type="number"] {
   justify-content: space-between;
   align-items: center;
   gap: 8px;
-  margin: 6px 0;
-  padding: 4px 8px;
+  margin: 4px 0;
+  padding: 2px 8px;
   background: #000;
-  font-size: 15px;
+  font-size: 14px;
   font-weight: 900;
 }
 .slip .slip-bar,
 .slip .slip-bar * {
   color: #fff;
+  -webkit-text-stroke-color: #fff;
 }
 .slip-table {
   width: 100%;
   border-collapse: collapse;
-  margin-bottom: 6px;
+  margin-bottom: 4px;
 }
 .slip-table th,
 .slip-table td {
   border: 1.5px solid #000;
-  padding: 3px 5px;
+  padding: 1px 5px;
 }
 .slip-table thead th {
   background: #000;
-  font-weight: 800;
-  font-size: 12px;
-  padding: 3px 2px;
+  font-weight: 900;
+  font-size: 11px;
+  padding: 1px 2px;
 }
 .slip .slip-table thead th {
   color: #fff;
+  -webkit-text-stroke-color: #fff;
 }
 .slip-info th {
   width: 34%;
-  font-weight: 800;
+  font-weight: 900;
   text-align: right;
   white-space: nowrap;
 }
 .slip-info td {
-  font-weight: 700;
+  font-weight: 800;
 }
 .slip-rx th,
 .slip-rx td {
-  padding: 3px 1px;
+  padding: 1px;
   text-align: center;
-  font-size: 12px;
+  font-size: 11px;
   font-variant-numeric: tabular-nums;
 }
 .slip-rx td {
   font-size: 13px;
-  font-weight: 800;
+  font-weight: 900;
 }
 .slip-amount {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  padding: 3px 8px;
+  padding: 1px 8px;
   border: 1.5px solid #000;
   border-top-width: 0;
-  font-size: 14px;
-  font-weight: 800;
+  font-size: 13px;
+  font-weight: 900;
 }
 .slip-amount:first-child,
 .slip-amount-strong {
@@ -394,20 +398,21 @@ input[type="number"] {
 }
 .slip-amount-strong {
   background: #000;
-  font-size: 16px;
+  font-size: 15px;
   font-weight: 900;
 }
 .slip .slip-amount-strong,
 .slip .slip-amount-strong * {
   color: #fff;
+  -webkit-text-stroke-color: #fff;
 }
 .slip-foot {
-  margin-top: 8px;
-  padding-top: 6px;
+  margin-top: 5px;
+  padding-top: 4px;
   border-top: 2px dashed #000;
   text-align: center;
-  font-size: 12px;
-  font-weight: 700;
+  font-size: 11px;
+  font-weight: 800;
 }
 
 /* الطباعة */

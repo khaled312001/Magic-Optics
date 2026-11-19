@@ -20,7 +20,17 @@ import { ProductPickerInput, type PickerProduct } from "@/components/customers/p
 import { CustomerHistoryPanel } from "@/components/customers/customer-history-panel";
 
 type CustomerOption = { id: number; name: string; phone: string | null };
-type ExtraFrame = { key: number; text: string; productId: number | null; price: number };
+type ExtraKind = "frame" | "lens";
+type ExtraItem = { key: number; kind: ExtraKind; text: string; productId: number | null; price: number };
+
+const extraLabels = {
+  frame: { title: "شنبر", price: "سعر الفريم", add: "شنبر تاني", field: "extraFrames" },
+  lens: { title: "عدسات", price: "سعر العدسات", add: "عدسات تانية", field: "extraLenses" },
+} as const;
+
+function sumExtras(items: ExtraItem[], kind: ExtraKind) {
+  return items.filter((f) => f.kind === kind).reduce((s, f) => s + f.price, 0);
+}
 export type RxProductOption = PickerProduct & { category: string };
 
 export function PrescriptionFormDialog({
@@ -54,15 +64,15 @@ export function PrescriptionFormDialog({
   const [framePrice, setFramePrice] = useState(0);
   const [lensPrice, setLensPrice] = useState(0);
   const [discount, setDiscount] = useState(() => initialDiscount(discountPercent));
-  // شنابر إضافية بعد الأول - الخصم على مجموع أسعار كل الشنابر
-  const [extraFrames, setExtraFrames] = useState<ExtraFrame[]>([]);
-  // نسخة فورية: اختيار شنبر بيغير النص والسعر فى نفس اللحظة، فالتعديل التانى لازم يبنى على الأول
-  const extrasRef = useRef<ExtraFrame[]>([]);
-  function setExtras(next: ExtraFrame[]) {
+  // شنابر وعدسات إضافية بعد الأولى - خصم الشنابر على مجموع أسعار كل الشنابر فقط
+  const [extras, setExtrasState] = useState<ExtraItem[]>([]);
+  // نسخة فورية: اختيار صنف بيغير النص والسعر فى نفس اللحظة، فالتعديل التانى لازم يبنى على الأول
+  const extrasRef = useRef<ExtraItem[]>([]);
+  function setExtras(next: ExtraItem[]) {
     extrasRef.current = next;
-    setExtraFrames(next);
+    setExtrasState(next);
   }
-  const framesTotal = framePrice + extraFrames.reduce((s, f) => s + f.price, 0);
+  const framesTotal = framePrice + sumExtras(extras, "frame");
   const frameDiscount = discountOf(framesTotal, discount);
 
   function updatePrices(nextFrame: number, nextLens: number, nextDiscount = discount, nextExtras = extrasRef.current) {
@@ -70,9 +80,10 @@ export function PrescriptionFormDialog({
     setLensPrice(nextLens);
     setDiscount(nextDiscount);
     setExtras(nextExtras);
-    const frames = nextFrame + nextExtras.reduce((s, f) => s + f.price, 0);
-    const sum = frames - discountOf(frames, nextDiscount) + nextLens;
-    if (frames > 0 || nextLens > 0) setTotalAmount(Math.round(sum * 100) / 100);
+    const frames = nextFrame + sumExtras(nextExtras, "frame");
+    const lenses = nextLens + sumExtras(nextExtras, "lens");
+    const sum = frames - discountOf(frames, nextDiscount) + lenses;
+    if (frames > 0 || lenses > 0) setTotalAmount(Math.round(sum * 100) / 100);
   }
 
   function onPick(kind: "frame" | "lens", product: PickerProduct | null) {
@@ -81,10 +92,65 @@ export function PrescriptionFormDialog({
     else updatePrices(framePrice, product.sellPrice);
   }
 
-  function updateExtra(key: number, change: Partial<ExtraFrame>) {
+  function updateExtra(key: number, change: Partial<ExtraItem>) {
     const next = extrasRef.current.map((f) => (f.key === key ? { ...f, ...change } : f));
     if (change.price !== undefined) updatePrices(framePrice, lensPrice, discount, next);
     else setExtras(next);
+  }
+
+  /** صفوف الشنابر/العدسات الإضافية تحت الأولى + زرار الإضافة */
+  function renderExtras(kind: ExtraKind) {
+    const labels = extraLabels[kind];
+    const items = extras.filter((f) => f.kind === kind);
+    return (
+      <>
+        <input
+          type="hidden"
+          name={labels.field}
+          value={JSON.stringify(items.map((f) => ({ text: f.text, productId: f.productId, price: f.price || null })))}
+        />
+        {items.map((f, index) => (
+          <div key={f.key} className="mt-2 border-t border-dashed border-border pt-2">
+            <div className="mb-1 flex items-center justify-between text-xs">
+              <span className="font-semibold text-foreground">
+                {labels.title} {index + 2}
+              </span>
+              <button
+                type="button"
+                onClick={() => updatePrices(framePrice, lensPrice, discount, extrasRef.current.filter((x) => x.key !== f.key))}
+                className="inline-flex items-center gap-0.5 text-red-600 hover:underline"
+              >
+                <X className="size-3.5" />
+                حذف
+              </button>
+            </div>
+            <ProductPickerInput
+              id={`p-${kind}-${f.key}`}
+              name={`extra-${kind}-${f.key}`}
+              productIdName={`extra-${kind}-product-${f.key}`}
+              products={kind === "frame" ? frames : lenses}
+              searchBy={kind === "frame" ? "code" : "name"}
+              onTextChange={(text) => updateExtra(f.key, { text })}
+              onPick={(p) => updateExtra(f.key, p ? { productId: p.id, price: p.sellPrice } : { productId: null })}
+            />
+            <PriceInput
+              name={`extra-${kind}-price-${f.key}`}
+              label={labels.price}
+              value={f.price}
+              onChange={(v) => updateExtra(f.key, { price: v })}
+            />
+          </div>
+        ))}
+        <button
+          type="button"
+          onClick={() => setExtras([...extrasRef.current, { key: Date.now(), kind, text: "", productId: null, price: 0 }])}
+          className="mt-1.5 inline-flex items-center gap-1 text-xs font-semibold text-brand-navy hover:underline"
+        >
+          <Plus className="size-3.5" />
+          {labels.add}
+        </button>
+      </>
+    );
   }
 
   const { onSubmit, isPending, fieldErrors, error } = useActionForm(createPrescription, {
@@ -206,50 +272,7 @@ export function PrescriptionFormDialog({
                 onPick={(p) => onPick("frame", p)}
               />
               <PriceInput name="framePrice" label="سعر الفريم" value={framePrice} onChange={(v) => updatePrices(v, lensPrice)} />
-
-              <input
-                type="hidden"
-                name="extraFrames"
-                value={JSON.stringify(extraFrames.map((f) => ({ text: f.text, productId: f.productId, price: f.price || null })))}
-              />
-              {extraFrames.map((f, index) => (
-                <div key={f.key} className="mt-2 border-t border-dashed border-border pt-2">
-                  <div className="mb-1 flex items-center justify-between text-xs">
-                    <span className="font-semibold text-foreground">شنبر {index + 2}</span>
-                    <button
-                      type="button"
-                      onClick={() => updatePrices(framePrice, lensPrice, discount, extrasRef.current.filter((x) => x.key !== f.key))}
-                      className="inline-flex items-center gap-0.5 text-red-600 hover:underline"
-                    >
-                      <X className="size-3.5" />
-                      حذف
-                    </button>
-                  </div>
-                  <ProductPickerInput
-                    id={`p-frame-${f.key}`}
-                    name={`extraFrame${f.key}`}
-                    productIdName={`extraFrameProductId${f.key}`}
-                    products={frames}
-                    searchBy="code"
-                    onTextChange={(text) => updateExtra(f.key, { text })}
-                    onPick={(p) => updateExtra(f.key, p ? { productId: p.id, price: p.sellPrice } : { productId: null })}
-                  />
-                  <PriceInput
-                    name={`extraFramePrice${f.key}`}
-                    label="سعر الفريم"
-                    value={f.price}
-                    onChange={(v) => updateExtra(f.key, { price: v })}
-                  />
-                </div>
-              ))}
-              <button
-                type="button"
-                onClick={() => setExtras([...extrasRef.current, { key: Date.now(), text: "", productId: null, price: 0 }])}
-                className="mt-1.5 inline-flex items-center gap-1 text-xs font-semibold text-brand-navy hover:underline"
-              >
-                <Plus className="size-3.5" />
-                شنبر تاني
-              </button>
+              {renderExtras("frame")}
             </div>
             <div>
               <Label htmlFor="p-lens">نوع العدسات</Label>
@@ -261,6 +284,7 @@ export function PrescriptionFormDialog({
                 onPick={(p) => onPick("lens", p)}
               />
               <PriceInput name="lensPrice" label="سعر العدسات" value={lensPrice} onChange={(v) => updatePrices(framePrice, v)} />
+              {renderExtras("lens")}
             </div>
             <div>
               <Label htmlFor="p-notes">ملاحظات</Label>

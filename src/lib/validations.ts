@@ -146,8 +146,8 @@ export const orderItemSchema = z.object({
   unitPrice: z.coerce.number().min(0),
 });
 
-/** شنبر إضافى فى الكشف (بعد الشنبر الأول) - يُرسل كـ JSON */
-export const extraFrameSchema = z.object({
+/** شنبر أو عدسات إضافية فى الكشف (بعد الأول) - تُرسل كـ JSON */
+export const extraItemSchema = z.object({
   text: z.string().trim().max(200),
   productId: z.number().int().positive().nullable(),
   price: z.number().min(0).nullable(),

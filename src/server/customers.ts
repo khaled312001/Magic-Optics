@@ -3,7 +3,7 @@
 import { revalidatePath } from "next/cache";
 import { prisma } from "@/lib/prisma";
 import { requireUser, requireAdmin } from "@/lib/auth-helpers";
-import { customerSchema, extraFrameSchema, prescriptionSchema, rxSchema } from "@/lib/validations";
+import { customerSchema, extraItemSchema, prescriptionSchema, rxSchema } from "@/lib/validations";
 import { z } from "zod";
 import { createPaymentWithCash } from "@/server/cash-utils";
 import { ActionResult, handleActionError, okResult } from "@/server/action-result";
@@ -100,13 +100,11 @@ export async function createPrescription(
     const user = await requireUser();
     const raw = Object.fromEntries(formData);
     const data = prescriptionSchema.parse(raw);
-    const extraFrames = z
-      .array(extraFrameSchema)
-      .max(10)
-      .parse(JSON.parse(String(formData.get("extraFrames") || "[]")))
-      .filter((f) => f.text || f.productId);
-    // كل الشنابر فى خانة الفريم بالورقة: "الأول + التانى"
-    const frameText = [data.frame, ...extraFrames.map((f) => f.text)].filter(Boolean).join(" + ").slice(0, 200) || null;
+    const extraFrames = parseExtraItems(formData, "extraFrames");
+    const extraLenses = parseExtraItems(formData, "extraLenses");
+    // كل الشنابر/العدسات فى خانتها بالورقة: "الأول + التانى"
+    const frameText = joinItemTexts(data.frame, extraFrames);
+    const lensText = joinItemTexts(data.lensType, extraLenses);
 
     let customerId = data.customerId;
     if (!customerId) {
@@ -137,7 +135,7 @@ export async function createPrescription(
         notes: data.notes || null,
         doctorName: data.doctorName,
         frame: frameText,
-        lensType: data.lensType,
+        lensType: lensText,
         createdById: Number(user.id),
       },
     });
@@ -154,7 +152,7 @@ export async function createPrescription(
       // القيمة المكتوبة صافية بعد خصم الشنابر، فالأصناف تُبنى بأسعارها المكتوبة والخصم يُسجل على الفريم
       const discount = await resolveDiscount(data);
       const { lines, discountAmount } = await buildPrescriptionOrderLines(
-        { ...data, extraFrames },
+        { ...data, extraFrames, extraLenses },
         totalAmount,
         discount,
         orderTypeLabels[orderType]
@@ -224,10 +222,20 @@ export async function createPrescription(
   }
 }
 
-/**
- * أصناف فاتورة الكشف: الفريم والعدسة المختاران من المخزون بأسعارهما، وما كُتب يدوياً بدون اختيار
- * يُضاف كبند بفرق القيمة. لو القيمة المكتوبة أقل من أسعار الأصناف، يُخصم الفرق من الفريم أولاً.
- */
+type ExtraItem = { text: string; productId: number | null; price: number | null };
+
+function parseExtraItems(formData: FormData, name: string): ExtraItem[] {
+  return z
+    .array(extraItemSchema)
+    .max(10)
+    .parse(JSON.parse(String(formData.get(name) || "[]")))
+    .filter((f) => f.text || f.productId || f.price);
+}
+
+function joinItemTexts(first: string | null, extras: ExtraItem[]) {
+  return [first, ...extras.map((f) => f.text)].filter(Boolean).join(" + ").slice(0, 200) || null;
+}
+
 /**
  * أصناف فاتورة الكشف: الفريم والعدسات بالسعر المكتوب فى الكشف (أو سعر المخزون لو ما اتكتبش).
  * خصم الشنابر يُحسب على سعر الفريم فقط. لو القيمة المكتوبة أكبر يُضاف الفرق كإضافات، ولو أقل يُخصم من الفريم أولاً.
@@ -240,21 +248,26 @@ async function buildPrescriptionOrderLines(
     lensProductId: number | null;
     framePrice: number | null;
     lensPrice: number | null;
-    extraFrames: { text: string; productId: number | null; price: number | null }[];
+    extraFrames: ExtraItem[];
+    extraLenses: ExtraItem[];
     orderDescription?: string;
   },
   netAmount: number,
   discount: { type: DiscountType; value: number },
   fallbackLabel: string
 ) {
-  const ids = [data.frameProductId, data.lensProductId, ...data.extraFrames.map((f) => f.productId)].filter(
-    (id): id is number => !!id
-  );
+  const ids = [
+    data.frameProductId,
+    data.lensProductId,
+    ...data.extraFrames.map((f) => f.productId),
+    ...data.extraLenses.map((f) => f.productId),
+  ].filter((id): id is number => !!id);
   const products = ids.length ? await prisma.product.findMany({ where: { id: { in: ids } } }) : [];
   const parts = [
     { kind: "frame", product: products.find((p) => p.id === data.frameProductId), text: data.frame, price: data.framePrice },
     ...data.extraFrames.map((f) => ({ kind: "frame", product: products.find((p) => p.id === f.productId), text: f.text || null, price: f.price })),
     { kind: "lens", product: products.find((p) => p.id === data.lensProductId), text: data.lensType, price: data.lensPrice },
+    ...data.extraLenses.map((f) => ({ kind: "lens", product: products.find((p) => p.id === f.productId), text: f.text || null, price: f.price })),
   ];
 
   const lines: { productId: number | null; description: string; price: number; isFrame: boolean }[] = [];
