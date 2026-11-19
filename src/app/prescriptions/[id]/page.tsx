@@ -9,7 +9,8 @@ import { deletePrescription } from "@/server/customers";
 import { PrintButton } from "@/components/orders/print-button";
 import { DeleteButton } from "@/components/ui/delete-button";
 import { ForceLight } from "@/components/layout/force-light";
-import { formatCurrency, formatDate } from "@/lib/utils";
+import { formatCurrency, formatDate, formatDateShort, formatDateTime } from "@/lib/utils";
+import { cairoDateStr } from "@/lib/cairo-time";
 import { paymentMethodLabels } from "@/lib/labels";
 import { SlipAmount, SlipBar, SlipFooter, SlipHeader, SlipInfo, SlipPaper, SlipRxTable } from "@/components/print/slip";
 
@@ -39,7 +40,13 @@ export default async function PrescriptionPrintPage({ params }: { params: Promis
   const frame = await frameWithoutCode(prescription.frame);
 
   const infoRows: [string, string][] = [
-    ["التاريخ", formatDate(prescription.date)],
+    // زى الفاتورة: التاريخ بالأرقام والساعة، والكشف القديم المسجل بتاريخ ورقته يظهر بتاريخه بس
+    [
+      "التاريخ",
+      cairoDateStr(prescription.date) === cairoDateStr(prescription.createdAt)
+        ? formatDateTime(prescription.createdAt)
+        : formatDateShort(prescription.date),
+    ],
     ["الاسم", prescription.customer.name],
     ...(prescription.customer.phone ? [["الهاتف", prescription.customer.phone] as [string, string]] : []),
     ...(prescription.createdBy ? [["الموظف", prescription.createdBy.name] as [string, string]] : []),

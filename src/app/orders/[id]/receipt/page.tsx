@@ -6,7 +6,8 @@ import { frameWithoutCode } from "@/server/prescriptions";
 import { PrintButton } from "@/components/orders/print-button";
 import { AutoPrint } from "@/components/orders/auto-print";
 import { ForceLight } from "@/components/layout/force-light";
-import { formatCurrency, formatDate, formatDateTime } from "@/lib/utils";
+import { formatCurrency, formatDate, formatDateShort, formatDateTime } from "@/lib/utils";
+import { cairoDateStr } from "@/lib/cairo-time";
 import { isFrameCategory, orderTypeLabels, paymentMethodLabels } from "@/lib/labels";
 import { SlipAmount, SlipBar, SlipFooter, SlipHeader, SlipInfo, SlipPaper, SlipRxTable } from "@/components/print/slip";
 
@@ -44,12 +45,12 @@ export default async function ReceiptPage({
 
   // بيانات الكشف المرتبط - تاريخه يظهر فقط لو مختلف عن يوم الفاتورة (كشف قديم مسجل بتاريخه)
   const rx = order.prescription;
-  const rxDate = rx ? formatDate(rx.date) : null;
+  const rxDate = rx && cairoDateStr(rx.date) !== cairoDateStr(order.createdAt) ? formatDateShort(rx.date) : null;
   const rxFrame = await frameWithoutCode(rx?.frame);
   const rxRows = rx
     ? (
         [
-          ["تاريخ الكشف", rxDate !== formatDate(order.createdAt) ? rxDate : null],
+          ["تاريخ الكشف", rxDate],
           ["اسم الطبيب", rx.doctorName],
           ["الفريم", rxFrame],
           ["نوع العدسات", rx.lensType],

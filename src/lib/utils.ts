@@ -1,6 +1,6 @@
 import { clsx, type ClassValue } from "clsx";
 import { twMerge } from "tailwind-merge";
-import { addDays, cairoDayStart } from "@/lib/cairo-time";
+import { addDays, cairoDayStart, TZ } from "@/lib/cairo-time";
 
 /** يدمج الكلاسات بحيث يتغلب الكلاس المُمرَّر لاحقاً (مثل h-9) على الافتراضي (h-10) */
 export function cn(...inputs: ClassValue[]) {
@@ -22,9 +22,11 @@ export function formatCurrency(value: number | string | { toString(): string }) 
   );
 }
 
+// كل التواريخ والساعات بتوقيت القاهرة: الخادم بيشتغل UTC، فبدونه الساعة فى الفاتورة بتتأخر ساعتين
 export function formatDate(date: Date | string) {
   const d = typeof date === "string" ? new Date(date) : date;
   return new Intl.DateTimeFormat(AR_EG_LATIN, {
+    timeZone: TZ,
     year: "numeric",
     month: "long",
     day: "numeric",
@@ -34,6 +36,7 @@ export function formatDate(date: Date | string) {
 export function formatDateShort(date: Date | string) {
   const d = typeof date === "string" ? new Date(date) : date;
   return new Intl.DateTimeFormat(AR_EG_LATIN, {
+    timeZone: TZ,
     year: "numeric",
     month: "2-digit",
     day: "2-digit",
@@ -43,6 +46,7 @@ export function formatDateShort(date: Date | string) {
 export function formatDateTime(date: Date | string) {
   const d = typeof date === "string" ? new Date(date) : date;
   return new Intl.DateTimeFormat(AR_EG_LATIN, {
+    timeZone: TZ,
     year: "numeric",
     month: "2-digit",
     day: "2-digit",

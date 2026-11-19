@@ -1,7 +1,7 @@
 // كل حسابات الأيام والشهور (الخزنة، مبيعات اليوم، التقارير) بتوقيت القاهرة، لأن خادم
 // Vercel يعمل بتوقيت UTC: بدون هذا التحويل تُحسب الدفعات بين 12 و3 فجراً على اليوم السابق.
 
-const TZ = "Africa/Cairo";
+export const TZ = "Africa/Cairo";
 
 const dateFormatter = new Intl.DateTimeFormat("en-CA", {
   timeZone: TZ,
